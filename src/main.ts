@@ -34,13 +34,13 @@ export default class PAPlugin extends Plugin {
       id: "open-chat",
       name: "Open AI Chat",
       callback: () => {
-        void this.activateChatView();
+        this.activateChatView();
       },
     });
 
     // Add ribbon icon
     this.addRibbonIcon("message-circle", "Open AI Chat", () => {
-      void this.activateChatView();
+      this.activateChatView();
     });
 
     // Add settings tab
@@ -200,7 +200,14 @@ export default class PAPlugin extends Plugin {
   /**
    * Activate the chat view in the right sidebar
    */
-  private async activateChatView(): Promise<void> {
+  public activateChatView(): void {
+    void this.doActivateChatView();
+  }
+
+  /**
+   * Internal async implementation of chat view activation
+   */
+  private async doActivateChatView(): Promise<void> {
     const { workspace } = this.app;
 
     let leaf: WorkspaceLeaf | null = null;
@@ -217,10 +224,11 @@ export default class PAPlugin extends Plugin {
       }
     }
 
-    // Reveal the leaf (revealLeaf is sync but TypeScript types may suggest otherwise)
+    // Reveal the leaf
     if (leaf) {
+      // revealLeaf returns void in some Obsidian versions
       // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      workspace.revealLeaf(leaf);
+      Promise.resolve(workspace.revealLeaf(leaf));
     }
   }
 }
