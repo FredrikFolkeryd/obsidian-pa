@@ -17,7 +17,7 @@ This skill ensures all commits follow the [Conventional Commits](https://www.con
 
 ## Commit Format
 
-```
+```text
 <type>[optional scope]: <description>
 
 [optional body]
@@ -28,7 +28,7 @@ This skill ensures all commits follow the [Conventional Commits](https://www.con
 ## Commit Types
 
 | Type | Description | Semver Impact |
-|------|-------------|---------------|
+| ---- | ----------- | ------------- |
 | `feat` | A new feature | Minor (0.x.0) |
 | `fix` | A bug fix | Patch (0.0.x) |
 | `docs` | Documentation only changes | None |
@@ -45,14 +45,16 @@ This skill ensures all commits follow the [Conventional Commits](https://www.con
 Breaking changes trigger a major version bump (x.0.0) and can be indicated in two ways:
 
 1. **Footer notation:**
-   ```
+
+   ```text
    feat: allow provided config object to extend other configs
 
    BREAKING CHANGE: `extends` key in config file is now used for extending other config files
    ```
 
 2. **Type with `!`:**
-   ```
+
+   ```text
    feat!: remove deprecated API endpoints
    ```
 
@@ -61,7 +63,7 @@ Breaking changes trigger a major version bump (x.0.0) and can be indicated in tw
 Scopes provide additional context about what part of the codebase is affected:
 
 | Scope | Description |
-|-------|-------------|
+| ----- | ----------- |
 | `settings` | Plugin settings and configuration |
 | `agent` | Agent-related functionality |
 | `ui` | User interface components |
@@ -130,6 +132,7 @@ A valid commit message must:
 ## Common Mistakes
 
 ❌ **Wrong:**
+
 ```bash
 Added new feature for settings
 Fix: resolved the bug
@@ -138,6 +141,7 @@ FEAT: new feature
 ```
 
 ✅ **Correct:**
+
 ```bash
 feat(settings): add timeout configuration
 fix: resolve null reference in agent service

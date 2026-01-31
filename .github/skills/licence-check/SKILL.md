@@ -21,7 +21,7 @@ This skill ensures all dependencies comply with licence requirements per EA-09, 
 These permissive licences are safe for use:
 
 | Licence | SPDX ID | Notes |
-|---------|---------|-------|
+| ------- | ------- | ----- |
 | MIT | `MIT` | Most permissive, preferred |
 | Apache 2.0 | `Apache-2.0` | Permissive with patent grant |
 | BSD 2-Clause | `BSD-2-Clause` | Permissive |
@@ -36,7 +36,7 @@ These permissive licences are safe for use:
 These require additional review before use:
 
 | Licence | SPDX ID | Concern |
-|---------|---------|---------|
+| ------- | ------- | ------- |
 | LGPL 2.1 | `LGPL-2.1` | Copyleft for library modifications |
 | LGPL 3.0 | `LGPL-3.0` | Copyleft for library modifications |
 | MPL 2.0 | `MPL-2.0` | File-level copyleft |
@@ -45,6 +45,7 @@ These require additional review before use:
 | CC-BY | `CC-BY-4.0` | Attribution required |
 
 **Review Criteria:**
+
 - Is the dependency used at runtime or build-time only?
 - Are we modifying the dependency source?
 - How is the dependency distributed (bundled vs. separate)?
@@ -54,7 +55,7 @@ These require additional review before use:
 These licences are incompatible with this project:
 
 | Licence | SPDX ID | Reason |
-|---------|---------|--------|
+| ------- | ------- | ------ |
 | GPL 2.0 | `GPL-2.0` | Strong copyleft, viral |
 | GPL 3.0 | `GPL-3.0` | Strong copyleft, viral |
 | AGPL 3.0 | `AGPL-3.0` | Network copyleft, most restrictive |

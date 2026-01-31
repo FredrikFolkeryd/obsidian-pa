@@ -72,7 +72,7 @@ All notable changes to this project will be documented in this file.
 ### Commit Type to Section Mapping
 
 | Commit Type | Changelog Section | Included |
-|-------------|-------------------|----------|
+| ----------- | ----------------- | -------- |
 | `feat` | Features | ✅ Yes |
 | `fix` | Bug Fixes | ✅ Yes |
 | `perf` | Performance Improvements | ✅ Yes |

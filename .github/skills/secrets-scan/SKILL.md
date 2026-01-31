@@ -19,7 +19,7 @@ This skill prevents accidental credential exposure in the repository, ensuring c
 ### Definitely Secrets (Never Commit)
 
 | Type | Pattern Examples | Risk |
-|------|------------------|------|
+| ---- | ---------------- | ---- |
 | API Keys | `sk-`, `pk_live_`, `AKIA` | Full account access |
 | PATs | `ghp_`, `gho_`, `ghu_` | Repository/org access |
 | OAuth Tokens | Long base64 strings | Application access |
@@ -32,7 +32,7 @@ This skill prevents accidental credential exposure in the repository, ensuring c
 ### Potentially Sensitive (Review Carefully)
 
 | Type | Context |
-|------|---------|
+| ---- | ------- |
 | Internal URLs | May reveal infrastructure |
 | Email addresses | PII considerations |
 | IP addresses | Internal network info |
@@ -257,6 +257,7 @@ env:
    - Other services: Revoke/regenerate in their settings
 
 2. **Remove from Git history**
+
    ```bash
    # Using git-filter-repo (recommended)
    pip install git-filter-repo

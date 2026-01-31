@@ -21,7 +21,7 @@ This skill provides standardised templates for agent work item files. When worki
 ## Available Templates
 
 | Agent | Template File | Creates | Purpose |
-|-------|---------------|---------|---------|
+| ----- | ------------- | ------- | ------- |
 | architect | `architect.md` | `architecture-notes.md` | Design decisions, patterns, integration considerations |
 | developer | `developer.md` | `developer.md` | Implementation progress, technical decisions, blockers |
 | tech-writer | `tech-writer.md` | `tech-writer.md` | Documentation progress, terminology decisions, review findings |
@@ -46,7 +46,7 @@ This skill provides standardised templates for agent work item files. When worki
 
 Work item files follow this structure:
 
-```
+```text
 .github/work/current/<feature-name>/
 ├── plan.md               # Team lead's work plan
 ├── final.md              # Team lead's completion summary (when done)

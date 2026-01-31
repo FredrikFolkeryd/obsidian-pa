@@ -27,7 +27,7 @@ Please be respectful and constructive in all interactions. We follow IKEA's valu
 
 All commits **must** follow [Conventional Commits](https://www.conventionalcommits.org/):
 
-```
+```text
 <type>[optional scope]: <description>
 
 [optional body]
@@ -36,6 +36,7 @@ All commits **must** follow [Conventional Commits](https://www.conventionalcommi
 ```
 
 **Types:**
+
 - `feat`: A new feature
 - `fix`: A bug fix
 - `docs`: Documentation only changes
@@ -48,6 +49,7 @@ All commits **must** follow [Conventional Commits](https://www.conventionalcommi
 - `chore`: Other changes that don't modify src or test files
 
 **Examples:**
+
 ```bash
 feat(settings): add configuration for agent timeout
 fix(agent): resolve memory leak in long-running sessions
@@ -104,6 +106,7 @@ When reporting issues, please include:
 - Any relevant error messages or logs
 
 Use these labels when creating issues:
+
 - `bug`: Something isn't working
 - `enhancement`: New feature or improvement
 - `documentation`: Documentation updates

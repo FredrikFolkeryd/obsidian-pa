@@ -20,6 +20,7 @@ Obsidian PA enables users to interact with AI capabilities directly in their not
 ### From Source
 
 1. Clone this repository into your vault's `.obsidian/plugins/` directory:
+
    ```bash
    cd /path/to/your/vault/.obsidian/plugins
    git clone https://github.com/FredrikFolkeryd/obsidian-pa.git
@@ -27,11 +28,13 @@ Obsidian PA enables users to interact with AI capabilities directly in their not
    ```
 
 2. Install dependencies:
+
    ```bash
    npm install
    ```
 
 3. Build the plugin:
+
    ```bash
    npm run build
    ```
@@ -76,7 +79,7 @@ npm run build
 
 ### Project Structure
 
-```
+```text
 obsidian-pa/
 ├── .github/
 │   ├── agents/           # AI agent definitions

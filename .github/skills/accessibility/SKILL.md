@@ -448,7 +448,7 @@ npm install --save-dev @axe-core/playwright
 ### ARIA Roles for Common Patterns
 
 | Pattern | Role | Notes |
-|---------|------|-------|
+| ------- | ---- | ----- |
 | Modal dialog | `dialog` | Add `aria-modal="true"` |
 | Alert message | `alert` | Announced immediately |
 | Status update | `status` | Announced politely |
@@ -459,7 +459,7 @@ npm install --save-dev @axe-core/playwright
 ### Keyboard Shortcuts
 
 | Key | Expected Behavior |
-|-----|-------------------|
+| --- | ----------------- |
 | Tab | Move to next focusable element |
 | Shift+Tab | Move to previous focusable element |
 | Enter | Activate button/link |
