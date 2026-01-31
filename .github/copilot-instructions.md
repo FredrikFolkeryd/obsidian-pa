@@ -57,6 +57,8 @@ Types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`
 
 ## Project Structure
 
+> **Note**: This is the **target structure** for the project. During early development phases, not all files and directories may exist yet. Agents should create these as needed following this structure.
+
 ```
 obsidian-pa/
 ├── .github/
@@ -84,14 +86,15 @@ Create these agents in `.github/agents/` as the project develops:
 | `team-lead.md` | Work planning, issue triage, milestone tracking |
 | `architect.md` | Technical design, architecture decisions, API design |
 | `developer.md` | Code implementation, bug fixes, feature development |
-| `review.md` | Code review, quality checks, standards enforcement |
+| `reviewer.md` | Code review, quality checks, standards enforcement |
 
 ### Specialised Agents
 
 | Agent | Purpose |
 |-------|---------|
-| `docs.md` | Documentation, README updates, user guides |
-| `test.md` | Test writing, coverage analysis, test strategy |
+| `tech-writer.md` | Documentation, README updates, user guides |
+| `tester.md` | Test writing, coverage analysis, test strategy |
+| `security.md` | Security assessment, secrets management, privacy review |
 | `pa.md` | End-user personal assistant, user interaction, bug/enhancement reporting |
 
 ## Workflows
@@ -101,20 +104,27 @@ Create these agents in `.github/agents/` as the project develops:
 1. **Planning**: `@team-lead` analyses the bug, creates investigation plan
 2. **Analysis**: `@architect` reviews code paths, identifies root cause
 3. **Implementation**: `@developer` implements fix following the plan
-4. **Review**: `@review` validates fix quality and test coverage
+4. **Testing** (optional): `@tester` writes or updates tests for the fix
+5. **Security** (if sensitive): `@security` reviews security implications
+6. **Review**: `@reviewer` validates fix quality and test coverage
+7. **Documentation** (optional): `@tech-writer` updates relevant documentation if needed
 
 ### Feature Request → Implementation
 
 1. **Planning**: `@team-lead` breaks down feature into tasks
 2. **Design**: `@architect` creates technical design with concrete steps
-3. **Implementation**: `@developer` implements each task sequentially
-4. **Review**: `@review` validates implementation against design
+3. **Security** (if sensitive): `@security` performs threat modelling and privacy assessment
+4. **Implementation**: `@developer` implements each task sequentially
+5. **Testing** (optional): `@tester` writes tests for new functionality
+6. **Review**: `@reviewer` validates implementation against design
+7. **Documentation** (optional): `@tech-writer` updates user guides and API docs
 
 ### Pull Request Review
 
 1. **Triage**: `@team-lead` assesses scope and impact
 2. **Technical Review**: `@architect` validates design decisions
-3. **Code Review**: `@review` checks code quality and standards
+3. **Security Review** (if sensitive): `@security` checks for vulnerabilities
+4. **Code Review**: `@reviewer` checks code quality and standards
 
 ### Critical Rule: Two-Shot Pattern
 
@@ -184,12 +194,18 @@ This project follows relevant Ingka Engineering Baseline ADRs:
 |-----|-------------|
 | EA-01 | Source code managed in GitHub |
 | EA-02 | Defined test strategy with change management |
+| EA-03 | Security and privacy requirements addressed |
+| EA-07 | Secrets management; no hardcoded credentials |
 | EA-09 | Open source licence compliance checks |
 | EA-10 | Technical documentation following OSPO guidelines |
 
 ### Security & Privacy
 
 - No hardcoded secrets or credentials
+- Use system keychains or secrets management tools for tokens
+- Obtain user consent before sharing note content with AI
+- Minimise data exposure to external services
+- Consider third-party privacy (individuals mentioned in notes)
 - Dependencies must be vetted for licence compliance
 - Avoid `AGPL-3.0` and other strong reciprocal licences
 - Prefer permissive licences (MIT, Apache-2.0, BSD)

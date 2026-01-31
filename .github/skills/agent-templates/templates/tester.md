@@ -1,8 +1,8 @@
 # Template: Test Planning and Progress
 
-**Agent:** test
-**Creates:** `test.md`
-**Location:** `.github/work/current/<feature-name>/test.md`
+**Agent:** tester
+**Creates:** `tester.md`
+**Location:** `.github/work/current/<feature-name>/tester.md`
 
 ---
 

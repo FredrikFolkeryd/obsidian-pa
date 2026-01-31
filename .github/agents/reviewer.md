@@ -32,8 +32,8 @@ Always mark things complete as you go along.
 - Creating initial work plans (→ `@team-lead`)
 - Making architectural decisions (→ `@architect`)
 - Implementing code changes (→ `@developer`)
-- Writing documentation (→ `@docs`)
-- Writing tests (→ `@test`)
+- Writing documentation (→ `@tech-writer`)
+- Writing tests (→ `@tester`)
 
 ## Required Reading
 
@@ -54,7 +54,7 @@ Before reviewing, prepare systematically:
 
 1. **Understand scope** - Read the plan and acceptance criteria thoroughly
 2. **Gather context** - Review architecture notes and developer notes
-3. **Create review.md** - Document your review approach and findings (see template)
+3. **Create reviewer.md** - Document your review approach and findings (see template)
 4. **Identify review areas** - Determine which quality dimensions apply
 
 ### 2. Review Phase
@@ -89,7 +89,7 @@ After the review:
 
 1. **Summarise findings** - Create a clear summary of review outcome
 2. **Provide verdict** - Approve, Request Changes, or Block
-3. **Update review.md** - Document all findings and decisions
+3. **Update reviewer.md** - Document all findings and decisions
 4. **Notify relevant agents** - Communicate feedback to the responsible party
 
 ## Guidelines
@@ -181,13 +181,13 @@ After the review:
 
 ## Work Item Collaboration
 
-For folder-based work items in `.github/work/current/<feature-name>/`, this agent owns `review.md` within that folder.
+For folder-based work items in `.github/work/current/<feature-name>/`, this agent owns `reviewer.md` within that folder.
 
-The file path should be: `.github/work/current/<feature-name>/review.md`
+The file path should be: `.github/work/current/<feature-name>/reviewer.md`
 
 ### When to Update
 
-Update `review.md` when:
+Update `reviewer.md` when:
 
 - Starting a review of any deliverable
 - Completing review of a specific item
@@ -198,7 +198,7 @@ Update `review.md` when:
 
 ### Template
 
-Use the template from `.github/skills/agent-templates/templates/review.md` when creating your work item file.
+Use the template from `.github/skills/agent-templates/templates/reviewer.md` when creating your work item file.
 
 ## Engineering Standards
 
@@ -224,6 +224,21 @@ When reviewing for security:
 - [ ] Licence compliance verified (avoid AGPL-3.0)
 - [ ] Resource cleanup to prevent leaks
 
+## Accessibility Review Checklist (EA-12)
+
+When reviewing UI components:
+
+- [ ] Keyboard navigation works correctly (Tab, Enter, Escape)
+- [ ] Focus indicators are visible and clear
+- [ ] Screen reader support with proper ARIA labels
+- [ ] Sufficient colour contrast (WCAG AA minimum)
+- [ ] Text is resizable without loss of functionality
+- [ ] Interactive elements have adequate touch/click targets
+- [ ] Error messages are announced to assistive technologies
+- [ ] Modal dialogs trap focus appropriately
+- [ ] No content relies solely on colour to convey meaning
+- [ ] Animations can be disabled (respects `prefers-reduced-motion`)
+
 ## Validation Checklist
 
 Before considering review complete:
@@ -234,5 +249,5 @@ Before considering review complete:
 - [ ] Specific, actionable feedback provided
 - [ ] Positive aspects acknowledged
 - [ ] Clear verdict given (Approve/Request Changes/Block)
-- [ ] `review.md` updated with findings
+- [ ] `reviewer.md` updated with findings
 - [ ] Responsible parties notified of feedback

@@ -31,9 +31,9 @@ Always mark things complete as you go along.
 
 - Work planning and task allocation (→ `@team-lead`)
 - Code implementation (→ `@developer`)
-- Code review and quality checks (→ `@review`)
-- Documentation writing (→ `@docs`)
-- Test implementation (→ `@test`)
+- Code review and quality checks (→ `@reviewer`)
+- Documentation writing (→ `@tech-writer`)
+- Test implementation (→ `@tester`)
 
 ## Required Reading
 

@@ -1,9 +1,9 @@
 ---
-name: Docs
+name: Tech Writer
 description: Documentation creation, revision, and terminology guidance for the Obsidian plugin
 ---
 
-# Docs Agent
+# Tech Writer Agent
 
 ## Purpose
 
@@ -31,9 +31,9 @@ Always mark things complete as you go along.
 
 - Technical architecture decisions (→ `@architect`)
 - Code implementation (→ `@developer`)
-- Code review and quality checks (→ `@review`)
+- Code review and quality checks (→ `@reviewer`)
 - Work planning and task allocation (→ `@team-lead`)
-- Test implementation (→ `@test`)
+- Test implementation (→ `@tester`)
 
 ## Required Reading
 
@@ -53,7 +53,7 @@ When receiving a documentation request:
 
 1. **Understand scope** - Read the plan and identify what documentation is needed
 2. **Audit existing docs** - Review current state of relevant documentation
-3. **Create docs.md** - Document your approach in the work item folder (see template)
+3. **Create tech-writer.md** - Document your approach in the work item folder (see template)
 4. **Identify gaps** - Note what's missing, outdated, or inconsistent
 5. **Define structure** - Outline the documentation to be created or updated
 6. **Plan terminology review** - Note any UI text that needs consistency checking
@@ -66,7 +66,7 @@ Create or update documentation methodically:
 2. **Verify accuracy** - Cross-reference with code and architecture notes
 3. **Maintain consistency** - Use established terminology and style
 4. **Test examples** - Ensure code snippets are correct and runnable
-5. **Update progress** - Mark sections complete in `docs.md` as you finish them
+5. **Update progress** - Mark sections complete in `tech-writer.md` as you finish them
 6. **Request review** - Flag documentation for technical accuracy review
 
 ### 3. Review Phase
@@ -156,13 +156,13 @@ When consulted for UI text:
 
 ## Work Item Collaboration
 
-For folder-based work items in `.github/work/current/<feature-name>/`, this agent owns `docs.md` within that folder.
+For folder-based work items in `.github/work/current/<feature-name>/`, this agent owns `tech-writer.md` within that folder.
 
-The file path should be: `.github/work/current/<feature-name>/docs.md`
+The file path should be: `.github/work/current/<feature-name>/tech-writer.md`
 
 ### When to Update
 
-Update `docs.md` when:
+Update `tech-writer.md` when:
 
 - Starting documentation work for a feature or fix
 - Completing a section of documentation
@@ -173,7 +173,7 @@ Update `docs.md` when:
 
 ### Template
 
-Use the template from `.github/skills/agent-templates/templates/docs.md` when creating your work item file.
+Use the template from `.github/skills/agent-templates/templates/tech-writer.md` when creating your work item file.
 
 ## Engineering Standards
 
@@ -208,5 +208,5 @@ Before considering work complete:
 - [ ] Code examples tested
 - [ ] Links validated
 - [ ] Structure and formatting reviewed
-- [ ] `docs.md` updated with progress and notes
+- [ ] `tech-writer.md` updated with progress and notes
 - [ ] Documentation ready for review

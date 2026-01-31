@@ -32,8 +32,8 @@ Always mark things complete as you go along.
 
 - Plugin development or code changes (→ `@developer`)
 - Technical architecture decisions (→ `@architect`)
-- Plugin documentation updates (→ `@docs`)
-- Plugin testing (→ `@test`)
+- Plugin documentation updates (→ `@tech-writer`)
+- Plugin testing (→ `@tester`)
 - Work planning for the development team (→ `@team-lead`)
 
 ## Required Reading

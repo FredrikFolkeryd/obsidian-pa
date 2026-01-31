@@ -24,11 +24,12 @@ This skill provides standardised templates for agent work item files. When worki
 |-------|---------------|---------|---------|
 | architect | `architect.md` | `architecture-notes.md` | Design decisions, patterns, integration considerations |
 | developer | `developer.md` | `developer.md` | Implementation progress, technical decisions, blockers |
-| docs | `docs.md` | `docs.md` | Documentation progress, terminology decisions, review findings |
-| review | `review.md` | `review.md` | Quality assessment, issues found, approval verdict |
+| tech-writer | `tech-writer.md` | `tech-writer.md` | Documentation progress, terminology decisions, review findings |
+| reviewer | `reviewer.md` | `reviewer.md` | Quality assessment, issues found, approval verdict |
 | team-lead | `team-lead.md` | `plan.md` | Work breakdown, task allocation, acceptance criteria |
 | team-lead | `team-lead-final.md` | `final.md` | Completion summary, verification, lessons learned |
-| test | `test.md` | `test.md` | Test strategy, risk assessment, coverage, metrics |
+| tester | `tester.md` | `tester.md` | Test strategy, risk assessment, coverage, metrics |
+| security | `security.md` | `security.md` | Threat model, privacy assessment, secrets management |
 | pa | `pa.md` | `pa.md` | User feedback, bug reports, enhancement requests |
 
 ## Usage
@@ -51,7 +52,7 @@ Work item files follow this structure:
 ├── final.md              # Team lead's completion summary (when done)
 ├── architecture-notes.md # Architect's design decisions
 ├── developer.md          # Developer's implementation notes
-├── review.md             # Reviewer's quality assessment and findings
+├── reviewer.md           # Reviewer's quality assessment and findings
 └── ...                   # Other agent files as needed
 ```
 

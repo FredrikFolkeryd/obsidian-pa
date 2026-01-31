@@ -1,8 +1,8 @@
 # Template: Documentation Notes
 
-**Agent:** docs
-**Creates:** `docs.md`
-**Location:** `.github/work/current/<feature-name>/docs.md`
+**Agent:** tech-writer
+**Creates:** `tech-writer.md`
+**Location:** `.github/work/current/<feature-name>/tech-writer.md`
 
 ---
 

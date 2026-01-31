@@ -30,9 +30,9 @@ Always mark things complete as you go along.
 
 - Technical architecture decisions (→ `@architect`)
 - Code implementation (→ `@developer`)
-- Code review and quality checks (→ `@review`)
-- Documentation writing (→ `@docs`)
-- Test implementation (→ `@test`)
+- Code review and quality checks (→ `@reviewer`)
+- Documentation writing (→ `@tech-writer`)
+- Test implementation (→ `@tester`)
 
 ## Required Reading
 
@@ -104,17 +104,19 @@ For features:
 
 1. `@team-lead` creates plan with tasks
 2. `@architect` designs technical approach (if needed)
-3. `@developer` implements the code
-4. `@test` writes/updates tests (if separate)
-5. `@review` validates quality
-6. `@docs` updates documentation (if needed)
+3. `@security` performs threat modelling (if security-sensitive)
+4. `@developer` implements the code
+5. `@tester` writes/updates tests (if separate)
+6. `@reviewer` validates quality
+7. `@tech-writer` updates documentation (if needed)
 
 For bugs:
 
 1. `@team-lead` creates investigation plan
 2. `@architect` analyses code paths (if complex)
 3. `@developer` implements fix
-4. `@review` validates fix quality
+4. `@security` reviews security implications (if sensitive)
+5. `@reviewer` validates fix quality
 
 ### Two-Shot Pattern Enforcement
 

@@ -1,8 +1,8 @@
 # Template: Review Findings
 
-**Agent:** review
-**Creates:** `review.md`
-**Location:** `.github/work/current/<feature-name>/review.md`
+**Agent:** reviewer
+**Creates:** `reviewer.md`
+**Location:** `.github/work/current/<feature-name>/reviewer.md`
 
 ---
 
