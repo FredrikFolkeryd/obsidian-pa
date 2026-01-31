@@ -272,7 +272,7 @@ main() {
     echo -e "${GREEN}🎉 Installation complete!${NC}"
     echo ""
     echo -e "💡 ${YELLOW}Next steps:${NC}"
-    echo "   1. Restart Obsidian (or reload with Ctrl/Cmd+R)"
+    echo "   1. Restart Obsidian (or Cmd+P → 'Reload app without saving')"
     echo "   2. Go to Settings → Community plugins"
     echo "   3. Enable \"Personal Assistant\""
   fi
