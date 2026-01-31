@@ -1,0 +1,100 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.0.0-alpha.1)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create plugin directory structure
+        run: |
+          mkdir -p dist/obsidian-pa
+          cp main.js dist/obsidian-pa/
+          cp manifest.json dist/obsidian-pa/
+          cp styles.css dist/obsidian-pa/ 2>/dev/null || echo '/* obsidian-pa styles */' > dist/obsidian-pa/styles.css
+
+      - name: Create release zip
+        run: |
+          cd dist
+          zip -r obsidian-pa-${{ steps.version.outputs.version }}.zip obsidian-pa
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: "v${{ steps.version.outputs.version }}"
+          draft: false
+          prerelease: ${{ contains(steps.version.outputs.version, 'alpha') || contains(steps.version.outputs.version, 'beta') }}
+          files: |
+            dist/obsidian-pa-${{ steps.version.outputs.version }}.zip
+            dist/obsidian-pa/main.js
+            dist/obsidian-pa/manifest.json
+            dist/obsidian-pa/styles.css
+          body: |
+            ## Installation
+
+            ### Option 1: Download and unzip (Recommended)
+            1. Download `obsidian-pa-${{ steps.version.outputs.version }}.zip`
+            2. Unzip into your vault's plugins folder: `<vault>/.obsidian/plugins/`
+            3. The zip creates the `obsidian-pa/` folder automatically
+            4. Reload Obsidian and enable the plugin in Settings → Community plugins
+
+            ### Option 2: Manual installation
+            1. Create folder: `<vault>/.obsidian/plugins/obsidian-pa/`
+            2. Download `main.js`, `manifest.json`, and `styles.css` into that folder
+            3. Reload Obsidian and enable the plugin
+
+            ### First-time setup
+            1. Go to Settings → Personal Assistant
+            2. Click "Sign in with GitHub" (or paste a PAT if OAuth not configured)
+            3. Enable AI features and configure which folders to include
+            4. Open the chat via ribbon icon or command palette
+
+            ---
+            
+            **Full Changelog**: https://github.com/${{ github.repository }}/commits/${{ steps.version.outputs.version }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
