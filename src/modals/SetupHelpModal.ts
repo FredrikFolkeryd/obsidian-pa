@@ -61,14 +61,20 @@ export class SetupHelpModal extends Modal {
     step3.createEl("strong", { text: "Create a GitHub Personal Access Token" });
     step3.createEl("br");
     const patLink = step3.createEl("a", {
-      text: "GitHub → Settings → Developer settings → Personal access tokens",
+      text: "GitHub → Settings → Personal access tokens (Fine-grained)",
       href: "https://github.com/settings/tokens?type=beta",
     });
     patLink.setAttribute("target", "_blank");
-    step3.createEl("br");
-    step3.appendText("Required scope: ");
-    step3.createEl("code", { text: "models:read" });
-    step3.appendText(" (for GitHub Models API)");
+
+    const substeps = step3.createEl("ol", { attr: { type: "a" } });
+    substeps.createEl("li", { text: 'Click "Generate new token"' });
+    substeps.createEl("li", { text: "Set a name and expiration date" });
+    const permStep = substeps.createEl("li");
+    permStep.appendText('Under "Account permissions", find ');
+    permStep.createEl("strong", { text: "Models" });
+    permStep.appendText(" and set to ");
+    permStep.createEl("strong", { text: "Read" });
+    substeps.createEl("li", { text: "Click Generate token and copy it" });
 
     // Step 4: Store in 1Password
     const step4 = steps.createEl("li");
