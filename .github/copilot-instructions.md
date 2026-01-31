@@ -181,6 +181,38 @@ Create these agents in `.github/agents/` as the project develops:
 4. **Security Review** (if sensitive): `@security` checks for vulnerabilities
 5. **Code Review**: `@reviewer` checks code quality and standards
 
+### Retrospectives
+
+The team holds retrospectives at regular intervals to continuously improve processes:
+
+**When to hold a retro:**
+
+- After each milestone/release
+- After significant bugs discovered in production
+- After external feedback from exploratory testing
+- Monthly at minimum during active development
+
+**Retro format:**
+
+1. **What went well?** - Celebrate successes and reinforce good practices
+2. **What could improve?** - Identify friction points and gaps
+3. **Action items** - Concrete changes to workflows, docs, or tooling
+
+**Documentation:**
+
+- Document retros in `.github/work/retros/YYYY-MM-DD.md`
+- Link action items to commits or issues that implement them
+- Review previous retro action items at the start of each retro
+
+**Example triggers:**
+
+| Trigger | Example |
+|---------|---------|
+| Release completed | v1.0.0 shipped → retro on MVP process |
+| Bug escaped testing | Security issue found → retro on test coverage |
+| User feedback | Onboarding confusing → retro on UX review process |
+| Process friction | Tests created late → retro on workflow order |
+
 ### Critical Rule: Two-Shot Pattern
 
 All workflows follow the **planning → implementation** pattern:
