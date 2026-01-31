@@ -155,28 +155,31 @@ Create these agents in `.github/agents/` as the project develops:
 
 1. **Planning**: `@team-lead` analyses the bug, creates investigation plan
 2. **Analysis**: `@architect` reviews code paths, identifies root cause
-3. **Implementation**: `@developer` implements fix following the plan
-4. **Testing** (optional): `@tester` writes or updates tests for the fix
-5. **Security** (if sensitive): `@security` reviews security implications
-6. **Review**: `@reviewer` validates fix quality and test coverage
-7. **Documentation** (optional): `@tech-writer` updates relevant documentation if needed
+3. **Test Planning**: `@tester` identifies regression tests needed (creates/updates `tester.md`)
+4. **Implementation**: `@developer` implements fix following the plan
+5. **Testing**: `@tester` writes or updates tests for the fix
+6. **Security** (if sensitive): `@security` reviews security implications
+7. **Review**: `@reviewer` validates fix quality and test coverage
+8. **Documentation** (if needed): `@tech-writer` updates relevant documentation
 
 ### Feature Request → Implementation
 
 1. **Planning**: `@team-lead` breaks down feature into tasks
 2. **Design**: `@architect` creates technical design with concrete steps
-3. **Security** (if sensitive): `@security` performs threat modelling and privacy assessment
-4. **Implementation**: `@developer` implements each task sequentially
-5. **Testing** (optional): `@tester` writes tests for new functionality
-6. **Review**: `@reviewer` validates implementation against design
-7. **Documentation** (optional): `@tech-writer` updates user guides and API docs
+3. **Test Planning**: `@tester` creates test strategy in `tester.md` (risk assessment, test types, acceptance criteria)
+4. **Security** (if sensitive): `@security` performs threat modelling and privacy assessment
+5. **Implementation**: `@developer` implements each task sequentially
+6. **Testing**: `@tester` implements tests per strategy
+7. **Review**: `@reviewer` validates implementation against design
+8. **Documentation** (if needed): `@tech-writer` updates user guides and API docs
 
 ### Pull Request Review
 
 1. **Triage**: `@team-lead` assesses scope and impact
 2. **Technical Review**: `@architect` validates design decisions
-3. **Security Review** (if sensitive): `@security` checks for vulnerabilities
-4. **Code Review**: `@reviewer` checks code quality and standards
+3. **Test Review**: `@tester` validates test coverage is adequate
+4. **Security Review** (if sensitive): `@security` checks for vulnerabilities
+5. **Code Review**: `@reviewer` checks code quality and standards
 
 ### Critical Rule: Two-Shot Pattern
 
