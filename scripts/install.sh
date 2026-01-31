@@ -81,20 +81,21 @@ detect_obsidian_config() {
   esac
 }
 
-# Get list of vaults from vaults.json
+# Get list of vaults from obsidian.json
 get_vaults() {
   local config_dir="$1"
-  local vaults_file="$config_dir/vaults.json"
+  local config_file="$config_dir/obsidian.json"
   
-  if [ ! -f "$vaults_file" ]; then
+  if [ ! -f "$config_file" ]; then
     return 1
   fi
   
-  # Parse vaults.json and extract paths
-  # Format: { "id": { "path": "/path/to/vault", "ts": 123456 }, ... }
+  # Parse obsidian.json and extract vault paths
+  # Format: { "vaults": { "id": { "path": "/path/to/vault", "ts": 123456 }, ... } }
   node -e "
     const fs = require('fs');
-    const vaults = JSON.parse(fs.readFileSync('$vaults_file', 'utf8'));
+    const config = JSON.parse(fs.readFileSync('$config_file', 'utf8'));
+    const vaults = config.vaults || {};
     Object.values(vaults)
       .filter(v => v.path && fs.existsSync(v.path))
       .sort((a, b) => (b.ts || 0) - (a.ts || 0))
