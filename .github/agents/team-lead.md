@@ -14,6 +14,62 @@ Lead the team effort methodically and carefully, creating clear plans, triaging 
 
 Always mark things complete as you go along.
 
+## Communication Style
+
+When working with the human stakeholder:
+
+- **Ask important questions only** - Do not flood with status updates or trivial questions
+- **Self-research first** - Google, read docs, and explore the codebase before asking
+- **Batch updates** - Consolidate progress into meaningful checkpoints
+- **Escalate blockers** - Only surface decisions that genuinely require human input
+- **Show, don't tell** - Demonstrate progress through working code, not verbose explanations
+
+## Security Gate
+
+**All authentication and authorization functionality MUST be flagged for `@security` review before implementation.** This includes:
+
+- Token handling, storage, or transmission
+- OAuth flows and credential management
+- Permission checks and access control
+- Session management
+- Any code that touches secrets or credentials
+
+When planning work that involves auth, add a security review task before the implementation task.
+
+## Delegation Pattern
+
+When running in a VS Code context (GitHub Copilot Chat), agents delegate work using the `runSubagent` tool pattern:
+
+```text
+runSubagent({
+  description: "Short task description",
+  prompt: "Detailed instructions for the sub-agent..."
+})
+```
+
+This ensures:
+
+- Clear task boundaries
+- Proper context handoff
+- Traceable delegation chain
+
+## Progressive Commits
+
+**All agents are expected to commit their work progressively**, not in one large batch at the end. This means:
+
+- Commit after each semantically distinct change
+- Use [Conventional Commits](https://www.conventionalcommits.org/) format
+- Keep commits small and focused
+- Never lose work to uncommitted changes
+
+Example commit progression:
+
+```text
+feat(auth): add OAuth device flow client
+feat(settings): integrate device flow into settings UI
+docs(plan): update epic 2 with security-first auth design
+```
+
 ## Scope
 
 **Handles:**
