@@ -7,14 +7,19 @@
  * @license MIT
  */
 
-import { Plugin, WorkspaceLeaf } from "obsidian";
+import { Notice, Plugin, WorkspaceLeaf } from "obsidian";
 import { PASettings, DEFAULT_SETTINGS, PASettingTab } from "./settings";
 import { ChatView, VIEW_TYPE_CHAT } from "./views/ChatView";
 import { GitHubModelsClient } from "./api/GitHubModelsClient";
+import {
+  isOnePasswordReference,
+  resolveOnePasswordSecret,
+} from "./auth/OnePasswordResolver";
 
 export default class PAPlugin extends Plugin {
   public settings!: PASettings;
   private apiClient: GitHubModelsClient | null = null;
+  private settingsTab!: PASettingTab;
 
   public async onload(): Promise<void> {
     console.log("Loading Personal Assistant plugin");
@@ -39,14 +44,48 @@ export default class PAPlugin extends Plugin {
     });
 
     // Add settings tab
-    this.addSettingTab(new PASettingTab(this.app, this));
+    this.settingsTab = new PASettingTab(this.app, this);
+    this.addSettingTab(this.settingsTab);
 
     // Initialize API client if configured
     await this.initializeApiClient();
+
+    // First-run detection: if no token and consent not enabled, prompt user
+    await this.checkFirstRun();
   }
 
   public onunload(): void {
     console.log("Unloading Personal Assistant plugin");
+  }
+
+  /**
+   * Check if this is first run and prompt user to configure
+   */
+  private async checkFirstRun(): Promise<void> {
+    const hasToken = await this.getStoredToken();
+
+    // If no token and no credential reference, this is likely first run
+    if (!hasToken && !this.settings.credentialReference) {
+      // Use a small delay to ensure UI is ready
+      setTimeout(() => {
+        new Notice(
+          "Welcome to Personal Assistant! Click here to configure.",
+          10000
+        );
+        // Open settings tab
+        this.openSettings();
+      }, 1000);
+    }
+  }
+
+  /**
+   * Open the plugin settings tab
+   */
+  public openSettings(): void {
+    // Access Obsidian's internal settings API
+    const setting = (this.app as unknown as { setting: { open: () => void; openTabById: (id: string) => void } }).setting;
+    setting.open();
+    setting.openTabById(this.manifest.id);
   }
 
   /**
@@ -103,15 +142,44 @@ export default class PAPlugin extends Plugin {
 
   /**
    * Retrieve the stored GitHub PAT
+   *
+   * Resolution order:
+   * 1. 1Password reference (op://vault/item/field)
+   * 2. Environment variable (GITHUB_TOKEN)
+   * 3. SecretStorage
+   * 4. Fallback settings (least secure)
    */
   public async getStoredToken(): Promise<string | null> {
+    // 1. Try 1Password reference
+    if (this.settings.credentialReference) {
+      const ref = this.settings.credentialReference;
+      if (isOnePasswordReference(ref)) {
+        const result = await resolveOnePasswordSecret(ref);
+        if (result.success && result.token) {
+          return result.token;
+        }
+        // Log error but continue to fallbacks
+        console.warn("[PA] 1Password resolution failed:", result.error);
+      }
+    }
+
+    // 2. Try environment variable
+    const envToken = process.env.GITHUB_TOKEN;
+    if (envToken) {
+      return envToken;
+    }
+
+    // 3. Try SecretStorage
     if ("getSecret" in this.app.vault.adapter) {
       const token = await (
         this.app.vault.adapter as { getSecret: (key: string) => Promise<string | null> }
       ).getSecret("obsidian-pa-github-token");
-      return token;
+      if (token) {
+        return token;
+      }
     }
-    // Fallback: retrieve from settings
+
+    // 4. Fallback: retrieve from settings
     return this.settings.githubToken || null;
   }
 

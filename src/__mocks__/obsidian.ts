@@ -85,6 +85,23 @@ export class Plugin {
   public saveData = async (_data: unknown): Promise<void> => undefined;
 }
 
+export class Modal {
+  public app: App;
+  public contentEl: HTMLElement = document.createElement("div");
+
+  public constructor(app: App) {
+    this.app = app;
+  }
+
+  public open(): void {
+    // Mock
+  }
+
+  public close(): void {
+    // Mock
+  }
+}
+
 export class PluginSettingTab {
   public app: App;
   public plugin: Plugin;

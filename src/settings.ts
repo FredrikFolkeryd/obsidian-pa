@@ -4,7 +4,12 @@
 
 import { App, Notice, PluginSettingTab, Setting } from "obsidian";
 import type PAPlugin from "./main";
-import { GitHubDeviceAuth } from "./auth/GitHubDeviceAuth";
+import { SetupHelpModal } from "./modals/SetupHelpModal";
+import {
+  validateOnePasswordReference,
+  resolveOnePasswordSecret,
+  isOnePasswordCliInstalled,
+} from "./auth/OnePasswordResolver";
 
 /**
  * Plugin settings interface
@@ -21,6 +26,9 @@ export interface PASettings {
 
   /** Folders excluded when in opt-out mode */
   excludedFolders: string[];
+
+  /** 1Password credential reference (op://vault/item/field) */
+  credentialReference?: string;
 
   /** GitHub PAT (fallback storage if SecretStorage unavailable) */
   githubToken?: string;
@@ -155,148 +163,179 @@ export class PASettingTab extends PluginSettingTab {
   }
 
   /**
-   * Render the authentication section with device flow
+   * Render the authentication section with 1Password support
    */
   private renderAuthSection(containerEl: HTMLElement): void {
-    const deviceAuth = new GitHubDeviceAuth();
-    const isConfigured = deviceAuth.isConfigured();
+    // Check current auth status
+    void this.checkAuthStatus(containerEl);
+  }
 
-    // Check if we have a token
-    void this.plugin.getStoredToken().then((hasToken) => {
-      if (hasToken) {
-        // Show authenticated state
-        new Setting(containerEl)
-          .setName("GitHub Authentication")
-          .setDesc("✅ Authenticated with GitHub. Your token is stored securely.")
-          .addButton((button) =>
-            button
-              .setButtonText("Sign out")
-              .setWarning()
-              .onClick(async () => {
-                await this.plugin.clearToken();
-                new Notice("Signed out successfully");
-                this.display();
-              })
-          );
-      } else if (!isConfigured) {
-        // OAuth App not configured - show manual token fallback with warning
-        new Setting(containerEl)
-          .setName("GitHub Authentication")
-          .setDesc(
-            "⚠️ OAuth App not configured. Using manual token entry (less secure). " +
-              "For production, register an OAuth App and update the client ID."
-          )
-          .addText((text) => {
-            text
-              .setPlaceholder("ghp_xxxxxxxxxxxx")
-              .setValue("")
-              .inputEl.setAttribute("type", "password");
-            text.onChange(async (value) => {
-              if (value.trim()) {
-                await this.plugin.storeToken(value.trim());
-                new Notice("Token saved");
-                this.display();
-              }
-            });
-          });
-      } else {
-        // Show device flow button
-        new Setting(containerEl)
-          .setName("GitHub Authentication")
-          .setDesc(
-            "Sign in with GitHub to enable AI features. " +
-              "You'll be redirected to GitHub to authorize this app."
-          )
-          .addButton((button) =>
-            button.setButtonText("Sign in with GitHub").onClick(() => {
-              void this.startDeviceFlow(containerEl, deviceAuth);
+  /**
+   * Check authentication status and render appropriate UI
+   */
+  private async checkAuthStatus(containerEl: HTMLElement): Promise<void> {
+    const hasToken = await this.plugin.getStoredToken();
+    const hasReference = !!this.plugin.settings.credentialReference;
+
+    if (hasToken) {
+      // Show authenticated state
+      new Setting(containerEl)
+        .setName("GitHub Authentication")
+        .setDesc(
+          hasReference
+            ? "✅ Authenticated via 1Password. Token resolved at runtime."
+            : "✅ Authenticated. Your token is stored securely."
+        )
+        .addButton((button) =>
+          button
+            .setButtonText("Sign out")
+            .setWarning()
+            .onClick(async () => {
+              await this.plugin.clearToken();
+              new Notice("Signed out successfully");
+              this.display();
             })
-          );
-      }
+        )
+        .addButton((button) =>
+          button.setButtonText("Setup help").onClick(() => {
+            new SetupHelpModal(this.app).open();
+          })
+        );
+    } else {
+      // Show setup UI
+      this.renderSetupUI(containerEl);
+    }
+  }
+
+  /**
+   * Render the credential setup UI
+   */
+  private renderSetupUI(containerEl: HTMLElement): void {
+    // Help button
+    new Setting(containerEl)
+      .setName("GitHub Authentication")
+      .setDesc("Configure how to authenticate with GitHub Models API.")
+      .addButton((button) =>
+        button
+          .setButtonText("Setup help")
+          .setCta()
+          .onClick(() => {
+            new SetupHelpModal(this.app).open();
+          })
+      );
+
+    // 1Password reference input (recommended)
+    new Setting(containerEl)
+      .setName("1Password reference (recommended)")
+      .setDesc("Enter your 1Password secret reference: op://vault/item/field")
+      .addText((text) => {
+        text
+          .setPlaceholder("op://Personal/GitHub-PAT/credential")
+          .setValue(this.plugin.settings.credentialReference || "")
+          .onChange(async (value) => {
+            // Validate format
+            if (value && !value.startsWith("op://")) {
+              return; // Let them finish typing
+            }
+            this.plugin.settings.credentialReference = value || undefined;
+            await this.plugin.saveSettings();
+          });
+
+        // Add validation button next to input
+        return text;
+      })
+      .addButton((button) =>
+        button.setButtonText("Validate").onClick(async () => {
+          await this.validateCredentialReference();
+        })
+      );
+
+    // Check 1Password CLI status
+    void this.checkOnePasswordStatus(containerEl);
+
+    // Fallback: direct token entry (less secure)
+    new Setting(containerEl)
+      .setName("Direct token (fallback)")
+      .setDesc(
+        "⚠️ Less secure. Enter a GitHub PAT directly. Only use if 1Password is not available."
+      );
+
+    // Create collapsible section
+    const detailsEl = containerEl.createEl("details", {
+      cls: "pa-fallback-details",
+    });
+    detailsEl.createEl("summary", { text: "Show direct token entry" });
+
+    new Setting(detailsEl).addText((text) => {
+      text
+        .setPlaceholder("ghp_xxxxxxxxxxxx")
+        .setValue("")
+        .inputEl.setAttribute("type", "password");
+      text.onChange(async (value) => {
+        if (value.trim()) {
+          await this.plugin.storeToken(value.trim());
+          new Notice("Token saved");
+          this.display();
+        }
+      });
     });
   }
 
   /**
-   * Start the OAuth device flow authentication
+   * Check and display 1Password CLI status
    */
-  private async startDeviceFlow(
-    containerEl: HTMLElement,
-    deviceAuth: GitHubDeviceAuth
-  ): Promise<void> {
-    // Create status display
-    const statusEl = containerEl.createDiv({ cls: "pa-auth-status" });
-    statusEl.createEl("p", { text: "Starting authentication..." });
+  private async checkOnePasswordStatus(containerEl: HTMLElement): Promise<void> {
+    const cliInstalled = await isOnePasswordCliInstalled();
 
-    try {
-      const token = await deviceAuth.authenticate((status) => {
-        statusEl.empty();
+    const statusEl = containerEl.createDiv({ cls: "pa-op-status" });
 
-        switch (status.status) {
-          case "pending": {
-            statusEl.createEl("p", {
-              text: "To authenticate, visit:",
-              cls: "pa-auth-instruction",
-            });
-            const linkEl = statusEl.createEl("a", {
-              text: status.verificationUrl ?? "https://github.com/login/device",
-              href: status.verificationUrl ?? "https://github.com/login/device",
-              cls: "pa-auth-link",
-            });
-            linkEl.setAttribute("target", "_blank");
-
-            statusEl.createEl("p", { text: "And enter this code:" });
-            statusEl.createEl("code", {
-              text: status.userCode ?? "",
-              cls: "pa-auth-code",
-            });
-
-            statusEl.createEl("p", {
-              text: "Waiting for authorization...",
-              cls: "pa-auth-waiting",
-            });
-
-            // Add cancel button
-            const cancelBtn = statusEl.createEl("button", { text: "Cancel" });
-            cancelBtn.addEventListener("click", () => {
-              deviceAuth.cancel();
-            });
-            break;
-          }
-
-          case "success":
-            statusEl.createEl("p", { text: "✅ Authentication successful!" });
-            break;
-
-          case "error": {
-            statusEl.createEl("p", {
-              text: `❌ Error: ${status.error ?? "Unknown error"}`,
-              cls: "pa-auth-error",
-            });
-            break;
-          }
-
-          case "expired":
-            statusEl.createEl("p", {
-              text: "⏰ Authentication timed out. Please try again.",
-              cls: "pa-auth-error",
-            });
-            break;
-
-          case "cancelled":
-            statusEl.createEl("p", { text: "Authentication cancelled." });
-            break;
-        }
+    if (cliInstalled) {
+      statusEl.createEl("p", {
+        text: "✅ 1Password CLI detected",
+        cls: "pa-status-ok",
       });
+    } else {
+      statusEl.createEl("p", {
+        text: "⚠️ 1Password CLI not found",
+        cls: "pa-status-warn",
+      });
+      const linkEl = statusEl.createEl("a", {
+        text: "Install 1Password CLI",
+        href: "https://1password.com/downloads/command-line/",
+      });
+      linkEl.setAttribute("target", "_blank");
+    }
+  }
 
-      // Store the token
-      await this.plugin.storeToken(token);
-      new Notice("Successfully authenticated with GitHub!");
+  /**
+   * Validate the 1Password credential reference
+   */
+  private async validateCredentialReference(): Promise<void> {
+    const ref = this.plugin.settings.credentialReference;
 
-      // Refresh settings display
+    if (!ref) {
+      new Notice("Enter a 1Password reference first");
+      return;
+    }
+
+    // Validate format
+    const formatCheck = validateOnePasswordReference(ref);
+    if (!formatCheck.valid) {
+      new Notice(`Invalid format: ${formatCheck.error}`);
+      return;
+    }
+
+    // Try to resolve
+    new Notice("Validating... (1Password may prompt for authentication)");
+
+    const result = await resolveOnePasswordSecret(ref);
+
+    if (result.success) {
+      new Notice("✅ Reference validated successfully!");
+      await this.plugin.initializeApiClient();
       this.display();
-    } catch (error) {
-      // Error already displayed via callback
-      console.error("[Settings] Device flow error:", error);
+    } else {
+      new Notice(`❌ Validation failed: ${result.error}`);
     }
   }
 }
