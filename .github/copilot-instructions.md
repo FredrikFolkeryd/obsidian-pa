@@ -155,7 +155,7 @@ Create these agents in `.github/agents/` as the project develops:
 
 1. **Planning**: `@team-lead` analyses the bug, creates investigation plan
 2. **Analysis**: `@architect` reviews code paths, identifies root cause
-3. **Test Planning**: `@tester` identifies regression tests needed (creates/updates `tester.md`)
+3. **Test Planning**: `@tester` identifies regression tests needed (creates/updates `test-strategy.md`)
 4. **Implementation**: `@developer` implements fix following the plan
 5. **Testing**: `@tester` writes or updates tests for the fix
 6. **Security** (if sensitive): `@security` reviews security implications
@@ -166,7 +166,7 @@ Create these agents in `.github/agents/` as the project develops:
 
 1. **Planning**: `@team-lead` breaks down feature into tasks
 2. **Design**: `@architect` creates technical design with concrete steps
-3. **Test Planning**: `@tester` creates test strategy in `tester.md` (risk assessment, test types, acceptance criteria)
+3. **Test Planning**: `@tester` creates test strategy in `test-strategy.md` (risk assessment, test types, acceptance criteria)
 4. **Security** (if sensitive): `@security` performs threat modelling and privacy assessment
 5. **Implementation**: `@developer` implements each task sequentially
 6. **Testing**: `@tester` implements tests per strategy
