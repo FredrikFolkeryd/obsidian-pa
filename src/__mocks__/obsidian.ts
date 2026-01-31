@@ -20,8 +20,8 @@ export class Vault {
   public getRoot = (): TFolder => new TFolder();
 
   public static recurseChildren(
-    root: TFolder,
-    callback: (file: TAbstractFile) => void
+    _root: TFolder,
+    _callback: (file: TAbstractFile) => void
   ): void {
     // Mock implementation
   }

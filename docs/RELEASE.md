@@ -19,6 +19,7 @@ Full releases are stable versions intended for general use. They require passing
 **Who can create:** Repository admins and maintainers (with production environment approval)
 
 **Requirements:**
+
 - All tests pass
 - Lint passes
 - README.md exists
@@ -38,6 +39,7 @@ Full releases are stable versions intended for general use. They require passing
 5. Click **Run workflow**
 
 The version is automatically computed from conventional commits:
+
 - `feat!:` or `BREAKING CHANGE` → Major bump (1.0.0 → 2.0.0)
 - `feat:` → Minor bump (1.0.0 → 1.1.0)
 - `fix:`, `perf:` → Patch bump (1.0.0 → 1.0.1)
@@ -98,6 +100,7 @@ Create the `production` environment in Settings → Environments before creating
 ### Version not incrementing correctly
 
 Ensure your commits follow [Conventional Commits](https://www.conventionalcommits.org/) format:
+
 - `feat: add new feature`
 - `fix: resolve bug`
 - `feat!: breaking change`

@@ -48,6 +48,7 @@ this.app.commands.executeCommandById('plugin-id:command-name');
 ```
 
 **Security considerations:**
+
 - Commands are user-consented (installed plugins only)
 - No sandboxing between plugins - execute with same permissions
 - Should whitelist safe commands rather than allowing arbitrary execution
@@ -55,14 +56,17 @@ this.app.commands.executeCommandById('plugin-id:command-name');
 ### ✅ GitHub Models Integration: FEASIBLE
 
 **Authentication:**
+
 - PAT with `models:read` scope
 - Use Obsidian's new `SecretStorage` API (since 1.11.4) for secure credential storage
 
 **API Endpoint:**
+
 - Azure AI Inference SDK compatible
 - REST API available at `https://models.inference.ai.azure.com`
 
 **Rate Limits (Copilot Pro):**
+
 - 15 requests/min, 150 requests/day for low-tier models
 - 8000 tokens in, 4000 tokens out per request
 

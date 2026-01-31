@@ -43,7 +43,8 @@ export class ChatView extends ItemView {
     return "message-circle";
   }
 
-  public onOpen(): void {
+  // eslint-disable-next-line @typescript-eslint/require-await
+  public async onOpen(): Promise<void> {
     const container = this.containerEl.children[1];
     container.empty();
     container.addClass("pa-chat-container");
@@ -102,7 +103,7 @@ export class ChatView extends ItemView {
     );
   }
 
-  public onClose(): void {
+  public async onClose(): Promise<void> {
     // Cleanup
   }
 
