@@ -30,23 +30,62 @@ export function isOnePasswordReference(value: string): boolean {
 
 /**
  * Check if the 1Password CLI is installed
+ * Uses common paths since Obsidian's shell may not have user's PATH
  */
 export async function isOnePasswordCliInstalled(): Promise<boolean> {
-  try {
-    await execAsync("op --version");
-    return true;
-  } catch {
-    return false;
+  // Try common installation paths since Obsidian doesn't inherit user's shell PATH
+  const paths = [
+    "op", // In case it's in a minimal PATH
+    "/usr/local/bin/op", // Homebrew on Intel Mac
+    "/opt/homebrew/bin/op", // Homebrew on Apple Silicon
+    "/usr/bin/op", // Linux system install
+    `${process.env.HOME}/.op/bin/op`, // 1Password's own installer
+  ];
+
+  for (const opPath of paths) {
+    try {
+      await execAsync(`"${opPath}" --version`);
+      return true;
+    } catch {
+      // Try next path
+    }
   }
+  return false;
+}
+
+/**
+ * Get the path to the 1Password CLI executable
+ */
+async function getOpPath(): Promise<string | null> {
+  const paths = [
+    "op",
+    "/usr/local/bin/op",
+    "/opt/homebrew/bin/op",
+    "/usr/bin/op",
+    `${process.env.HOME}/.op/bin/op`,
+  ];
+
+  for (const opPath of paths) {
+    try {
+      await execAsync(`"${opPath}" --version`);
+      return opPath;
+    } catch {
+      // Try next path
+    }
+  }
+  return null;
 }
 
 /**
  * Check if the user is signed in to 1Password CLI
  */
 export async function isOnePasswordSignedIn(): Promise<boolean> {
+  const opPath = await getOpPath();
+  if (!opPath) return false;
+
   try {
     // `op account list` returns accounts if signed in
-    const { stdout } = await execAsync("op account list --format=json");
+    const { stdout } = await execAsync(`"${opPath}" account list --format=json`);
     const accounts = JSON.parse(stdout) as unknown[];
     return accounts.length > 0;
   } catch {
@@ -70,9 +109,9 @@ export async function resolveOnePasswordSecret(
     };
   }
 
-  // Check if op CLI is installed
-  const cliInstalled = await isOnePasswordCliInstalled();
-  if (!cliInstalled) {
+  // Get the op CLI path
+  const opPath = await getOpPath();
+  if (!opPath) {
     return {
       success: false,
       error:
@@ -92,7 +131,7 @@ export async function resolveOnePasswordSecret(
 
   try {
     // Use op read to get the secret
-    const { stdout, stderr } = await execAsync(`op read "${reference}"`);
+    const { stdout, stderr } = await execAsync(`"${opPath}" read "${reference}"`);
 
     if (stderr && !stdout.trim()) {
       return {

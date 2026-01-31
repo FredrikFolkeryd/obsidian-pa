@@ -24,6 +24,10 @@ describe("Settings", () => {
       expect(DEFAULT_SETTINGS.model).toBe("gpt-4o");
     });
 
+    it("should use 1password auth method by default", () => {
+      expect(DEFAULT_SETTINGS.authMethod).toBe("1password");
+    });
+
     it("should not have a token stored by default", () => {
       expect(DEFAULT_SETTINGS.githubToken).toBeUndefined();
     });
@@ -37,11 +41,13 @@ describe("Settings", () => {
         includedFolders: ["notes"],
         excludedFolders: ["private"],
         model: "gpt-4o-mini",
+        authMethod: "direct",
         githubToken: "ghp_test",
       };
 
       expect(settings.consentEnabled).toBe(true);
       expect(settings.consentMode).toBe("opt-out");
+      expect(settings.authMethod).toBe("direct");
     });
   });
 });
