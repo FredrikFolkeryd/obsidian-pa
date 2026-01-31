@@ -73,23 +73,31 @@ jobs:
             dist/obsidian-pa/main.js
             dist/obsidian-pa/manifest.json
             dist/obsidian-pa/styles.css
+            scripts/install.sh
           body: |
             ## Installation
 
-            ### Option 1: Download and unzip (Recommended)
+            ### Option 1: Interactive Installer (Recommended)
+            Download `install.sh` and run it - it auto-detects your Obsidian vaults:
+            ```bash
+            chmod +x install.sh
+            ./install.sh --from-zip obsidian-pa-${{ steps.version.outputs.version }}.zip
+            ```
+
+            ### Option 2: Manual unzip
             1. Download `obsidian-pa-${{ steps.version.outputs.version }}.zip`
             2. Unzip into your vault's plugins folder: `<vault>/.obsidian/plugins/`
             3. The zip creates the `obsidian-pa/` folder automatically
             4. Reload Obsidian and enable the plugin in Settings → Community plugins
 
-            ### Option 2: Manual installation
+            ### Option 3: Manual file copy
             1. Create folder: `<vault>/.obsidian/plugins/obsidian-pa/`
             2. Download `main.js`, `manifest.json`, and `styles.css` into that folder
             3. Reload Obsidian and enable the plugin
 
             ### First-time setup
             1. Go to Settings → Personal Assistant
-            2. Click "Sign in with GitHub" (or paste a PAT if OAuth not configured)
+            2. Click "Sign in with GitHub" to authenticate
             3. Enable AI features and configure which folders to include
             4. Open the chat via ribbon icon or command palette
 
