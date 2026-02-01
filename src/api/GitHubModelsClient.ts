@@ -6,6 +6,32 @@
  */
 
 const API_ENDPOINT = "https://models.inference.ai.azure.com/chat/completions";
+const MODELS_ENDPOINT = "https://models.inference.ai.azure.com/models";
+
+/**
+ * Model info from the API
+ */
+export interface ModelInfo {
+  name: string;
+  displayName: string;
+  isChat: boolean;
+}
+
+/**
+ * Patterns to identify embedding models (not for chat)
+ */
+const EMBEDDING_PATTERNS = [
+  /embed/i,
+  /embedding/i,
+  /text-embedding/i,
+];
+
+/**
+ * Check if a model is a chat model (not embedding)
+ */
+function isChatModel(name: string): boolean {
+  return !EMBEDDING_PATTERNS.some((pattern) => pattern.test(name));
+}
 
 /**
  * Chat message format
@@ -77,6 +103,7 @@ interface RateLimitInfo {
 export class GitHubModelsClient {
   private token: string;
   private rateLimits: RateLimitInfo;
+  private cachedModels: ModelInfo[] | null = null;
 
   public constructor(token: string) {
     this.token = token;
@@ -88,6 +115,73 @@ export class GitHubModelsClient {
       requestCountDay: 0,
       dayStartTime: Date.now(),
     };
+  }
+
+  /**
+   * Fetch available models from the API
+   * Returns only chat models (filters out embedding models)
+   */
+  public async getAvailableModels(): Promise<ModelInfo[]> {
+    // Return cached if available
+    if (this.cachedModels) {
+      return this.cachedModels;
+    }
+
+    try {
+      const response = await fetch(MODELS_ENDPOINT, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${this.token}`,
+        },
+      });
+
+      if (!response.ok) {
+        console.warn("[PA] Failed to fetch models:", response.status);
+        return this.getDefaultModels();
+      }
+
+      const data = (await response.json()) as Array<{ name: string; friendly_name?: string }>;
+
+      // Filter to chat models only and map to ModelInfo
+      const models: ModelInfo[] = data
+        .filter((m) => isChatModel(m.name))
+        .map((m) => ({
+          name: m.name,
+          displayName: m.friendly_name || m.name,
+          isChat: true,
+        }))
+        .sort((a, b) => {
+          // Sort: GPT models first, then by name
+          const aIsGpt = a.name.toLowerCase().startsWith("gpt");
+          const bIsGpt = b.name.toLowerCase().startsWith("gpt");
+          if (aIsGpt && !bIsGpt) return -1;
+          if (!aIsGpt && bIsGpt) return 1;
+          return a.displayName.localeCompare(b.displayName);
+        });
+
+      this.cachedModels = models;
+      return models;
+    } catch (error) {
+      console.warn("[PA] Error fetching models:", error);
+      return this.getDefaultModels();
+    }
+  }
+
+  /**
+   * Get default models if API fetch fails
+   */
+  private getDefaultModels(): ModelInfo[] {
+    return [
+      { name: "gpt-4o", displayName: "GPT-4o", isChat: true },
+      { name: "gpt-4o-mini", displayName: "GPT-4o Mini", isChat: true },
+    ];
+  }
+
+  /**
+   * Clear cached models (call when token changes)
+   */
+  public clearModelCache(): void {
+    this.cachedModels = null;
   }
 
   /**

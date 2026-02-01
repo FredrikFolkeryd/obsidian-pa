@@ -367,7 +367,7 @@ export class PASettingTab extends PluginSettingTab {
     const hasToken = await this.plugin.getStoredToken();
 
     if (hasToken) {
-      this.renderModelSection(containerEl);
+      await this.renderModelSection(containerEl);
       this.renderReadySection(containerEl);
     } else {
       // Show hint that auth is required
@@ -380,26 +380,69 @@ export class PASettingTab extends PluginSettingTab {
   }
 
   /**
-   * Render model selection section
+   * Render model selection section with dynamic model list
    */
-  private renderModelSection(containerEl: HTMLElement): void {
+  private async renderModelSection(containerEl: HTMLElement): Promise<void> {
     containerEl.createEl("h3", { text: "Model Settings" });
 
-    new Setting(containerEl)
+    const client = this.plugin.getApiClient();
+
+    // Create placeholder while loading
+    const modelSettingEl = containerEl.createDiv({ cls: "pa-model-setting" });
+    modelSettingEl.createEl("p", {
+      text: "Loading available models...",
+      cls: "pa-hint",
+    });
+
+    // Fetch models asynchronously
+    let models = [
+      { name: "gpt-4o", displayName: "GPT-4o" },
+      { name: "gpt-4o-mini", displayName: "GPT-4o Mini" },
+    ];
+
+    if (client) {
+      try {
+        const availableModels = await client.getAvailableModels();
+        if (availableModels.length > 0) {
+          models = availableModels.map((m) => ({
+            name: m.name,
+            displayName: m.displayName,
+          }));
+        }
+      } catch (e) {
+        console.warn("[PA] Could not fetch models, using defaults");
+      }
+    }
+
+    // Clear placeholder and render dropdown
+    modelSettingEl.empty();
+
+    new Setting(modelSettingEl)
       .setName("AI Model")
-      .setDesc("Select which model to use for chat completions")
-      .addDropdown((dropdown) =>
-        dropdown
-          .addOption("gpt-4o", "GPT-4o")
-          .addOption("gpt-4o-mini", "GPT-4o Mini")
-          .addOption("o1", "o1")
-          .addOption("o1-mini", "o1 Mini")
-          .setValue(this.plugin.settings.model)
-          .onChange(async (value) => {
-            this.plugin.settings.model = value;
-            await this.plugin.saveSettings();
-          })
-      );
+      .setDesc(`Select which model to use (${models.length} available)`)
+      .addDropdown((dropdown) => {
+        // Add all available models
+        for (const model of models) {
+          dropdown.addOption(model.name, model.displayName);
+        }
+
+        // Set current value (default to first if current not available)
+        const currentModel = this.plugin.settings.model;
+        const isCurrentAvailable = models.some((m) => m.name === currentModel);
+        if (isCurrentAvailable) {
+          dropdown.setValue(currentModel);
+        } else if (models.length > 0) {
+          dropdown.setValue(models[0].name);
+          // Update settings to valid model
+          this.plugin.settings.model = models[0].name;
+          void this.plugin.saveSettings();
+        }
+
+        dropdown.onChange(async (value) => {
+          this.plugin.settings.model = value;
+          await this.plugin.saveSettings();
+        });
+      });
 
     // Sign out button
     new Setting(containerEl)
