@@ -12,7 +12,7 @@ import {
 } from "./auth/OnePasswordResolver";
 import type { GhCopilotCliProvider } from "./api/providers/GhCopilotCliProvider";
 import type { ProviderType } from "./api/types";
-import { VIEW_TYPE_CHAT } from "./views/ChatView";
+import { VIEW_TYPE_CHAT, ChatView } from "./views/ChatView";
 
 /**
  * Plugin settings interface
@@ -761,6 +761,7 @@ export class PASettingTab extends PluginSettingTab {
 
     try {
       let leaf = workspace.getLeavesOfType(VIEW_TYPE_CHAT)[0];
+      const existingLeaf = !!leaf;
 
       if (!leaf) {
         leaf = workspace.getRightLeaf(false);
@@ -770,6 +771,11 @@ export class PASettingTab extends PluginSettingTab {
       }
 
       if (leaf) {
+        // If it was an existing leaf, refresh it to re-check configuration
+        if (existingLeaf) {
+          const view = leaf.view as ChatView;
+          await view.refresh();
+        }
         await Promise.resolve(workspace.revealLeaf(leaf));
         // Close settings modal if open
         const setting = (this.plugin.app as unknown as { setting?: { close: () => void } }).setting;

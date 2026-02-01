@@ -44,6 +44,21 @@ export class ChatView extends ItemView {
   }
 
   public async onOpen(): Promise<void> {
+    await this.render();
+  }
+
+  /**
+   * Refresh the view (re-check configuration and re-render)
+   * Called when settings change or when navigating back to chat
+   */
+  public async refresh(): Promise<void> {
+    await this.render();
+  }
+
+  /**
+   * Internal render method - checks configuration and renders appropriate UI
+   */
+  private async render(): Promise<void> {
     const container = this.containerEl.children[1];
     container.empty();
     container.addClass("pa-chat-container");
