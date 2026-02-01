@@ -410,17 +410,33 @@ export class PASettingTab extends PluginSettingTab {
     // Status display area (inline feedback instead of toasts)
     const statusEl = authContainer.createDiv({ cls: "pa-cli-status" });
 
+    // Check status on render to show current state
+    void this.showInitialCliStatus(statusEl);
+
     new Setting(authContainer)
       .setName("CLI Status")
       .setDesc("Check if gh copilot CLI is properly configured")
       .addButton((button) =>
         button
-          .setButtonText("Check Status")
-          .setCta()
+          .setButtonText("Re-check Status")
           .onClick(async () => {
             await this.checkGhCopilotStatus(statusEl, button.buttonEl);
           })
       );
+  }
+
+  /**
+   * Show initial CLI status on settings render (no refresh after)
+   */
+  private async showInitialCliStatus(statusEl: HTMLElement): Promise<void> {
+    const provider = this.plugin.providerManager?.getProvider("gh-copilot-cli");
+    if (!provider) return;
+
+    const result = await provider.validateToken();
+    if (result.success) {
+      this.showCliStatus(statusEl, "success", "✓ gh copilot CLI is configured and ready");
+    }
+    // Don't show error on initial load - let user click "Re-check Status" if needed
   }
 
   /**
@@ -478,12 +494,9 @@ export class PASettingTab extends PluginSettingTab {
         return;
       }
 
-      this.showCliStatus(statusEl, "success", "✓ gh copilot CLI is ready to use!");
+      this.showCliStatus(statusEl, "success", "✓ gh copilot CLI is configured and ready");
       buttonEl.disabled = false;
-      
-      // Brief delay so user can see the success message before refresh
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      this.display(); // Refresh to show model section
+      // No display refresh needed - status persists and model section shows on next settings open
     } catch (error) {
       this.showCliStatus(statusEl, "error", error instanceof Error ? error.message : "Unknown error");
       buttonEl.disabled = false;
