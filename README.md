@@ -49,22 +49,27 @@ You'll need **one** of the following:
 
 ### Manual Installation
 
-Download the latest release and install manually:
+Download and run the installer:
 
 ```bash
 # Download latest release
 curl -L https://github.com/FredrikFolkeryd/obsidian-pa/releases/latest/download/obsidian-pa.zip -o /tmp/obsidian-pa.zip
 
-# Extract to your vault's plugins folder
-unzip /tmp/obsidian-pa.zip -d /path/to/your/vault/.obsidian/plugins/obsidian-pa
-
-# Clean up
-rm /tmp/obsidian-pa.zip
+# Download and run install script
+curl -L https://github.com/FredrikFolkeryd/obsidian-pa/releases/latest/download/install.sh -o /tmp/install.sh
+chmod +x /tmp/install.sh
+/tmp/install.sh --from-zip /tmp/obsidian-pa.zip
 ```
 
-Then enable the plugin in Obsidian:
-- Open Settings → Community plugins
-- Enable "Obsidian PA"
+The installer will auto-detect your Obsidian vaults and let you choose where to install.
+
+**Alternative: Manual copy**
+
+If you prefer to install manually:
+
+1. Download `obsidian-pa.zip` from the [latest release](https://github.com/FredrikFolkeryd/obsidian-pa/releases/latest)
+2. Extract to `<your-vault>/.obsidian/plugins/obsidian-pa/`
+3. Enable the plugin in Obsidian Settings → Community plugins
 
 ### Using BRAT (Beta Testing)
 
