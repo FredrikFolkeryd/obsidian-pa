@@ -11,9 +11,10 @@
  * - Shell safety: Uses spawn with shell:false to prevent injection
  */
 
-import { spawn, type ChildProcess } from "child_process";
+import { spawn, type ChildProcess, execSync } from "child_process";
 import { promisify } from "util";
 import { exec } from "child_process";
+import { existsSync } from "fs";
 
 import { BaseProvider, PROVIDER_CONFIGS } from "../BaseProvider";
 import type {
@@ -26,6 +27,28 @@ import type {
 } from "../types";
 
 const execAsync = promisify(exec);
+
+/**
+ * Common gh CLI installation paths by platform
+ * GUI apps on macOS don't inherit shell PATH, so we check known locations
+ */
+const GH_CLI_PATHS: Record<string, string[]> = {
+  darwin: [
+    "/opt/homebrew/bin/gh", // Homebrew on Apple Silicon
+    "/usr/local/bin/gh", // Homebrew on Intel Mac
+    "/usr/bin/gh", // System install
+  ],
+  linux: [
+    "/usr/bin/gh",
+    "/usr/local/bin/gh",
+    "/snap/bin/gh", // Snap package
+    "/home/linuxbrew/.linuxbrew/bin/gh", // Linuxbrew
+  ],
+  win32: [
+    "C:\\Program Files\\GitHub CLI\\gh.exe",
+    "C:\\Program Files (x86)\\GitHub CLI\\gh.exe",
+  ],
+};
 
 /**
  * CLI status information
@@ -245,19 +268,18 @@ export class GhCopilotCliProvider extends BaseProvider {
       authenticated: false,
     };
 
-    try {
-      // Check gh CLI exists
-      const whichCmd = process.platform === "win32" ? "where gh" : "which gh";
-      const { stdout: whichOutput } = await execAsync(whichCmd, { timeout: 5000 });
-      status.ghPath = whichOutput.trim().split("\n")[0];
-      status.ghInstalled = true;
-    } catch {
-      return status; // gh not installed
+    // Find gh CLI - check known paths first (GUI apps don't have shell PATH)
+    const ghPath = this.findGhCliPath();
+    if (!ghPath) {
+      return status;
     }
 
+    status.ghInstalled = true;
+    status.ghPath = ghPath;
+
     try {
-      // Check copilot extension
-      const { stdout: extOutput } = await execAsync("gh extension list", {
+      // Check copilot extension using the found gh path
+      const { stdout: extOutput } = await execAsync(`"${ghPath}" extension list`, {
         timeout: 5000,
       });
       status.copilotExtensionInstalled = extOutput.includes("github/gh-copilot");
@@ -268,7 +290,7 @@ export class GhCopilotCliProvider extends BaseProvider {
     try {
       // Check authentication
       const { stdout: authOutput, stderr: authStderr } = await execAsync(
-        "gh auth status",
+        `"${ghPath}" auth status`,
         { timeout: 5000 }
       );
       const combined = authOutput + authStderr;
@@ -280,6 +302,36 @@ export class GhCopilotCliProvider extends BaseProvider {
     }
 
     return status;
+  }
+
+  /**
+   * Find the gh CLI binary path
+   * GUI apps (like Obsidian) don't inherit shell PATH, so we check known locations
+   */
+  private findGhCliPath(): string | null {
+    const platform = process.platform;
+    const knownPaths = GH_CLI_PATHS[platform] || [];
+
+    // First check known installation paths (most reliable for GUI apps)
+    for (const p of knownPaths) {
+      if (existsSync(p)) {
+        return p;
+      }
+    }
+
+    // Fallback: try to find in PATH (works if launched from terminal)
+    try {
+      const whichCmd = platform === "win32" ? "where gh" : "which gh";
+      const result = execSync(whichCmd, { timeout: 2000, encoding: "utf8" });
+      const foundPath = result.trim().split("\n")[0];
+      if (foundPath && existsSync(foundPath)) {
+        return foundPath;
+      }
+    } catch {
+      // Not in PATH
+    }
+
+    return null;
   }
 
   /**
@@ -328,12 +380,19 @@ export class GhCopilotCliProvider extends BaseProvider {
       throw new Error("A request is already in progress. Please wait.");
     }
 
+    // Get the gh path from cache (should already be set from validation)
+    const ghPath = this.cliStatusCache?.ghPath || this.findGhCliPath();
+    if (!ghPath) {
+      throw new Error("GitHub CLI not found. Install from https://cli.github.com/");
+    }
+
     return new Promise((resolve, reject) => {
       // Arguments as array - never interpreted by shell
       const args = ["copilot", "-p", prompt, "--model", model];
 
       // CRITICAL: shell: false prevents shell interpretation
-      const child = spawn("gh", args, {
+      // Use full path to gh binary (GUI apps don't have shell PATH)
+      const child = spawn(ghPath, args, {
         shell: false, // <-- CRITICAL SECURITY SETTING
         timeout: 120000, // 2 minute timeout
         windowsHide: true, // Prevent window popup on Windows
