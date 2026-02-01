@@ -258,6 +258,9 @@ export class ChatView extends ItemView {
 
       .pa-chat-message-content {
         line-height: 1.5;
+        user-select: text;
+        -webkit-user-select: text;
+        cursor: text;
       }
 
       .pa-chat-message-content p:last-child {
@@ -420,9 +423,16 @@ export class ChatView extends ItemView {
       if (activeFile && this.isFileAllowed(activeFile.path)) {
         const fileContent = await this.app.vault.read(activeFile);
         systemPrompt +=
-          `\n\nThe user currently has this note open:\n` +
-          `Title: ${activeFile.basename}\n` +
-          `Content:\n${fileContent.slice(0, 4000)}`; // Limit context size
+          `\n\nYou have access to the user's currently open note:\n` +
+          `Filename: ${activeFile.basename}\n` +
+          `Path: ${activeFile.path}\n` +
+          `Content:\n---\n${fileContent.slice(0, 4000)}\n---\n` +
+          `\nYou can reference and discuss this note's content. ` +
+          `If the user asks about their notes without a file open, let them know they can open a note for you to see it.`;
+      } else {
+        systemPrompt +=
+          `\n\nNo note is currently open, or the active note is in a folder the user has excluded from AI access. ` +
+          `If the user wants you to see a note's content, ask them to open it in the editor.`;
       }
 
       // Call API
