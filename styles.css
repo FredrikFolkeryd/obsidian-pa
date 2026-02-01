@@ -2,6 +2,14 @@
  * Personal Assistant Plugin Styles
  */
 
+/* Settings: Disabled button state */
+.pa-validate-btn.is-disabled,
+.pa-validate-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 /* Settings: Consent info box */
 .pa-consent-info {
   background-color: var(--background-secondary);

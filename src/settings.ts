@@ -18,7 +18,7 @@ export interface PASettings {
   /** Whether the user has acknowledged and consented to AI features */
   consentEnabled: boolean;
 
-  /** Consent mode: opt-in (whitelist) or opt-out (blacklist) */
+  /** Consent mode: opt-in (include list) or opt-out (exclude list) */
   consentMode: "opt-in" | "opt-out";
 
   /** Folders included when in opt-in mode */
@@ -157,8 +157,8 @@ export class PASettingTab extends PluginSettingTab {
         )
         .addDropdown((dropdown) =>
           dropdown
-            .addOption("opt-in", "Opt-in (whitelist folders)")
-            .addOption("opt-out", "Opt-out (blacklist folders)")
+            .addOption("opt-in", "Opt-in (include only specified)")
+            .addOption("opt-out", "Opt-out (exclude specified)")
             .setValue(this.plugin.settings.consentMode)
             .onChange(async (value) => {
               this.plugin.settings.consentMode = value as "opt-in" | "opt-out";
@@ -296,16 +296,41 @@ export class PASettingTab extends PluginSettingTab {
             }
             this.plugin.settings.credentialReference = value || undefined;
             await this.plugin.saveSettings();
+            // Update button state
+            this.updateValidateButtonState(opContainer);
           });
       })
-      .addButton((button) =>
+      .addButton((button) => {
         button
           .setButtonText("Validate & Connect")
           .setCta()
           .onClick(async () => {
             await this.validateCredentialReference();
-          })
-      );
+          });
+        // Set initial disabled state
+        button.buttonEl.addClass("pa-validate-btn");
+      });
+
+    // Set initial button state
+    this.updateValidateButtonState(opContainer);
+  }
+
+  /**
+   * Update the Validate button enabled state based on input
+   */
+  private updateValidateButtonState(container: HTMLElement): void {
+    const btn = container.querySelector(".pa-validate-btn") as HTMLButtonElement | null;
+    if (!btn) return;
+
+    const ref = this.plugin.settings.credentialReference;
+    const isValid = ref && ref.startsWith("op://") && ref.split("/").length >= 4;
+
+    btn.disabled = !isValid;
+    if (isValid) {
+      btn.removeClass("is-disabled");
+    } else {
+      btn.addClass("is-disabled");
+    }
   }
 
   /**
