@@ -2,7 +2,7 @@
  * Chat View - Main AI conversation interface
  */
 
-import { ItemView, WorkspaceLeaf, MarkdownRenderer } from "obsidian";
+import { ItemView, WorkspaceLeaf, MarkdownRenderer, TFile, MarkdownView } from "obsidian";
 import type PAPlugin from "../main";
 import type { ChatMessage } from "../api/GitHubModelsClient";
 
@@ -25,6 +25,7 @@ export class ChatView extends ItemView {
   private inputEl: HTMLTextAreaElement | null = null;
   private messagesContainerEl: HTMLElement | null = null;
   private isLoading = false;
+  private lastActiveFile: TFile | null = null;
 
   public constructor(leaf: WorkspaceLeaf, plugin: PAPlugin) {
     super(leaf);
@@ -415,17 +416,18 @@ export class ChatView extends ItemView {
         .map((m) => ({ role: m.role, content: m.content }));
 
       // Add context from active note if available
-      const activeFile = this.app.workspace.getActiveFile();
+      // Use tracked last active file since getActiveFile() returns null when chat has focus
+      const contextFile = this.getContextFile();
       let systemPrompt =
         "You are a helpful AI assistant integrated into Obsidian. " +
         "Help the user with their notes, writing, and knowledge management.";
 
-      if (activeFile && this.isFileAllowed(activeFile.path)) {
-        const fileContent = await this.app.vault.read(activeFile);
+      if (contextFile && this.isFileAllowed(contextFile.path)) {
+        const fileContent = await this.app.vault.read(contextFile);
         systemPrompt +=
           `\n\nYou have access to the user's currently open note:\n` +
-          `Filename: ${activeFile.basename}\n` +
-          `Path: ${activeFile.path}\n` +
+          `Filename: ${contextFile.basename}\n` +
+          `Path: ${contextFile.path}\n` +
           `Content:\n---\n${fileContent.slice(0, 4000)}\n---\n` +
           `\nYou can reference and discuss this note's content. ` +
           `If the user asks about their notes without a file open, let them know they can open a note for you to see it.`;
@@ -461,6 +463,34 @@ export class ChatView extends ItemView {
       const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
       this.addSystemMessage(`Error: ${errorMessage}`);
     }
+  }
+
+  /**
+   * Get the file to use for context
+   * Tries getActiveFile first, falls back to finding a markdown leaf, or last tracked file
+   */
+  private getContextFile(): TFile | null {
+    // First try the standard method - works when a markdown pane has focus
+    const activeFile = this.app.workspace.getActiveFile();
+    if (activeFile) {
+      this.lastActiveFile = activeFile;
+      return activeFile;
+    }
+
+    // If chat has focus, getActiveFile returns null
+    // Find the most recent markdown view leaf
+    const leaves = this.app.workspace.getLeavesOfType("markdown");
+    if (leaves.length > 0) {
+      // Get the file from the first markdown leaf (most recently focused)
+      const markdownView = leaves[0].view as MarkdownView;
+      if (markdownView.file) {
+        this.lastActiveFile = markdownView.file;
+        return markdownView.file;
+      }
+    }
+
+    // Fall back to last known active file
+    return this.lastActiveFile;
   }
 
   /**
