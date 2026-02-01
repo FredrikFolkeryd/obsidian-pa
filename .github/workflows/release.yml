@@ -3,21 +3,14 @@ name: Release
 on:
   push:
     tags:
-      - '*'
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version to release (e.g., 1.0.0-alpha.1)'
-        required: true
-        type: string
+      - '[0-9]+.[0-9]+.[0-9]+*'
 
 permissions:
   contents: write
 
 jobs:
-  build:
+  release:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -40,28 +33,41 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Determine version
+      - name: Get version from tag
         id: version
-        run: |
-          if [ -n "${{ inputs.version }}" ]; then
-            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
-          else
-            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-          fi
+        run: echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
-      - name: Create plugin directory structure
+      - name: Extract release notes from CHANGELOG
+        id: changelog
         run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          
+          # Extract section for this version from CHANGELOG.md
+          # Looks for ## [version] or ## version header and extracts until next ## header
+          if [ -f CHANGELOG.md ]; then
+            NOTES=$(awk "/^## \\[?${VERSION}\\]?/{found=1; next} /^## /{if(found) exit} found{print}" CHANGELOG.md)
+            if [ -z "$NOTES" ]; then
+              NOTES="See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details."
+            fi
+          else
+            NOTES="Release $VERSION"
+          fi
+          
+          # Write to file to preserve formatting
+          echo "$NOTES" > /tmp/release-notes.md
+          echo "notes_file=/tmp/release-notes.md" >> $GITHUB_OUTPUT
+
+      - name: Create plugin package
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          
           mkdir -p dist/obsidian-pa
           cp main.js dist/obsidian-pa/
           cp manifest.json dist/obsidian-pa/
           cp styles.css dist/obsidian-pa/ 2>/dev/null || echo '/* obsidian-pa styles */' > dist/obsidian-pa/styles.css
-          # Include install script in the zip
-          cp scripts/install.sh dist/obsidian-pa/
-
-      - name: Create release zip
-        run: |
+          
           cd dist
-          zip -r obsidian-pa-${{ steps.version.outputs.version }}.zip obsidian-pa
+          zip -r "obsidian-pa-${VERSION}.zip" obsidian-pa
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
@@ -70,40 +76,11 @@ jobs:
           name: "v${{ steps.version.outputs.version }}"
           draft: false
           prerelease: ${{ contains(steps.version.outputs.version, 'alpha') || contains(steps.version.outputs.version, 'beta') }}
+          body_path: ${{ steps.changelog.outputs.notes_file }}
           files: |
             dist/obsidian-pa-${{ steps.version.outputs.version }}.zip
             dist/obsidian-pa/main.js
             dist/obsidian-pa/manifest.json
             dist/obsidian-pa/styles.css
-          body: |
-            ## Installation
-
-            ### Option 1: Interactive Installer (Recommended)
-            ```bash
-            # Download and extract
-            curl -L https://github.com/FredrikFolkeryd/obsidian-pa/releases/download/${{ steps.version.outputs.version }}/obsidian-pa-${{ steps.version.outputs.version }}.zip -o /tmp/obsidian-pa.zip
-            unzip -o /tmp/obsidian-pa.zip -d /tmp/
-
-            # Run installer (auto-detects your vaults)
-            /tmp/obsidian-pa/install.sh
-            ```
-
-            ### Option 2: Manual Installation
-            1. Download `obsidian-pa-${{ steps.version.outputs.version }}.zip`
-            2. Extract to `<vault>/.obsidian/plugins/` (creates `obsidian-pa/` folder)
-            3. Reload Obsidian and enable in Settings → Community plugins
-
-            ### Option 3: Individual Files
-            Download `main.js`, `manifest.json`, and `styles.css` into `<vault>/.obsidian/plugins/obsidian-pa/`
-
-            ### First-time setup
-            1. Go to Settings → Personal Assistant
-            2. Click "Sign in with GitHub" to authenticate
-            3. Enable AI features and configure which folders to include
-            4. Open the chat via ribbon icon or command palette
-
-            ---
-            
-            **Full Changelog**: https://github.com/${{ github.repository }}/commits/${{ steps.version.outputs.version }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
