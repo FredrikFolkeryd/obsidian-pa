@@ -82,8 +82,13 @@ export class PASettingTab extends PluginSettingTab {
 
     containerEl.createEl("h2", { text: "Personal Assistant Settings" });
 
-    // Check 1Password CLI status first (async)
+    // Check 1Password CLI status first (async), then render
     void this.checkOpCliStatus().then(() => {
+      // Clear everything after the h2 before rendering to prevent duplicates
+      const h2 = containerEl.querySelector("h2");
+      while (h2 && h2.nextSibling) {
+        h2.nextSibling.remove();
+      }
       this.renderSettings(containerEl);
     });
   }
