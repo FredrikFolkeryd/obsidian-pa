@@ -36,7 +36,7 @@ export default class PAPlugin extends Plugin {
     // Register the chat view
     this.registerView(VIEW_TYPE_CHAT, (leaf) => new ChatView(leaf, this));
 
-    // Add command to open chat
+    // Add command to open chat (checks configuration status)
     this.addCommand({
       id: "open-chat",
       name: "Open AI Chat",
@@ -45,7 +45,18 @@ export default class PAPlugin extends Plugin {
       },
     });
 
-    // Add ribbon icon
+    // Add command to open settings directly
+    this.addCommand({
+      id: "open-settings",
+      name: "Open Settings",
+      callback: () => {
+        const setting = (this.app as unknown as { setting?: { open: () => void; openTabById?: (id: string) => void } }).setting;
+        setting?.open();
+        setting?.openTabById?.(this.manifest.id);
+      },
+    });
+
+    // Add ribbon icon (checks configuration status)
     this.addRibbonIcon("message-circle", "Open AI Chat", () => {
       this.activateChatView();
     });
@@ -210,7 +221,35 @@ export default class PAPlugin extends Plugin {
   }
 
   /**
+   * Check if the plugin is fully configured and ready to use
+   * Returns true only when authentication is complete for the selected provider
+   */
+  public async isConfigured(): Promise<boolean> {
+    // Must have consent enabled
+    if (!this.settings.consentEnabled) {
+      return false;
+    }
+
+    // Check provider-specific authentication
+    const provider = this.providerManager.getActiveProvider();
+    if (!provider) {
+      return false;
+    }
+
+    // For gh-copilot-cli, check CLI status
+    if (this.settings.provider === "gh-copilot-cli") {
+      const result = await provider.validateToken();
+      return result.success;
+    }
+
+    // For other providers, check if we have a valid token
+    const token = await this.getStoredToken();
+    return !!token;
+  }
+
+  /**
    * Activate the chat view in the right sidebar
+   * Redirects to settings if not configured
    */
   public activateChatView(): void {
     void this.doActivateChatView();
@@ -220,6 +259,16 @@ export default class PAPlugin extends Plugin {
    * Internal async implementation of chat view activation
    */
   private async doActivateChatView(): Promise<void> {
+    // Check if configured first
+    const configured = await this.isConfigured();
+    if (!configured) {
+      new Notice("Please complete setup in settings first", 5000);
+      // Open settings tab - use type assertion for internal API
+      const setting = (this.app as unknown as { setting?: { open: () => void; openTabById?: (id: string) => void } }).setting;
+      setting?.open();
+      setting?.openTabById?.(this.manifest.id);
+      return;
+    }
     const { workspace } = this.app;
 
     let leaf: WorkspaceLeaf | null = null;

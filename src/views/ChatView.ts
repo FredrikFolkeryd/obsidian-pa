@@ -43,12 +43,54 @@ export class ChatView extends ItemView {
     return "message-circle";
   }
 
-  // eslint-disable-next-line @typescript-eslint/require-await
   public async onOpen(): Promise<void> {
     const container = this.containerEl.children[1];
     container.empty();
     container.addClass("pa-chat-container");
 
+    // Check if plugin is configured
+    const isConfigured = await this.plugin.isConfigured();
+    
+    if (!isConfigured) {
+      this.renderSetupRequired(container);
+      return;
+    }
+
+    this.renderChatInterface(container);
+  }
+
+  /**
+   * Render the setup-required state
+   */
+  private renderSetupRequired(container: Element): void {
+    const setupEl = container.createDiv({ cls: "pa-chat-setup-required" });
+    
+    setupEl.createEl("div", { cls: "pa-chat-setup-icon", text: "⚙️" });
+    setupEl.createEl("h3", { text: "Setup Required" });
+    setupEl.createEl("p", { 
+      text: "Please complete the plugin configuration in Settings before using the chat." 
+    });
+    
+    const openSettingsBtn = setupEl.createEl("button", {
+      cls: "mod-cta",
+      text: "Open Settings",
+    });
+    
+    openSettingsBtn.addEventListener("click", () => {
+      // Use type assertion for internal Obsidian API
+      const setting = (this.app as unknown as { setting?: { open: () => void; openTabById?: (id: string) => void } }).setting;
+      setting?.open();
+      setting?.openTabById?.(this.plugin.manifest.id);
+    });
+
+    // Add styles for setup state
+    this.addSetupStyles();
+  }
+
+  /**
+   * Render the full chat interface
+   */
+  private renderChatInterface(container: Element): void {
     // Create header
     const headerEl = container.createDiv({ cls: "pa-chat-header" });
     headerEl.createEl("h4", { text: "Personal Assistant" });
@@ -98,9 +140,43 @@ export class ChatView extends ItemView {
 
     // Show welcome message
     this.addSystemMessage(
-      "Welcome! I'm your Personal Assistant. " +
-        "Enable AI features in settings and add your GitHub token to get started."
+      "Hello! I'm your Personal Assistant. How can I help you today?"
     );
+  }
+
+  /**
+   * Add styles for the setup-required state
+   */
+  private addSetupStyles(): void {
+    if (document.getElementById("pa-chat-setup-styles")) return;
+    
+    const styleEl = document.createElement("style");
+    styleEl.id = "pa-chat-setup-styles";
+    styleEl.textContent = `
+      .pa-chat-setup-required {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        padding: 24px;
+        text-align: center;
+      }
+      .pa-chat-setup-icon {
+        font-size: 48px;
+        margin-bottom: 16px;
+      }
+      .pa-chat-setup-required h3 {
+        margin: 0 0 12px 0;
+        color: var(--text-normal);
+      }
+      .pa-chat-setup-required p {
+        margin: 0 0 20px 0;
+        color: var(--text-muted);
+        max-width: 280px;
+      }
+    `;
+    document.head.appendChild(styleEl);
   }
 
   public async onClose(): Promise<void> {
