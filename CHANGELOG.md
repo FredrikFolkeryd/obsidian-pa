@@ -64,7 +64,4 @@ First alpha release of the Obsidian Personal Assistant plugin.
 
 - [Documentation](https://github.com/FredrikFolkeryd/obsidian-pa#readme)
 - [Report an issue](https://github.com/FredrikFolkeryd/obsidian-pa/issues)
-
-## [Unreleased]
-
-_Changes that will be in the next release._
+- 
