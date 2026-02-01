@@ -91,7 +91,7 @@ describe("GitHubModelsClient", () => {
       });
 
       await expect(client.chat([{ role: "user", content: "Test" }])).rejects.toThrow(
-        "Invalid token"
+        "Authentication failed"
       );
     });
 

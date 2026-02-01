@@ -187,13 +187,18 @@ export default class PAPlugin extends Plugin {
    * Clear the stored token
    */
   public async clearToken(): Promise<void> {
+    // Clear SecretStorage
     if ("setSecret" in this.app.vault.adapter) {
       await (
         this.app.vault.adapter as { setSecret: (key: string, value: string) => Promise<void> }
       ).setSecret("obsidian-pa-github-token", "");
     }
+    // Clear settings token
     this.settings.githubToken = undefined;
+    // Also clear 1Password reference so user must re-enter
+    this.settings.credentialReference = undefined;
     await this.saveSettings();
+    // Clear API client
     this.apiClient = null;
   }
 

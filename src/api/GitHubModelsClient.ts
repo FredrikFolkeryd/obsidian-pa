@@ -144,9 +144,26 @@ export class GitHubModelsClient {
 
       if (!response.ok) {
         const errorData = (await response.json()) as ApiError;
-        throw new Error(
-          errorData.error?.message || `API error: ${response.status} ${response.statusText}`
-        );
+        const errorMessage = errorData.error?.message || `API error: ${response.status} ${response.statusText}`;
+        
+        // Provide clearer messages for common errors
+        if (response.status === 401) {
+          throw new Error("Authentication failed. Your token may be invalid or expired.");
+        }
+        if (response.status === 403 && errorMessage.toLowerCase().includes("models")) {
+          throw new Error(
+            "Permission denied: Your token needs the 'Models: Read' permission. " +
+            "Edit your token at github.com/settings/tokens and add this permission."
+          );
+        }
+        if (response.status === 403) {
+          throw new Error(`Permission denied: ${errorMessage}`);
+        }
+        if (response.status === 429) {
+          throw new Error("Rate limit exceeded. Please wait a moment and try again.");
+        }
+        
+        throw new Error(errorMessage);
       }
 
       const data = (await response.json()) as ChatCompletionResponse;
