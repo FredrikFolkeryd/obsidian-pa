@@ -493,8 +493,8 @@ export class GhCopilotCliProvider extends BaseProvider {
         "Request timed out. Try a shorter prompt or simpler question.",
       ],
       [
-        /model.*not found|invalid model|unknown model/i,
-        "Selected model is not available. Please choose a different model.",
+        /argument.*is invalid.*allowed choices|model.*not found|invalid model|unknown model/i,
+        "Selected model is not available. Go to Settings → Model Settings and choose a valid model.",
       ],
       [
         /network|connection|ENOTFOUND|ECONNREFUSED/i,

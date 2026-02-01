@@ -112,6 +112,21 @@ export default class PAPlugin extends Plugin {
   private async loadSettings(): Promise<void> {
     const data = (await this.loadData()) as Partial<PASettings> | null;
     this.settings = Object.assign({}, DEFAULT_SETTINGS, data);
+    
+    // Validate model selection for gh-copilot-cli (model list may have changed)
+    if (this.settings.provider === "gh-copilot-cli") {
+      const validModels = [
+        "claude-sonnet-4", "claude-opus-4.5", "claude-sonnet-4.5", "claude-haiku-4.5",
+        "gpt-4.1", "gpt-5", "gpt-5-mini", "gpt-5.1", "gpt-5.1-codex", "gpt-5.2",
+        "gemini-3-pro-preview"
+      ];
+      if (!validModels.includes(this.settings.model)) {
+        console.info(`[PA] Invalid model "${this.settings.model}" for gh-copilot-cli, resetting to claude-sonnet-4`);
+        this.settings.model = "claude-sonnet-4";
+        void this.saveData(this.settings);
+      }
+    }
+    
     // Sync provider setting to manager
     this.providerManager.setActiveProvider(this.settings.provider);
   }

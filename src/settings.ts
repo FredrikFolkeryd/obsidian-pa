@@ -143,9 +143,9 @@ export class PASettingTab extends PluginSettingTab {
         dropdown.setValue(this.plugin.settings.provider);
         dropdown.onChange(async (value) => {
           this.plugin.settings.provider = value as ProviderType;
-          // Reset model when switching providers
+          // Reset model when switching providers to a valid default
           if (value === "gh-copilot-cli") {
-            this.plugin.settings.model = "claude-opus-4.5";
+            this.plugin.settings.model = "claude-sonnet-4";
           } else {
             this.plugin.settings.model = "gpt-4o";
           }
