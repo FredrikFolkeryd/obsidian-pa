@@ -1,11 +1,15 @@
 /**
  * GitHub Copilot CLI Provider
  *
- * Invokes the gh-copilot CLI extension for chat completions.
- * Requires: gh CLI with gh-copilot extension installed and authenticated.
+ * Invokes the standalone GitHub Copilot CLI for chat completions.
+ * Requires: copilot CLI installed and authenticated.
+ *
+ * Installation: brew install copilot-cli (macOS/Linux)
+ *               winget install GitHub.Copilot (Windows)
+ *               npm install -g @github/copilot
  *
  * SECURITY MODEL:
- * - Authentication: Delegates to `gh auth` stored credentials (system keychain)
+ * - Authentication: Delegates to copilot's OAuth or PAT credentials
  * - No tokens: This provider never receives, stores, or transmits credentials
  * - Process isolation: Each CLI invocation is a separate process
  * - Shell safety: Uses spawn with shell:false to prevent injection
@@ -29,24 +33,23 @@ import type {
 const execAsync = promisify(exec);
 
 /**
- * Common gh CLI installation paths by platform
+ * Common copilot CLI installation paths by platform
  * GUI apps on macOS don't inherit shell PATH, so we check known locations
  */
-const GH_CLI_PATHS: Record<string, string[]> = {
+const COPILOT_CLI_PATHS: Record<string, string[]> = {
   darwin: [
-    "/opt/homebrew/bin/gh", // Homebrew on Apple Silicon
-    "/usr/local/bin/gh", // Homebrew on Intel Mac
-    "/usr/bin/gh", // System install
+    "/opt/homebrew/bin/copilot", // Homebrew on Apple Silicon
+    "/usr/local/bin/copilot", // Homebrew on Intel Mac / npm global
+    `${process.env.HOME}/.local/bin/copilot`, // Install script default
   ],
   linux: [
-    "/usr/bin/gh",
-    "/usr/local/bin/gh",
-    "/snap/bin/gh", // Snap package
-    "/home/linuxbrew/.linuxbrew/bin/gh", // Linuxbrew
+    "/usr/local/bin/copilot", // npm global / install script as root
+    `${process.env.HOME}/.local/bin/copilot`, // Install script default
+    "/usr/bin/copilot",
   ],
   win32: [
-    "C:\\Program Files\\GitHub CLI\\gh.exe",
-    "C:\\Program Files (x86)\\GitHub CLI\\gh.exe",
+    "C:\\Program Files\\GitHub Copilot\\copilot.exe",
+    `${process.env.LOCALAPPDATA}\\Programs\\GitHub Copilot\\copilot.exe`,
   ],
 };
 
@@ -54,16 +57,16 @@ const GH_CLI_PATHS: Record<string, string[]> = {
  * CLI status information
  */
 interface CliStatus {
-  ghInstalled: boolean;
-  ghPath: string | null;
-  copilotExtensionInstalled: boolean;
+  cliInstalled: boolean;
+  cliPath: string | null;
   authenticated: boolean;
   authError?: string;
+  version?: string;
 }
 
 /**
- * Known models available via gh copilot CLI
- * From: gh copilot -- --help (model choices)
+ * Known models available via copilot CLI
+ * From: copilot --help (model choices)
  */
 const KNOWN_MODELS: ModelInfo[] = [
   {
@@ -73,16 +76,16 @@ const KNOWN_MODELS: ModelInfo[] = [
     description: "Balanced Claude model - good for most tasks",
   },
   {
-    id: "claude-opus-4.5",
-    name: "Claude Opus 4.5",
-    provider: "gh-copilot-cli",
-    description: "Most capable Claude model - best for complex tasks",
-  },
-  {
     id: "claude-sonnet-4.5",
     name: "Claude Sonnet 4.5",
     provider: "gh-copilot-cli",
     description: "Latest Claude Sonnet - fast and capable",
+  },
+  {
+    id: "claude-opus-4.5",
+    name: "Claude Opus 4.5",
+    provider: "gh-copilot-cli",
+    description: "Most capable Claude model - best for complex tasks",
   },
   {
     id: "claude-haiku-4.5",
@@ -121,10 +124,28 @@ const KNOWN_MODELS: ModelInfo[] = [
     description: "OpenAI coding model",
   },
   {
+    id: "gpt-5.1-codex-mini",
+    name: "GPT-5.1 Codex Mini",
+    provider: "gh-copilot-cli",
+    description: "Efficient OpenAI coding model",
+  },
+  {
+    id: "gpt-5.1-codex-max",
+    name: "GPT-5.1 Codex Max",
+    provider: "gh-copilot-cli",
+    description: "Most capable OpenAI coding model",
+  },
+  {
     id: "gpt-5.2",
     name: "GPT-5.2",
     provider: "gh-copilot-cli",
     description: "Latest OpenAI GPT",
+  },
+  {
+    id: "gpt-5.2-codex",
+    name: "GPT-5.2 Codex",
+    provider: "gh-copilot-cli",
+    description: "Latest OpenAI coding model",
   },
   {
     id: "gemini-3-pro-preview",
@@ -149,7 +170,7 @@ export class GhCopilotCliProvider extends BaseProvider {
 
   public getCapabilities(): ProviderCapabilities {
     return {
-      supportsStreaming: false, // CLI returns full response
+      supportsStreaming: false, // CLI returns full response in non-interactive mode
       supportsSystemPrompt: true, // Prepend to prompt
       supportsFunctionCalling: false, // Not supported via CLI
       supportsVision: false, // Not supported via CLI
@@ -157,7 +178,7 @@ export class GhCopilotCliProvider extends BaseProvider {
   }
 
   /**
-   * Override: This provider doesn't use tokens - uses gh auth
+   * Override: This provider doesn't use tokens - uses copilot auth
    */
   public override isAuthenticated(): boolean {
     // Use cached status for synchronous check
@@ -165,11 +186,11 @@ export class GhCopilotCliProvider extends BaseProvider {
   }
 
   /**
-   * Override: No token needed - uses gh auth
+   * Override: No token needed - uses copilot auth
    */
   public override setToken(_token: string): void {
-    // No-op: this provider uses gh auth, not tokens
-    console.info("[PA] GhCopilotCliProvider: setToken ignored - uses gh auth");
+    // No-op: this provider uses copilot's own auth, not tokens
+    console.info("[PA] GhCopilotCliProvider: setToken ignored - uses copilot auth");
   }
 
   /**
@@ -181,30 +202,23 @@ export class GhCopilotCliProvider extends BaseProvider {
   }
 
   /**
-   * Validate by checking gh auth status
+   * Validate by checking copilot CLI status
    */
   public async validateToken(): Promise<Result<boolean>> {
     const status = await this.getCachedCliStatus();
 
-    if (!status.ghInstalled) {
-      return {
-        success: false,
-        error: "GitHub CLI (gh) is not installed. Install from https://cli.github.com/",
-      };
-    }
-
-    if (!status.copilotExtensionInstalled) {
+    if (!status.cliInstalled) {
       return {
         success: false,
         error:
-          "gh-copilot extension not installed. Run: gh extension install github/gh-copilot",
+          "GitHub Copilot CLI not installed. Install with: brew install copilot-cli",
       };
     }
 
     if (!status.authenticated) {
       return {
         success: false,
-        error: `Not authenticated with GitHub CLI. Run: gh auth login${status.authError ? ` (${status.authError})` : ""}`,
+        error: `Not authenticated with Copilot CLI. Run: copilot${status.authError ? ` (${status.authError})` : ""}`,
       };
     }
 
@@ -222,11 +236,11 @@ export class GhCopilotCliProvider extends BaseProvider {
    * Get default model
    */
   public getDefaultModel(): string {
-    return "claude-opus-4.5";
+    return "claude-sonnet-4";
   }
 
   /**
-   * Send a chat request via gh copilot CLI
+   * Send a chat request via copilot CLI
    */
   public async chat(
     messages: ChatMessage[],
@@ -235,7 +249,7 @@ export class GhCopilotCliProvider extends BaseProvider {
     // Verify CLI is ready
     const status = await this.getCachedCliStatus();
     if (!status.authenticated) {
-      throw new Error("GitHub CLI not authenticated. Run: gh auth login");
+      throw new Error("Copilot CLI not authenticated. Run: copilot");
     }
 
     const { model, systemPrompt } = options;
@@ -247,7 +261,7 @@ export class GhCopilotCliProvider extends BaseProvider {
       return {
         content: result,
         model: model,
-        // CLI doesn't provide usage stats
+        // CLI provides usage info but we'd need to parse it
         usage: undefined,
         finishReason: "stop",
       };
@@ -288,82 +302,79 @@ export class GhCopilotCliProvider extends BaseProvider {
   }
 
   /**
-   * Check if gh CLI and copilot are available
-   * Note: gh copilot is now a built-in command in gh CLI v2.40+, not an extension
+   * Check if copilot CLI is available and authenticated
    */
   private async checkCliStatus(): Promise<CliStatus> {
     const status: CliStatus = {
-      ghInstalled: false,
-      ghPath: null,
-      copilotExtensionInstalled: false,
+      cliInstalled: false,
+      cliPath: null,
       authenticated: false,
     };
 
-    // Find gh CLI - check known paths first (GUI apps don't have shell PATH)
-    const ghPath = this.findGhCliPath();
-    if (!ghPath) {
+    // Find copilot CLI - check known paths first (GUI apps don't have shell PATH)
+    const cliPath = this.findCopilotCliPath();
+    if (!cliPath) {
       return status;
     }
 
-    status.ghInstalled = true;
-    status.ghPath = ghPath;
+    status.cliInstalled = true;
+    status.cliPath = cliPath;
 
-    // Check if gh copilot is available (built-in or extension)
-    // In gh CLI v2.40+, copilot is a built-in command, not an extension
+    // Check version to verify it works
     try {
-      // Try running gh copilot --help to see if it's available
-      await execAsync(`"${ghPath}" copilot --help`, {
-        timeout: 10000, // May need to download on first run
+      const { stdout } = await execAsync(`"${cliPath}" --version`, {
+        timeout: 5000,
       });
-      status.copilotExtensionInstalled = true;
+      status.version = stdout.trim();
     } catch {
-      // Copilot not available - check if it's an extension (older gh versions)
-      try {
-        const { stdout: extOutput } = await execAsync(`"${ghPath}" extension list`, {
-          timeout: 5000,
-        });
-        status.copilotExtensionInstalled = extOutput.includes("github/gh-copilot");
-      } catch {
-        // Neither built-in nor extension
-        return status;
-      }
+      // CLI found but failed to run
+      return status;
     }
 
+    // Check authentication by running a minimal prompt
+    // The CLI will fail with auth error if not logged in
     try {
-      // Check authentication
-      const { stdout: authOutput, stderr: authStderr } = await execAsync(
-        `"${ghPath}" auth status`,
-        { timeout: 5000 }
+      await execAsync(
+        `"${cliPath}" -p "hi" --model claude-sonnet-4 --no-auto-update`,
+        { timeout: 30000 }
       );
-      const combined = authOutput + authStderr;
-      status.authenticated =
-        combined.includes("Logged in") || combined.includes("✓ Logged in");
+      status.authenticated = true;
     } catch (error) {
-      // gh auth status returns non-zero when not logged in
-      status.authError = error instanceof Error ? error.message : "Auth check failed";
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      if (
+        errorMsg.includes("auth") ||
+        errorMsg.includes("login") ||
+        errorMsg.includes("unauthorized")
+      ) {
+        status.authError = "Not logged in";
+      } else {
+        // Other error, but CLI works so auth is probably ok
+        // Could be rate limit, model error, etc.
+        status.authenticated = true;
+      }
     }
 
     return status;
   }
 
   /**
-   * Find the gh CLI binary path
+   * Find the copilot CLI binary path
    * GUI apps (like Obsidian) don't inherit shell PATH, so we check known locations
    */
-  private findGhCliPath(): string | null {
+  private findCopilotCliPath(): string | null {
     const platform = process.platform;
-    const knownPaths = GH_CLI_PATHS[platform] || [];
+    const knownPaths = COPILOT_CLI_PATHS[platform] || [];
 
     // First check known installation paths (most reliable for GUI apps)
     for (const p of knownPaths) {
-      if (existsSync(p)) {
+      if (p && existsSync(p)) {
         return p;
       }
     }
 
     // Fallback: try to find in PATH (works if launched from terminal)
     try {
-      const whichCmd = platform === "win32" ? "where gh" : "which gh";
+      const whichCmd = platform === "win32" ? "where copilot" : "which copilot";
       const result = execSync(whichCmd, { timeout: 2000, encoding: "utf8" });
       const foundPath = result.trim().split("\n")[0];
       if (foundPath && existsSync(foundPath)) {
@@ -412,7 +423,7 @@ export class GhCopilotCliProvider extends BaseProvider {
   }
 
   /**
-   * Invoke the gh copilot CLI
+   * Invoke the copilot CLI
    *
    * SECURITY: Uses spawn with shell:false to prevent injection
    */
@@ -422,36 +433,35 @@ export class GhCopilotCliProvider extends BaseProvider {
       throw new Error("A request is already in progress. Please wait.");
     }
 
-    // Get the gh path from cache (should already be set from validation)
-    const ghPath = this.cliStatusCache?.ghPath || this.findGhCliPath();
-    if (!ghPath) {
-      throw new Error("GitHub CLI not found. Install from https://cli.github.com/");
+    // Get the CLI path from cache (should already be set from validation)
+    const cliPath = this.cliStatusCache?.cliPath || this.findCopilotCliPath();
+    if (!cliPath) {
+      throw new Error(
+        "Copilot CLI not found. Install with: brew install copilot-cli"
+      );
     }
 
-    // Get the directory containing gh - this also contains the copilot binary
-    // Handle both Unix (/) and Windows (\) path separators
-    const pathSep = process.platform === "win32" ? "\\" : "/";
-    const ghDir = ghPath.substring(0, ghPath.lastIndexOf(pathSep));
-
     return new Promise((resolve, reject) => {
-      // Arguments as array - never interpreted by shell
-      const args = ["copilot", "-p", prompt, "--model", model];
-
-      // Build PATH that includes gh's directory (where copilot binary is)
-      // GUI apps like Obsidian don't have shell PATH, so we set it explicitly
-      // Use ; on Windows, : on Unix
-      const envPathSep = process.platform === "win32" ? ";" : ":";
-      const envPath = ghDir + (process.env.PATH ? `${envPathSep}${process.env.PATH}` : "");
+      // Arguments for non-interactive mode
+      const args = [
+        "-p",
+        prompt,
+        "--model",
+        model,
+        "--no-auto-update", // Don't try to update during invocation
+        "--stream",
+        "off", // Disable streaming for simpler output parsing
+      ];
 
       // CRITICAL: shell: false prevents shell interpretation
-      // Use full path to gh binary (GUI apps don't have shell PATH)
-      const child = spawn(ghPath, args, {
+      const child = spawn(cliPath, args, {
         shell: false, // <-- CRITICAL SECURITY SETTING
         timeout: 120000, // 2 minute timeout
         windowsHide: true, // Prevent window popup on Windows
         env: {
           ...process.env,
-          PATH: envPath,
+          // Ensure HOME is set for config lookup
+          HOME: process.env.HOME,
         },
       });
 
@@ -471,20 +481,65 @@ export class GhCopilotCliProvider extends BaseProvider {
       child.on("close", (code) => {
         this.activeProcess = null;
         if (code === 0) {
-          resolve(stdout.trim());
+          // Parse out just the response, removing usage stats
+          const response = this.parseCliOutput(stdout);
+          resolve(response);
         } else {
           // Log the actual error for debugging
-          console.error("[PA] gh copilot CLI error:", { code, stderr, stdout });
+          console.error("[PA] copilot CLI error:", { code, stderr, stdout });
           reject(new Error(this.sanitiseErrorMessage(stderr || stdout, code)));
         }
       });
 
       child.on("error", (err) => {
         this.activeProcess = null;
-        console.error("[PA] gh copilot CLI spawn error:", err);
+        console.error("[PA] copilot CLI spawn error:", err);
         reject(new Error(this.sanitiseErrorMessage(err.message, null)));
       });
     });
+  }
+
+  /**
+   * Parse CLI output to extract just the response content
+   * The CLI adds usage stats at the end which we want to strip
+   */
+  private parseCliOutput(output: string): string {
+    // The CLI output format in non-interactive mode:
+    // <response content>
+    //
+    // Total usage est:        X Premium request
+    // API time spent:         Xs
+    // ...
+
+    const lines = output.split("\n");
+    const responseLines: string[] = [];
+    let foundUsageSection = false;
+
+    for (const line of lines) {
+      if (
+        line.startsWith("Total usage est:") ||
+        line.startsWith("API time spent:") ||
+        line.startsWith("Total session time:") ||
+        line.startsWith("Total code changes:") ||
+        line.startsWith("Breakdown by AI model:")
+      ) {
+        foundUsageSection = true;
+        break;
+      }
+      responseLines.push(line);
+    }
+
+    // If we found usage section, trim trailing empty lines from response
+    if (foundUsageSection) {
+      while (
+        responseLines.length > 0 &&
+        responseLines[responseLines.length - 1].trim() === ""
+      ) {
+        responseLines.pop();
+      }
+    }
+
+    return responseLines.join("\n").trim();
   }
 
   /**
@@ -494,52 +549,51 @@ export class GhCopilotCliProvider extends BaseProvider {
     const patterns: Array<[RegExp, string]> = [
       [
         /command not found|not recognized/i,
-        "GitHub CLI not found. Install from https://cli.github.com/",
-      ],
-      [
-        /gh.copilot.*not installed|extension.*not found/i,
-        "gh-copilot extension not installed. Run: gh extension install github/gh-copilot",
+        "Copilot CLI not found. Install with: brew install copilot-cli",
       ],
       [
         /401|unauthorized|not logged in|auth.*failed/i,
-        "Not authenticated with GitHub. Run: gh auth login",
+        "Not authenticated with Copilot. Run: copilot",
       ],
-      [/403|forbidden|access denied|permission/i, "Access denied. Ensure you have a valid Copilot licence."],
-      [/429|rate.limit|too many requests/i, "Rate limit exceeded. Please wait a moment and try again."],
+      [
+        /403|forbidden|access denied|permission/i,
+        "Access denied. Ensure you have a valid Copilot licence.",
+      ],
+      [
+        /429|rate.limit|too many requests/i,
+        "Rate limit exceeded. Please wait a moment and try again.",
+      ],
       [
         /timeout|timed out|deadline exceeded/i,
         "Request timed out. Try a shorter prompt or simpler question.",
       ],
       [
-        /argument.*is invalid.*allowed choices|model.*not found|invalid model|unknown model/i,
+        /model.*not found|invalid model|unknown model/i,
         "Selected model is not available. Go to Settings → Model Settings and choose a valid model.",
       ],
-      [
-        /network|connection|ENOTFOUND|ECONNREFUSED/i,
-        "Network error. Please check your internet connection.",
-      ],
+      [/network|connection|ENOTFOUND|ECONNREFUSED/i, "Network error. Check your internet connection."],
     ];
 
-    const lowerError = rawError.toLowerCase();
-    for (const [pattern, safeMessage] of patterns) {
-      if (pattern.test(lowerError)) {
-        return safeMessage;
+    for (const [pattern, message] of patterns) {
+      if (pattern.test(rawError)) {
+        return message;
       }
     }
 
-    // Generic fallback - never expose raw error
-    const exitInfo = exitCode !== null ? ` (exit code: ${exitCode})` : "";
-    return `CLI operation failed${exitInfo}. Check that gh copilot is properly configured.`;
+    // Generic error
+    if (exitCode !== null) {
+      return `Copilot CLI error (exit ${exitCode}). Check console for details.`;
+    }
+    return "Copilot CLI error. Check console for details.";
   }
 
   /**
-   * Wrap errors with user-friendly messages
+   * Wrap errors consistently
    */
   private wrapError(error: unknown): Error {
-    if (!(error instanceof Error)) {
-      return new Error(String(error));
+    if (error instanceof Error) {
+      return error;
     }
-    // Error is already wrapped by sanitiseErrorMessage in most cases
-    return error;
+    return new Error(String(error));
   }
 }

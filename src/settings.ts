@@ -144,7 +144,7 @@ export class PASettingTab extends PluginSettingTab {
       .setDesc("Select your preferred AI provider")
       .addDropdown((dropdown) => {
         dropdown.addOption("github-models", "GitHub Models (free tier, needs PAT)");
-        dropdown.addOption("gh-copilot-cli", "GitHub Copilot CLI (premium models, needs gh CLI)");
+        dropdown.addOption("gh-copilot-cli", "GitHub Copilot CLI (premium models)");
 
         dropdown.setValue(this.plugin.settings.provider);
         dropdown.onChange(async (value) => {
@@ -188,20 +188,23 @@ export class PASettingTab extends PluginSettingTab {
     const infoBox = containerEl.createDiv({ cls: "pa-provider-detail" });
     infoBox.createEl("strong", { text: "GitHub Copilot CLI" });
     infoBox.createEl("p", {
-      text: "Access premium models like Claude Opus 4.5 and o1 through the gh copilot CLI. " +
+      text: "Access premium models like Claude Opus 4.5 and GPT-5 through the Copilot CLI. " +
         "Requires a Copilot Business or Enterprise licence.",
     });
 
     const requirements = infoBox.createEl("div", { cls: "pa-cli-requirements" });
-    requirements.createEl("p", { text: "Requirements:" });
-    const list = requirements.createEl("ol");
+    requirements.createEl("p", { text: "Installation:" });
+    const list = requirements.createEl("ul");
+    const macLi = list.createEl("li");
+    macLi.createEl("strong", { text: "macOS/Linux: " });
+    macLi.createEl("code", { text: "brew install copilot-cli" });
+    const winLi = list.createEl("li");
+    winLi.createEl("strong", { text: "Windows: " });
+    winLi.createEl("code", { text: "winget install GitHub.Copilot" });
     list.createEl("li").createEl("a", {
-      text: "GitHub CLI (gh)",
-      href: "https://cli.github.com/",
+      text: "More installation options",
+      href: "https://github.com/github/copilot-cli",
     }).setAttribute("target", "_blank");
-    list.createEl("li", { text: "Login: gh auth login" });
-    list.createEl("li", { text: "Install extension: gh extension install github/gh-copilot" });
-    list.createEl("li", { text: "Copilot Business or Enterprise licence" });
   }
 
   /**
@@ -409,13 +412,13 @@ export class PASettingTab extends PluginSettingTab {
   }
 
   /**
-   * Render gh-copilot-cli authentication (uses gh auth, no token needed)
+   * Render Copilot CLI authentication (uses copilot's own auth)
    */
   private renderGhCopilotAuth(containerEl: HTMLElement): void {
     const authContainer = containerEl.createDiv({ cls: "pa-gh-copilot-auth" });
 
     authContainer.createEl("p", {
-      text: "The Copilot CLI uses your existing GitHub CLI authentication. No additional token is needed.",
+      text: "The Copilot CLI uses its own authentication. Run 'copilot' in your terminal to log in.",
     });
 
     // Status display area (inline feedback instead of toasts)
@@ -426,7 +429,7 @@ export class PASettingTab extends PluginSettingTab {
 
     new Setting(authContainer)
       .setName("CLI Status")
-      .setDesc("Check if gh copilot CLI is properly configured")
+      .setDesc("Check if Copilot CLI is properly installed and authenticated")
       .addButton((button) =>
         button
           .setButtonText("Re-check Status")
@@ -445,7 +448,7 @@ export class PASettingTab extends PluginSettingTab {
 
     const result = await provider.validateToken();
     if (result.success) {
-      this.showCliStatus(statusEl, "success", "✓ gh copilot CLI is configured and ready");
+      this.showCliStatus(statusEl, "success", "✓ Copilot CLI is configured and ready");
     }
     // Don't show error on initial load - let user click "Re-check Status" if needed
   }
@@ -458,7 +461,7 @@ export class PASettingTab extends PluginSettingTab {
     statusEl.empty();
     statusEl.removeClass("pa-cli-status-error", "pa-cli-status-success");
     statusEl.addClass("pa-cli-status-checking");
-    statusEl.setText("⏳ Checking gh copilot CLI status...");
+    statusEl.setText("⏳ Checking Copilot CLI status...");
     buttonEl.disabled = true;
 
     try {
@@ -476,7 +479,7 @@ export class PASettingTab extends PluginSettingTab {
         // Fall back to validateToken
         const result = await provider.validateToken();
         if (result.success) {
-          this.showCliStatus(statusEl, "success", "gh copilot CLI is ready to use!");
+          this.showCliStatus(statusEl, "success", "Copilot CLI is ready to use!");
           this.display(); // Refresh to show model section
         } else {
           this.showCliStatus(statusEl, "error", result.error || "Validation failed");
@@ -487,25 +490,19 @@ export class PASettingTab extends PluginSettingTab {
 
       const status = await cliProvider.refreshCliStatus();
 
-      if (!status.ghInstalled) {
-        this.showCliStatus(statusEl, "error", "GitHub CLI (gh) not found. Install from cli.github.com");
-        buttonEl.disabled = false;
-        return;
-      }
-
-      if (!status.copilotExtensionInstalled) {
-        this.showCliStatus(statusEl, "error", "gh copilot not available. Update gh CLI or run: gh extension install github/gh-copilot");
+      if (!status.cliInstalled) {
+        this.showCliStatus(statusEl, "error", "Copilot CLI not found. Install with: brew install copilot-cli");
         buttonEl.disabled = false;
         return;
       }
 
       if (!status.authenticated) {
-        this.showCliStatus(statusEl, "error", "Not logged in to GitHub CLI. Run: gh auth login");
+        this.showCliStatus(statusEl, "error", "Not logged in. Run 'copilot' in terminal to authenticate");
         buttonEl.disabled = false;
         return;
       }
 
-      this.showCliStatus(statusEl, "success", "✓ gh copilot CLI is configured and ready");
+      this.showCliStatus(statusEl, "success", "✓ Copilot CLI is configured and ready");
       buttonEl.disabled = false;
       // No display refresh needed - status persists and model section shows on next settings open
     } catch (error) {

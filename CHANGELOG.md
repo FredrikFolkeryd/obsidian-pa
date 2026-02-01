@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+_Changes that will be in the next release._
+
+## [1.0.0-alpha.2]
+
+### 🔄 Changed
+
+- **Migrated to standalone Copilot CLI** — Now uses `copilot` command instead of deprecated `gh copilot` extension
+- Updated installation instructions for Copilot CLI (`brew install copilot-cli`)
+- Simplified release workflow (removed environments, uses CHANGELOG for release notes)
+
+### 🐛 Fixed
+
+- Copilot CLI provider now works correctly from Obsidian GUI
+- Updated model list to match current Copilot CLI offerings
+
 ## [1.0.0-alpha.1]
 
 First alpha release of the Obsidian Personal Assistant plugin.

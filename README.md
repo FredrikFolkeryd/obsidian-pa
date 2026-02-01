@@ -33,9 +33,13 @@ You'll need **one** of the following:
 ### Option B: GitHub Copilot CLI (Premium Models)
 
 1. A GitHub Copilot Business or Enterprise licence
-2. [GitHub CLI](https://cli.github.com/) installed
-3. Authenticated with: `gh auth login`
-4. Copilot extension installed: `gh extension install github/gh-copilot`
+2. [GitHub Copilot CLI](https://github.com/github/copilot-cli) installed:
+   - **macOS/Linux**: `brew install copilot-cli`
+   - **Windows**: `winget install GitHub.Copilot`
+   - **npm**: `npm install -g @github/copilot`
+3. Authenticated via OAuth (run `copilot` and follow prompts) or via PAT with "Copilot Requests" permission
+
+> **Note**: The older `gh copilot` extension has been deprecated in favour of the standalone `copilot` CLI.
 
 ## Installation
 
