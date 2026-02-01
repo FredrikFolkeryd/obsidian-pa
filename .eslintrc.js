@@ -50,8 +50,8 @@ module.exports = {
     // Require await in async functions
     "@typescript-eslint/require-await": "error",
 
-    // Allow console for debugging (can be stricter in production)
-    "no-console": "warn",
+    // Allow console.warn/error for debugging, warn on console.log
+    "no-console": ["warn", { allow: ["warn", "error", "info"] }],
   },
   ignorePatterns: ["main.js", "node_modules/", "*.config.js", "*.config.mjs"],
 };

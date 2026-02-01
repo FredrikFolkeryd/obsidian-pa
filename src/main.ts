@@ -29,7 +29,7 @@ export default class PAPlugin extends Plugin {
   }
 
   public async onload(): Promise<void> {
-    console.log("Loading Personal Assistant plugin");
+    console.info("[PA] Loading Personal Assistant plugin");
 
     await this.loadSettings();
 
@@ -73,7 +73,7 @@ export default class PAPlugin extends Plugin {
   }
 
   public onunload(): void {
-    console.log("Unloading Personal Assistant plugin");
+    console.info("[PA] Unloading Personal Assistant plugin");
   }
 
   /**
