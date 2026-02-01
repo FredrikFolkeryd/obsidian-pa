@@ -47,6 +47,10 @@ export interface PASettings {
 
   /** Selected AI provider */
   provider: ProviderType;
+
+  /** Daily usage tracking */
+  usageDate: string; // YYYY-MM-DD
+  usageRequests: number;
 }
 
 /**
@@ -61,6 +65,8 @@ export const DEFAULT_SETTINGS: PASettings = {
   model: "gpt-4o",
   authMethod: "1password",
   provider: "github-models",
+  usageDate: "",
+  usageRequests: 0,
 };
 
 /**

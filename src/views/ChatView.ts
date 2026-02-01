@@ -27,7 +27,6 @@ export class ChatView extends ItemView {
   private isLoading = false;
   private lastActiveFile: TFile | null = null;
   private usageStatsEl: HTMLElement | null = null;
-  private sessionRequests = 0;
   private modelInfoEl: HTMLElement | null = null;
 
   public constructor(leaf: WorkspaceLeaf, plugin: PAPlugin) {
@@ -503,8 +502,8 @@ export class ChatView extends ItemView {
       loadingEl.remove();
       this.isLoading = false;
 
-      // Update usage stats
-      this.sessionRequests++;
+      // Update usage stats (persisted daily counter)
+      this.incrementUsage();
       this.updateUsageDisplay();
 
       // Add assistant message
@@ -644,11 +643,39 @@ export class ChatView extends ItemView {
   }
 
   /**
-   * Update the usage stats display
+   * Update the usage stats display (persisted daily counter)
    */
   private updateUsageDisplay(): void {
     if (!this.usageStatsEl) return;
-    const reqText = this.sessionRequests === 1 ? "request" : "requests";
-    this.usageStatsEl.setText(`${this.sessionRequests} ${reqText} this session`);
+    const count = this.getTodayUsage();
+    const reqText = count === 1 ? "request" : "requests";
+    this.usageStatsEl.setText(`${count} ${reqText} today`);
+  }
+
+  /**
+   * Get today's usage count, resetting if it's a new day
+   */
+  private getTodayUsage(): number {
+    const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+    if (this.plugin.settings.usageDate !== today) {
+      // New day, reset counter
+      this.plugin.settings.usageDate = today;
+      this.plugin.settings.usageRequests = 0;
+      void this.plugin.saveSettings();
+    }
+    return this.plugin.settings.usageRequests;
+  }
+
+  /**
+   * Increment today's usage count
+   */
+  private incrementUsage(): void {
+    const today = new Date().toISOString().split("T")[0];
+    if (this.plugin.settings.usageDate !== today) {
+      this.plugin.settings.usageDate = today;
+      this.plugin.settings.usageRequests = 0;
+    }
+    this.plugin.settings.usageRequests++;
+    void this.plugin.saveSettings();
   }
 }

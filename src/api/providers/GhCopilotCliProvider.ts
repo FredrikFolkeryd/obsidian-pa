@@ -458,12 +458,15 @@ export class GhCopilotCliProvider extends BaseProvider {
         if (code === 0) {
           resolve(stdout.trim());
         } else {
+          // Log the actual error for debugging
+          console.error("[PA] gh copilot CLI error:", { code, stderr, stdout });
           reject(new Error(this.sanitiseErrorMessage(stderr || stdout, code)));
         }
       });
 
       child.on("error", (err) => {
         this.activeProcess = null;
+        console.error("[PA] gh copilot CLI spawn error:", err);
         reject(new Error(this.sanitiseErrorMessage(err.message, null)));
       });
     });
