@@ -12,6 +12,7 @@ import {
 } from "./auth/OnePasswordResolver";
 import type { GhCopilotCliProvider } from "./api/providers/GhCopilotCliProvider";
 import type { ProviderType } from "./api/types";
+import { VIEW_TYPE_CHAT } from "./views/ChatView";
 
 /**
  * Plugin settings interface
@@ -734,6 +735,9 @@ export class PASettingTab extends PluginSettingTab {
     list.createEl("li", { text: "Or use Command Palette (Cmd+P) → 'Open AI Chat'" });
     list.createEl("li", { text: "The chat will use your currently open note as context" });
 
+    // Status area for feedback
+    const statusEl = containerEl.createDiv({ cls: "pa-cli-status" });
+
     new Setting(containerEl)
       .setName("Open Chat")
       .setDesc("Start chatting with your AI assistant")
@@ -741,10 +745,41 @@ export class PASettingTab extends PluginSettingTab {
         button
           .setButtonText("Open AI Chat")
           .setCta()
-          .onClick(() => {
-            this.plugin.activateChatView();
+          .onClick(async () => {
+            // We're in the Ready section, so auth should be valid
+            // Open chat directly without re-checking (avoids double 1Password prompts)
+            await this.openChatDirectly(statusEl);
           })
       );
+  }
+
+  /**
+   * Open the chat view directly, with inline error feedback
+   */
+  private async openChatDirectly(statusEl: HTMLElement): Promise<void> {
+    const { workspace } = this.plugin.app;
+
+    try {
+      let leaf = workspace.getLeavesOfType(VIEW_TYPE_CHAT)[0];
+
+      if (!leaf) {
+        leaf = workspace.getRightLeaf(false);
+        if (leaf) {
+          await leaf.setViewState({ type: VIEW_TYPE_CHAT, active: true });
+        }
+      }
+
+      if (leaf) {
+        await Promise.resolve(workspace.revealLeaf(leaf));
+        // Close settings modal if open
+        const setting = (this.plugin.app as unknown as { setting?: { close: () => void } }).setting;
+        setting?.close();
+      } else {
+        this.showCliStatus(statusEl, "error", "Could not open chat panel");
+      }
+    } catch (error) {
+      this.showCliStatus(statusEl, "error", error instanceof Error ? error.message : "Failed to open chat");
+    }
   }
 
   /**
