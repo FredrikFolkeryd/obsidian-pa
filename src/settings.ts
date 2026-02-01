@@ -372,6 +372,9 @@ export class PASettingTab extends PluginSettingTab {
       text: "The Copilot CLI uses your existing GitHub CLI authentication. No additional token is needed.",
     });
 
+    // Status display area (inline feedback instead of toasts)
+    const statusEl = authContainer.createDiv({ cls: "pa-cli-status" });
+
     new Setting(authContainer)
       .setName("CLI Status")
       .setDesc("Check if gh copilot CLI is properly configured")
@@ -380,22 +383,28 @@ export class PASettingTab extends PluginSettingTab {
           .setButtonText("Check Status")
           .setCta()
           .onClick(async () => {
-            await this.checkGhCopilotStatus();
+            await this.checkGhCopilotStatus(statusEl, button.buttonEl);
           })
       );
   }
 
   /**
-   * Check gh copilot CLI status and show results
+   * Check gh copilot CLI status and show results inline
    */
-  private async checkGhCopilotStatus(): Promise<void> {
-    new Notice("Checking gh copilot CLI status...");
+  private async checkGhCopilotStatus(statusEl: HTMLElement, buttonEl: HTMLButtonElement): Promise<void> {
+    // Show loading state
+    statusEl.empty();
+    statusEl.removeClass("pa-cli-status-error", "pa-cli-status-success");
+    statusEl.addClass("pa-cli-status-checking");
+    statusEl.setText("⏳ Checking gh copilot CLI status...");
+    buttonEl.disabled = true;
 
     try {
       // Get the provider from the manager
       const provider = this.plugin.providerManager?.getProvider("gh-copilot-cli");
       if (!provider) {
-        new Notice("❌ Provider not found");
+        this.showCliStatus(statusEl, "error", "Provider not found");
+        buttonEl.disabled = false;
         return;
       }
 
@@ -405,36 +414,54 @@ export class PASettingTab extends PluginSettingTab {
         // Fall back to validateToken
         const result = await provider.validateToken();
         if (result.success) {
-          new Notice("✅ gh copilot CLI is ready to use!");
+          this.showCliStatus(statusEl, "success", "gh copilot CLI is ready to use!");
           this.display(); // Refresh to show model section
         } else {
-          new Notice(`❌ ${result.error}`, 10000);
+          this.showCliStatus(statusEl, "error", result.error || "Validation failed");
         }
+        buttonEl.disabled = false;
         return;
       }
 
       const status = await cliProvider.refreshCliStatus();
 
       if (!status.ghInstalled) {
-        new Notice("❌ GitHub CLI (gh) not found. Install from cli.github.com", 10000);
+        this.showCliStatus(statusEl, "error", "GitHub CLI (gh) not found. Install from cli.github.com");
+        buttonEl.disabled = false;
         return;
       }
 
       if (!status.copilotExtensionInstalled) {
-        new Notice("❌ gh-copilot extension not installed. Run: gh extension install github/gh-copilot", 10000);
+        this.showCliStatus(statusEl, "error", "gh copilot not available. Update gh CLI or run: gh extension install github/gh-copilot");
+        buttonEl.disabled = false;
         return;
       }
 
       if (!status.authenticated) {
-        new Notice("❌ Not logged in to GitHub CLI. Run: gh auth login", 10000);
+        this.showCliStatus(statusEl, "error", "Not logged in to GitHub CLI. Run: gh auth login");
+        buttonEl.disabled = false;
         return;
       }
 
-      new Notice("✅ gh copilot CLI is ready to use!");
+      this.showCliStatus(statusEl, "success", "gh copilot CLI is ready to use!");
+      buttonEl.disabled = false;
       this.display(); // Refresh to show model section
     } catch (error) {
-      new Notice(`❌ Error: ${error instanceof Error ? error.message : "Unknown error"}`);
+      this.showCliStatus(statusEl, "error", error instanceof Error ? error.message : "Unknown error");
+      buttonEl.disabled = false;
     }
+  }
+
+  /**
+   * Show CLI status inline in the settings panel
+   */
+  private showCliStatus(statusEl: HTMLElement, type: "success" | "error", message: string): void {
+    statusEl.empty();
+    statusEl.removeClass("pa-cli-status-checking", "pa-cli-status-error", "pa-cli-status-success");
+    statusEl.addClass(type === "success" ? "pa-cli-status-success" : "pa-cli-status-error");
+    
+    const icon = type === "success" ? "✅" : "❌";
+    statusEl.setText(`${icon} ${message}`);
   }
 
   /**
