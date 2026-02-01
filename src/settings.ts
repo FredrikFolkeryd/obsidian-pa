@@ -478,8 +478,11 @@ export class PASettingTab extends PluginSettingTab {
         return;
       }
 
-      this.showCliStatus(statusEl, "success", "gh copilot CLI is ready to use!");
+      this.showCliStatus(statusEl, "success", "✓ gh copilot CLI is ready to use!");
       buttonEl.disabled = false;
+      
+      // Brief delay so user can see the success message before refresh
+      await new Promise(resolve => setTimeout(resolve, 1000));
       this.display(); // Refresh to show model section
     } catch (error) {
       this.showCliStatus(statusEl, "error", error instanceof Error ? error.message : "Unknown error");
