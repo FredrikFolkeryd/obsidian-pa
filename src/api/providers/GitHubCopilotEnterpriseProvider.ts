@@ -46,18 +46,18 @@ export class GitHubCopilotEnterpriseProvider extends BaseProvider {
     };
   }
 
-  public async validateToken(): Promise<Result<boolean>> {
-    return {
+  public validateToken(): Promise<Result<boolean>> {
+    return Promise.resolve({
       success: false,
       error:
         "GitHub Copilot Enterprise API is not yet available. " +
         "Check with your organization admin for updates.",
-    };
+    });
   }
 
-  public async getModels(): Promise<ModelInfo[]> {
+  public getModels(): Promise<ModelInfo[]> {
     // Placeholder: expected models when available
-    return [
+    return Promise.resolve([
       {
         id: "claude-opus-4.5",
         name: "Claude Opus 4.5",
@@ -82,22 +82,22 @@ export class GitHubCopilotEnterpriseProvider extends BaseProvider {
         provider: "github-copilot-enterprise",
         description: "OpenAI reasoning model",
       },
-    ];
+    ]);
   }
 
   public getDefaultModel(): string {
     return "claude-opus-4.5";
   }
 
-  public async chat(
+  public chat(
     _messages: ChatMessage[],
     _options: ChatOptions
   ): Promise<ChatResponse> {
-    throw new Error(
+    return Promise.reject(new Error(
       "GitHub Copilot Enterprise API is not yet implemented. " +
         "Please use GitHub Models for now, or contact your organization " +
         "admin to request programmatic API access to Copilot Enterprise."
-    );
+    ));
   }
 }
 

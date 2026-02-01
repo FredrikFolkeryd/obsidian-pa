@@ -222,3 +222,67 @@
   background: none;
   padding: 0;
 }
+
+/* Settings: Provider section */
+.pa-provider-info {
+  margin-bottom: 12px;
+}
+
+.pa-provider-info p {
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.pa-provider-detail {
+  background-color: var(--background-secondary);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 12px 0 16px 0;
+  border-left: 3px solid var(--interactive-accent);
+}
+
+.pa-provider-detail strong {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.pa-provider-detail p {
+  margin: 0 0 8px 0;
+  color: var(--text-normal);
+}
+
+/* Settings: CLI requirements list */
+.pa-cli-requirements {
+  margin-top: 8px;
+}
+
+.pa-cli-requirements p {
+  margin: 0 0 4px 0;
+  font-weight: 500;
+}
+
+.pa-cli-requirements ol {
+  margin: 4px 0 0 0;
+  padding-left: 20px;
+}
+
+.pa-cli-requirements li {
+  margin: 4px 0;
+}
+
+.pa-cli-requirements a {
+  color: var(--interactive-accent);
+}
+
+/* Settings: gh copilot auth section */
+.pa-gh-copilot-auth {
+  background-color: var(--background-secondary-alt);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-top: 12px;
+  border: 1px solid var(--background-modifier-border);
+}
+
+.pa-gh-copilot-auth p {
+  margin: 0 0 12px 0;
+}

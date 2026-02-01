@@ -11,6 +11,7 @@ import { Notice, Plugin, WorkspaceLeaf } from "obsidian";
 import { PASettings, DEFAULT_SETTINGS, PASettingTab } from "./settings";
 import { ChatView, VIEW_TYPE_CHAT } from "./views/ChatView";
 import { GitHubModelsClient } from "./api/GitHubModelsClient";
+import { ProviderManager } from "./api/ProviderManager";
 import {
   isOnePasswordReference,
   resolveOnePasswordSecret,
@@ -20,6 +21,12 @@ export default class PAPlugin extends Plugin {
   public settings!: PASettings;
   private apiClient: GitHubModelsClient | null = null;
   private settingsTab!: PASettingTab;
+  public providerManager: ProviderManager;
+
+  public constructor(app: Parameters<typeof Plugin>[0], manifest: Parameters<typeof Plugin>[1]) {
+    super(app, manifest);
+    this.providerManager = new ProviderManager();
+  }
 
   public async onload(): Promise<void> {
     console.log("Loading Personal Assistant plugin");

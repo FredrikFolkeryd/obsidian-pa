@@ -128,23 +128,23 @@ export const PROVIDER_CONFIGS: Record<ProviderType, ProviderConfig> = {
     tokenInstructions:
       "Create a Personal Access Token at github.com/settings/tokens with 'Models: Read' permission",
   },
+  "gh-copilot-cli": {
+    type: "gh-copilot-cli",
+    name: "GitHub Copilot CLI",
+    description: "Premium models (Claude Opus, o1) via gh copilot CLI",
+    enabled: true,
+    requiresToken: false, // Uses gh auth
+    tokenInstructions:
+      "No token needed. Requires: 1) gh CLI installed, 2) gh auth login, 3) gh extension install github/gh-copilot",
+  },
   "github-copilot-enterprise": {
     type: "github-copilot-enterprise",
-    name: "GitHub Copilot Enterprise",
-    description: "Premium models including Claude Opus via Copilot Enterprise",
-    enabled: false, // Not yet implemented
+    name: "GitHub Copilot Enterprise API",
+    description: "Premium models via Copilot Enterprise REST API (coming soon)",
+    enabled: false, // Not yet implemented - waiting for API
     requiresToken: true,
     tokenInstructions:
-      "Requires Copilot Enterprise license. Contact your organization admin for API access.",
-  },
-  anthropic: {
-    type: "anthropic",
-    name: "Anthropic",
-    description: "Direct access to Claude models",
-    enabled: false, // Not yet implemented
-    endpoint: "https://api.anthropic.com/v1",
-    requiresToken: true,
-    tokenInstructions: "Get your API key from console.anthropic.com",
+      "Requires Copilot Enterprise licence. API access coming soon.",
   },
   openai: {
     type: "openai",

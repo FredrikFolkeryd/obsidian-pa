@@ -13,7 +13,29 @@ Obsidian PA enables users to interact with AI capabilities directly in their not
 
 - Seamless AI integration within Obsidian
 - Agentic workflow support
+- **Two provider options:**
+  - **GitHub Models** (free tier) — GPT-4o, Llama, Mistral, and more
+  - **GitHub Copilot CLI** — Premium models like Claude Opus 4.5 and o1 for Copilot Business/Enterprise users
+- Secure credential management via 1Password CLI or direct entry
+- Folder-based data sharing controls (opt-in or opt-out)
 - Built with TypeScript for type safety and maintainability
+
+## Prerequisites
+
+You'll need **one** of the following:
+
+### Option A: GitHub Models (Free Tier)
+
+1. A GitHub account
+2. A [Personal Access Token](https://github.com/settings/tokens) with **Models: Read** permission
+3. (Optional) [1Password CLI](https://1password.com/downloads/command-line/) for secure token management
+
+### Option B: GitHub Copilot CLI (Premium Models)
+
+1. A GitHub Copilot Business or Enterprise licence
+2. [GitHub CLI](https://cli.github.com/) installed
+3. Authenticated with: `gh auth login`
+4. Copilot extension installed: `gh extension install github/gh-copilot`
 
 ## Installation
 

@@ -3,5 +3,5 @@
  */
 
 export { GitHubModelsProvider } from "./GitHubModelsProvider";
+export { GhCopilotCliProvider } from "./GhCopilotCliProvider";
 export { GitHubCopilotEnterpriseProvider } from "./GitHubCopilotEnterpriseProvider";
-export { AnthropicProvider } from "./AnthropicProvider";

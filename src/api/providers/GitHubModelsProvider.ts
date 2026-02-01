@@ -8,7 +8,7 @@
 import {
   BaseProvider,
   PROVIDER_CONFIGS,
-} from "./BaseProvider";
+} from "../BaseProvider";
 import type {
   ChatMessage,
   ChatOptions,
@@ -16,7 +16,7 @@ import type {
   ModelInfo,
   ProviderCapabilities,
   Result,
-} from "./types";
+} from "../types";
 
 const API_ENDPOINT = "https://models.inference.ai.azure.com/chat/completions";
 const MODELS_ENDPOINT = "https://models.inference.ai.azure.com/models";

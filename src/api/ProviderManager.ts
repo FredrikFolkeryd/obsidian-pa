@@ -16,8 +16,8 @@ import type {
   Result,
 } from "./types";
 import { GitHubModelsProvider } from "./providers/GitHubModelsProvider";
+import { GhCopilotCliProvider } from "./providers/GhCopilotCliProvider";
 import { GitHubCopilotEnterpriseProvider } from "./providers/GitHubCopilotEnterpriseProvider";
-import { AnthropicProvider } from "./providers/AnthropicProvider";
 
 /**
  * Provider with authentication status
@@ -41,8 +41,8 @@ export class ProviderManager {
   public constructor() {
     // Initialize all providers
     this.providers.set("github-models", new GitHubModelsProvider());
+    this.providers.set("gh-copilot-cli", new GhCopilotCliProvider());
     this.providers.set("github-copilot-enterprise", new GitHubCopilotEnterpriseProvider());
-    this.providers.set("anthropic", new AnthropicProvider());
     // Add more providers here as they're implemented
   }
 

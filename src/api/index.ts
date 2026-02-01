@@ -19,8 +19,8 @@ export { BaseProvider, PROVIDER_CONFIGS, getEnabledProviders, getAllProviders } 
 
 // Provider implementations
 export { GitHubModelsProvider } from "./providers/GitHubModelsProvider";
+export { GhCopilotCliProvider } from "./providers/GhCopilotCliProvider";
 export { GitHubCopilotEnterpriseProvider } from "./providers/GitHubCopilotEnterpriseProvider";
-export { AnthropicProvider } from "./providers/AnthropicProvider";
 
 // Provider manager
 export { ProviderManager } from "./ProviderManager";

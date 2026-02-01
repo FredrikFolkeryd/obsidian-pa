@@ -27,8 +27,8 @@ export interface ModelInfo {
  */
 export type ProviderType =
   | "github-models"
+  | "gh-copilot-cli"
   | "github-copilot-enterprise"
-  | "anthropic"
   | "openai"
   | "azure-openai"
   | "aws-bedrock";

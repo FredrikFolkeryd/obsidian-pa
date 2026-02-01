@@ -10,6 +10,8 @@ import {
   resolveOnePasswordSecret,
   isOnePasswordCliInstalled,
 } from "./auth/OnePasswordResolver";
+import type { GhCopilotCliProvider } from "./api/providers/GhCopilotCliProvider";
+import type { ProviderType } from "./api/types";
 
 /**
  * Plugin settings interface
@@ -38,6 +40,9 @@ export interface PASettings {
 
   /** Authentication method: 1password or direct */
   authMethod: "1password" | "direct";
+
+  /** Selected AI provider */
+  provider: ProviderType;
 }
 
 /**
@@ -50,6 +55,7 @@ export const DEFAULT_SETTINGS: PASettings = {
   excludedFolders: [],
   model: "gpt-4o",
   authMethod: "1password",
+  provider: "github-models",
 };
 
 /**
@@ -96,11 +102,90 @@ export class PASettingTab extends PluginSettingTab {
       return;
     }
 
-    // === SECTION 2: Authentication ===
+    // === SECTION 2: Provider Selection ===
+    this.renderProviderSection(containerEl);
+
+    // === SECTION 3: Authentication (provider-specific) ===
     this.renderAuthSection(containerEl);
 
-    // === SECTION 3: Model Selection (only after authenticated) ===
+    // === SECTION 4: Model Selection (only after authenticated) ===
     void this.checkAuthAndRenderModelSection(containerEl);
+  }
+
+  /**
+   * Render provider selection section
+   */
+  private renderProviderSection(containerEl: HTMLElement): void {
+    containerEl.createEl("h3", { text: "AI Provider" });
+
+    const providerInfo = containerEl.createDiv({ cls: "pa-provider-info" });
+    providerInfo.createEl("p", {
+      text: "Choose how to connect to AI models:",
+    });
+
+    new Setting(containerEl)
+      .setName("Provider")
+      .setDesc("Select your preferred AI provider")
+      .addDropdown((dropdown) => {
+        dropdown.addOption("github-models", "GitHub Models (free tier, needs PAT)");
+        dropdown.addOption("gh-copilot-cli", "GitHub Copilot CLI (premium models, needs gh CLI)");
+
+        dropdown.setValue(this.plugin.settings.provider);
+        dropdown.onChange(async (value) => {
+          this.plugin.settings.provider = value as ProviderType;
+          // Reset model when switching providers
+          if (value === "gh-copilot-cli") {
+            this.plugin.settings.model = "claude-opus-4.5";
+          } else {
+            this.plugin.settings.model = "gpt-4o";
+          }
+          await this.plugin.saveSettings();
+          this.display();
+        });
+      });
+
+    // Provider-specific info boxes
+    if (this.plugin.settings.provider === "gh-copilot-cli") {
+      this.renderGhCopilotInfo(containerEl);
+    } else {
+      this.renderGitHubModelsInfo(containerEl);
+    }
+  }
+
+  /**
+   * Render GitHub Models provider info
+   */
+  private renderGitHubModelsInfo(containerEl: HTMLElement): void {
+    const infoBox = containerEl.createDiv({ cls: "pa-provider-detail" });
+    infoBox.createEl("strong", { text: "GitHub Models" });
+    infoBox.createEl("p", {
+      text: "Free tier access to GPT-4o, Llama, Mistral, and more. Requires a GitHub Personal Access Token with 'Models: Read' permission.",
+    });
+    const limits = infoBox.createEl("p", { cls: "pa-hint" });
+    limits.setText("Rate limits: 15 requests/min, 150 requests/day");
+  }
+
+  /**
+   * Render GitHub Copilot CLI provider info
+   */
+  private renderGhCopilotInfo(containerEl: HTMLElement): void {
+    const infoBox = containerEl.createDiv({ cls: "pa-provider-detail" });
+    infoBox.createEl("strong", { text: "GitHub Copilot CLI" });
+    infoBox.createEl("p", {
+      text: "Access premium models like Claude Opus 4.5 and o1 through the gh copilot CLI. " +
+        "Requires a Copilot Business or Enterprise licence.",
+    });
+
+    const requirements = infoBox.createEl("div", { cls: "pa-cli-requirements" });
+    requirements.createEl("p", { text: "Requirements:" });
+    const list = requirements.createEl("ol");
+    list.createEl("li").createEl("a", {
+      text: "GitHub CLI (gh)",
+      href: "https://cli.github.com/",
+    }).setAttribute("target", "_blank");
+    list.createEl("li", { text: "Login: gh auth login" });
+    list.createEl("li", { text: "Install extension: gh extension install github/gh-copilot" });
+    list.createEl("li", { text: "Copilot Business or Enterprise licence" });
   }
 
   /**
@@ -209,6 +294,13 @@ export class PASettingTab extends PluginSettingTab {
   private renderAuthSection(containerEl: HTMLElement): void {
     containerEl.createEl("h3", { text: "Authentication" });
 
+    // Different auth flow for gh-copilot-cli
+    if (this.plugin.settings.provider === "gh-copilot-cli") {
+      this.renderGhCopilotAuth(containerEl);
+      return;
+    }
+
+    // GitHub Models auth flow
     // Help link
     const helpEl = containerEl.createDiv({ cls: "pa-auth-help" });
     helpEl.createEl("p", {
@@ -271,6 +363,81 @@ export class PASettingTab extends PluginSettingTab {
   }
 
   /**
+   * Render gh-copilot-cli authentication (uses gh auth, no token needed)
+   */
+  private renderGhCopilotAuth(containerEl: HTMLElement): void {
+    const authContainer = containerEl.createDiv({ cls: "pa-gh-copilot-auth" });
+
+    authContainer.createEl("p", {
+      text: "The Copilot CLI uses your existing GitHub CLI authentication. No additional token is needed.",
+    });
+
+    new Setting(authContainer)
+      .setName("CLI Status")
+      .setDesc("Check if gh copilot CLI is properly configured")
+      .addButton((button) =>
+        button
+          .setButtonText("Check Status")
+          .setCta()
+          .onClick(async () => {
+            await this.checkGhCopilotStatus();
+          })
+      );
+  }
+
+  /**
+   * Check gh copilot CLI status and show results
+   */
+  private async checkGhCopilotStatus(): Promise<void> {
+    new Notice("Checking gh copilot CLI status...");
+
+    try {
+      // Get the provider from the manager
+      const provider = this.plugin.providerManager?.getProvider("gh-copilot-cli");
+      if (!provider) {
+        new Notice("❌ Provider not found");
+        return;
+      }
+
+      // Cast to access the refreshCliStatus method
+      const cliProvider = provider as GhCopilotCliProvider;
+      if (typeof cliProvider.refreshCliStatus !== "function") {
+        // Fall back to validateToken
+        const result = await provider.validateToken();
+        if (result.success) {
+          new Notice("✅ gh copilot CLI is ready to use!");
+          this.display(); // Refresh to show model section
+        } else {
+          new Notice(`❌ ${result.error}`, 10000);
+        }
+        return;
+      }
+
+      const status = await cliProvider.refreshCliStatus();
+
+      if (!status.ghInstalled) {
+        new Notice("❌ GitHub CLI (gh) not found. Install from cli.github.com", 10000);
+        return;
+      }
+
+      if (!status.copilotExtensionInstalled) {
+        new Notice("❌ gh-copilot extension not installed. Run: gh extension install github/gh-copilot", 10000);
+        return;
+      }
+
+      if (!status.authenticated) {
+        new Notice("❌ Not logged in to GitHub CLI. Run: gh auth login", 10000);
+        return;
+      }
+
+      new Notice("✅ gh copilot CLI is ready to use!");
+      this.display(); // Refresh to show model section
+    } catch (error) {
+      new Notice(`❌ Error: ${error instanceof Error ? error.message : "Unknown error"}`);
+    }
+  }
+
+  /**
    * Render 1Password authentication option
    */
   private renderOnePasswordAuth(containerEl: HTMLElement): void {
@@ -319,7 +486,7 @@ export class PASettingTab extends PluginSettingTab {
    * Update the Validate button enabled state based on input
    */
   private updateValidateButtonState(container: HTMLElement): void {
-    const btn = container.querySelector(".pa-validate-btn") as HTMLButtonElement | null;
+    const btn = container.querySelector<HTMLButtonElement>(".pa-validate-btn");
     if (!btn) return;
 
     const ref = this.plugin.settings.credentialReference;
@@ -364,6 +531,27 @@ export class PASettingTab extends PluginSettingTab {
    * Check auth status and render model section if authenticated
    */
   private async checkAuthAndRenderModelSection(containerEl: HTMLElement): Promise<void> {
+    // For gh-copilot-cli, check CLI status instead of token
+    if (this.plugin.settings.provider === "gh-copilot-cli") {
+      const provider = this.plugin.providerManager?.getProvider("gh-copilot-cli");
+      if (provider) {
+        const result = await provider.validateToken();
+        if (result.success) {
+          await this.renderModelSection(containerEl);
+          this.renderReadySection(containerEl);
+          return;
+        }
+      }
+      // Show hint that CLI setup is required
+      const hintEl = containerEl.createDiv({ cls: "pa-auth-required-hint" });
+      hintEl.createEl("p", {
+        text: "Click 'Check Status' above to verify your gh copilot CLI setup.",
+        cls: "pa-hint",
+      });
+      return;
+    }
+
+    // For GitHub Models, check token
     const hasToken = await this.plugin.getStoredToken();
 
     if (hasToken) {
@@ -385,8 +573,6 @@ export class PASettingTab extends PluginSettingTab {
   private async renderModelSection(containerEl: HTMLElement): Promise<void> {
     containerEl.createEl("h3", { text: "Model Settings" });
 
-    const client = this.plugin.getApiClient();
-
     // Create placeholder while loading
     const modelSettingEl = containerEl.createDiv({ cls: "pa-model-setting" });
     modelSettingEl.createEl("p", {
@@ -394,23 +580,51 @@ export class PASettingTab extends PluginSettingTab {
       cls: "pa-hint",
     });
 
-    // Fetch models asynchronously
-    let models = [
-      { name: "gpt-4o", displayName: "GPT-4o" },
-      { name: "gpt-4o-mini", displayName: "GPT-4o Mini" },
-    ];
+    // Get models from the active provider
+    let models: Array<{ name: string; displayName: string }> = [];
 
-    if (client) {
-      try {
-        const availableModels = await client.getAvailableModels();
-        if (availableModels.length > 0) {
-          models = availableModels.map((m) => ({
-            name: m.name,
-            displayName: m.displayName,
+    if (this.plugin.settings.provider === "gh-copilot-cli") {
+      // Get models from gh-copilot-cli provider
+      const provider = this.plugin.providerManager?.getProvider("gh-copilot-cli");
+      if (provider) {
+        try {
+          const providerModels = await provider.getModels();
+          models = providerModels.map((m) => ({
+            name: m.id,
+            displayName: m.name,
           }));
+        } catch (e) {
+          console.warn("[PA] Could not fetch models from CLI provider");
         }
-      } catch (e) {
-        console.warn("[PA] Could not fetch models, using defaults");
+      }
+      // Fallback defaults for CLI
+      if (models.length === 0) {
+        models = [
+          { name: "claude-opus-4.5", displayName: "Claude Opus 4.5" },
+          { name: "claude-sonnet-4", displayName: "Claude Sonnet 4" },
+          { name: "gpt-4o", displayName: "GPT-4o" },
+        ];
+      }
+    } else {
+      // Get models from GitHub Models client (legacy)
+      const client = this.plugin.getApiClient();
+      models = [
+        { name: "gpt-4o", displayName: "GPT-4o" },
+        { name: "gpt-4o-mini", displayName: "GPT-4o Mini" },
+      ];
+
+      if (client) {
+        try {
+          const availableModels = await client.getAvailableModels();
+          if (availableModels.length > 0) {
+            models = availableModels.map((m) => ({
+              name: m.name,
+              displayName: m.displayName,
+            }));
+          }
+        } catch (e) {
+          console.warn("[PA] Could not fetch models, using defaults");
+        }
       }
     }
 
