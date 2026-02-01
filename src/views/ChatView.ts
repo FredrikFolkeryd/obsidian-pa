@@ -385,10 +385,20 @@ export class ChatView extends ItemView {
       return;
     }
 
-    // Check for API client
-    const client = this.plugin.getApiClient();
-    if (!client) {
-      this.addSystemMessage("Please add your GitHub token in settings.");
+    // Check for active provider
+    const provider = this.plugin.providerManager?.getActiveProvider();
+    if (!provider) {
+      this.addSystemMessage("No AI provider configured. Please check settings.");
+      return;
+    }
+
+    // Check if provider is authenticated (use async validateToken for accurate check)
+    const authResult = await provider.validateToken();
+    if (!authResult.success) {
+      const providerName = this.plugin.settings.provider === "gh-copilot-cli" 
+        ? "gh copilot CLI" 
+        : "GitHub token";
+      this.addSystemMessage(`Please configure ${providerName} in settings. ${authResult.error || ""}`);
       return;
     }
 
@@ -437,8 +447,8 @@ export class ChatView extends ItemView {
           `If the user wants you to see a note's content, ask them to open it in the editor.`;
       }
 
-      // Call API
-      const response = await client.chat(conversationHistory, {
+      // Call API via provider
+      const response = await provider.chat(conversationHistory, {
         model: this.plugin.settings.model,
         systemPrompt,
       });
@@ -451,16 +461,16 @@ export class ChatView extends ItemView {
       const assistantMessage: DisplayMessage = {
         id: this.generateId(),
         role: "assistant",
-        content: response,
+        content: response.content,
         timestamp: new Date(),
       };
       this.messages.push(assistantMessage);
       this.renderMessage(assistantMessage);
-    } catch (error) {
+    } catch (err: unknown) {
       loadingEl.remove();
       this.isLoading = false;
 
-      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
       this.addSystemMessage(`Error: ${errorMessage}`);
     }
   }
