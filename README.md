@@ -39,31 +39,40 @@ You'll need **one** of the following:
 
 ## Installation
 
-### From Source
+### From Community Plugins (Recommended)
 
-1. Clone this repository into your vault's `.obsidian/plugins/` directory:
+> **Note**: This plugin is not yet available in the Obsidian Community Plugins directory. Once submitted and approved, you'll be able to install it directly from Obsidian.
 
-   ```bash
-   cd /path/to/your/vault/.obsidian/plugins
-   git clone https://github.com/FredrikFolkeryd/obsidian-pa.git
-   cd obsidian-pa
-   ```
+1. Open Obsidian Settings → Community plugins
+2. Click "Browse" and search for "Personal Assistant"
+3. Click "Install" then "Enable"
 
-2. Install dependencies:
+### Manual Installation
 
-   ```bash
-   npm install
-   ```
+Download the latest release and install manually:
 
-3. Build the plugin:
+```bash
+# Download latest release
+curl -L https://github.com/FredrikFolkeryd/obsidian-pa/releases/latest/download/obsidian-pa.zip -o /tmp/obsidian-pa.zip
 
-   ```bash
-   npm run build
-   ```
+# Extract to your vault's plugins folder
+unzip /tmp/obsidian-pa.zip -d /path/to/your/vault/.obsidian/plugins/obsidian-pa
 
-4. Enable the plugin in Obsidian:
-   - Open Settings → Community plugins
-   - Enable "Obsidian PA"
+# Clean up
+rm /tmp/obsidian-pa.zip
+```
+
+Then enable the plugin in Obsidian:
+- Open Settings → Community plugins
+- Enable "Obsidian PA"
+
+### Using BRAT (Beta Testing)
+
+If you use the [BRAT plugin](https://github.com/TfTHacker/obsidian42-brat) for beta testing:
+
+1. Open BRAT settings
+2. Click "Add Beta plugin"
+3. Enter: `FredrikFolkeryd/obsidian-pa`
 
 ## Development
 
