@@ -26,6 +26,9 @@ export class ChatView extends ItemView {
   private messagesContainerEl: HTMLElement | null = null;
   private isLoading = false;
   private lastActiveFile: TFile | null = null;
+  private usageStatsEl: HTMLElement | null = null;
+  private sessionRequests = 0;
+  private modelInfoEl: HTMLElement | null = null;
 
   public constructor(leaf: WorkspaceLeaf, plugin: PAPlugin) {
     super(leaf);
@@ -109,7 +112,23 @@ export class ChatView extends ItemView {
   private renderChatInterface(container: Element): void {
     // Create header
     const headerEl = container.createDiv({ cls: "pa-chat-header" });
-    headerEl.createEl("h4", { text: "Personal Assistant" });
+    
+    const titleRow = headerEl.createDiv({ cls: "pa-chat-title-row" });
+    titleRow.createEl("h4", { text: "Personal Assistant" });
+    
+    // Model and usage info (unobtrusive subtitle)
+    const infoRow = headerEl.createDiv({ cls: "pa-chat-info-row" });
+    
+    // Model indicator
+    this.modelInfoEl = infoRow.createSpan({ cls: "pa-chat-model" });
+    this.updateModelDisplay();
+    
+    // Separator
+    infoRow.createSpan({ cls: "pa-chat-info-sep", text: "•" });
+    
+    // Usage stats
+    this.usageStatsEl = infoRow.createSpan({ cls: "pa-chat-usage" });
+    this.updateUsageDisplay();
 
     // Create messages container
     this.messagesContainerEl = container.createDiv({ cls: "pa-chat-messages" });
@@ -218,8 +237,35 @@ export class ChatView extends ItemView {
         border-bottom: 1px solid var(--background-modifier-border);
       }
 
+      .pa-chat-title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
       .pa-chat-header h4 {
         margin: 0;
+      }
+
+      .pa-chat-info-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.75em;
+        color: var(--text-muted);
+        margin-top: 4px;
+      }
+
+      .pa-chat-model {
+        opacity: 0.8;
+      }
+
+      .pa-chat-info-sep {
+        opacity: 0.4;
+      }
+
+      .pa-chat-usage {
+        opacity: 0.8;
       }
 
       .pa-chat-messages {
@@ -457,6 +503,10 @@ export class ChatView extends ItemView {
       loadingEl.remove();
       this.isLoading = false;
 
+      // Update usage stats
+      this.sessionRequests++;
+      this.updateUsageDisplay();
+
       // Add assistant message
       const assistantMessage: DisplayMessage = {
         id: this.generateId(),
@@ -581,5 +631,24 @@ export class ChatView extends ItemView {
    */
   private generateId(): string {
     return `msg-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+  }
+
+  /**
+   * Update the model display in the header
+   */
+  private updateModelDisplay(): void {
+    if (!this.modelInfoEl) return;
+    const model = this.plugin.settings.model;
+    // Show a friendly short name
+    this.modelInfoEl.setText(model);
+  }
+
+  /**
+   * Update the usage stats display
+   */
+  private updateUsageDisplay(): void {
+    if (!this.usageStatsEl) return;
+    const reqText = this.sessionRequests === 1 ? "request" : "requests";
+    this.usageStatsEl.setText(`${this.sessionRequests} ${reqText} this session`);
   }
 }
