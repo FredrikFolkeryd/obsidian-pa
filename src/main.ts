@@ -112,6 +112,8 @@ export default class PAPlugin extends Plugin {
   private async loadSettings(): Promise<void> {
     const data = (await this.loadData()) as Partial<PASettings> | null;
     this.settings = Object.assign({}, DEFAULT_SETTINGS, data);
+    // Sync provider setting to manager
+    this.providerManager.setActiveProvider(this.settings.provider);
   }
 
   /**
@@ -119,6 +121,8 @@ export default class PAPlugin extends Plugin {
    */
   public async saveSettings(): Promise<void> {
     await this.saveData(this.settings);
+    // Sync provider setting to manager
+    this.providerManager.setActiveProvider(this.settings.provider);
   }
 
   /**
@@ -230,8 +234,8 @@ export default class PAPlugin extends Plugin {
       return false;
     }
 
-    // Check provider-specific authentication
-    const provider = this.providerManager.getActiveProvider();
+    // Get provider from settings (not manager, in case it's out of sync)
+    const provider = this.providerManager.getProvider(this.settings.provider);
     if (!provider) {
       return false;
     }

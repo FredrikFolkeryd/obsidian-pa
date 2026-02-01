@@ -475,7 +475,15 @@ export class PASettingTab extends PluginSettingTab {
         text: "✅ 1Password CLI detected",
         cls: "pa-status-ok",
       });
+    } else if (this.opCliAvailable === false) {
+      opContainer.createEl("p", {
+        text: "⚠️ 1Password CLI not found. Install from 1password.com/downloads/command-line",
+        cls: "pa-status-warn",
+      });
     }
+
+    // Status display area (inline feedback instead of toasts)
+    const statusEl = opContainer.createDiv({ cls: "pa-cli-status" });
 
     new Setting(opContainer)
       .setName("1Password secret reference")
@@ -490,8 +498,9 @@ export class PASettingTab extends PluginSettingTab {
             }
             this.plugin.settings.credentialReference = value || undefined;
             await this.plugin.saveSettings();
-            // Update button state
+            // Update button state and clear status
             this.updateValidateButtonState(opContainer);
+            statusEl.empty();
           });
       })
       .addButton((button) => {
@@ -499,7 +508,7 @@ export class PASettingTab extends PluginSettingTab {
           .setButtonText("Validate & Connect")
           .setCta()
           .onClick(async () => {
-            await this.validateCredentialReference();
+            await this.validateCredentialReference(statusEl, button.buttonEl);
           });
         // Set initial disabled state
         button.buttonEl.addClass("pa-validate-btn");
@@ -731,34 +740,40 @@ export class PASettingTab extends PluginSettingTab {
   }
 
   /**
-   * Validate the 1Password credential reference
+   * Validate the 1Password credential reference (inline feedback)
    */
-  private async validateCredentialReference(): Promise<void> {
+  private async validateCredentialReference(statusEl: HTMLElement, buttonEl: HTMLButtonElement): Promise<void> {
     const ref = this.plugin.settings.credentialReference;
 
     if (!ref) {
-      new Notice("Enter a 1Password reference first");
+      this.showCliStatus(statusEl, "error", "Enter a 1Password reference first");
       return;
     }
 
     // Validate format
     const formatCheck = validateOnePasswordReference(ref);
     if (!formatCheck.valid) {
-      new Notice(`Invalid format: ${formatCheck.error}`);
+      this.showCliStatus(statusEl, "error", `Invalid format: ${formatCheck.error}`);
       return;
     }
 
-    // Try to resolve
-    new Notice("Validating... (1Password may prompt for authentication)");
+    // Show loading state
+    statusEl.empty();
+    statusEl.removeClass("pa-cli-status-error", "pa-cli-status-success");
+    statusEl.addClass("pa-cli-status-checking");
+    statusEl.setText("⏳ Validating... (1Password may prompt for authentication)");
+    buttonEl.disabled = true;
 
     const result = await resolveOnePasswordSecret(ref);
 
+    buttonEl.disabled = false;
+
     if (result.success) {
-      new Notice("✅ Connected successfully!");
+      this.showCliStatus(statusEl, "success", "Connected successfully!");
       await this.plugin.initializeApiClient();
       this.display();
     } else {
-      new Notice(`❌ Validation failed: ${result.error}`);
+      this.showCliStatus(statusEl, "error", result.error || "Validation failed");
     }
   }
 }
