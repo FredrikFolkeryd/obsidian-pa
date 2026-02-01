@@ -258,7 +258,8 @@ export class GhCopilotCliProvider extends BaseProvider {
   }
 
   /**
-   * Check if gh CLI and copilot extension are available
+   * Check if gh CLI and copilot are available
+   * Note: gh copilot is now a built-in command in gh CLI v2.40+, not an extension
    */
   private async checkCliStatus(): Promise<CliStatus> {
     const status: CliStatus = {
@@ -277,14 +278,25 @@ export class GhCopilotCliProvider extends BaseProvider {
     status.ghInstalled = true;
     status.ghPath = ghPath;
 
+    // Check if gh copilot is available (built-in or extension)
+    // In gh CLI v2.40+, copilot is a built-in command, not an extension
     try {
-      // Check copilot extension using the found gh path
-      const { stdout: extOutput } = await execAsync(`"${ghPath}" extension list`, {
-        timeout: 5000,
+      // Try running gh copilot --help to see if it's available
+      await execAsync(`"${ghPath}" copilot --help`, {
+        timeout: 10000, // May need to download on first run
       });
-      status.copilotExtensionInstalled = extOutput.includes("github/gh-copilot");
+      status.copilotExtensionInstalled = true;
     } catch {
-      return status;
+      // Copilot not available - check if it's an extension (older gh versions)
+      try {
+        const { stdout: extOutput } = await execAsync(`"${ghPath}" extension list`, {
+          timeout: 5000,
+        });
+        status.copilotExtensionInstalled = extOutput.includes("github/gh-copilot");
+      } catch {
+        // Neither built-in nor extension
+        return status;
+      }
     }
 
     try {
