@@ -620,7 +620,7 @@ export class PASettingTab extends PluginSettingTab {
             name: m.id,
             displayName: m.name,
           }));
-        } catch (e) {
+        } catch {
           console.warn("[PA] Could not fetch models from CLI provider");
         }
       }
@@ -649,7 +649,7 @@ export class PASettingTab extends PluginSettingTab {
               displayName: m.displayName,
             }));
           }
-        } catch (e) {
+        } catch {
           console.warn("[PA] Could not fetch models, using defaults");
         }
       }
