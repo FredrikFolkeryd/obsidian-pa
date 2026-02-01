@@ -2,9 +2,12 @@
 # Interactive installer for obsidian-pa plugin
 #
 # Usage:
-#   ./scripts/install.sh              # Interactive vault selection
-#   ./scripts/install.sh --from-zip obsidian-pa-1.0.0.zip  # Install from release
-#   ./scripts/install.sh --vault /path/to/vault            # Direct install (no prompt)
+#   From extracted release folder:
+#     ./install.sh                      # Interactive vault selection
+#     ./install.sh --vault /path/to/vault   # Direct install (no prompt)
+#
+#   From source repository:
+#     ./scripts/install.sh              # Build and install interactively
 #
 # Supports: macOS, Linux, Windows (Git Bash/WSL)
 
@@ -19,35 +22,42 @@ NC='\033[0m' # No Color
 
 # Script paths
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+# Detect if we're running from an extracted release folder
+# (alongside main.js and manifest.json) vs from source repo
+is_release_folder() {
+  [ -f "$SCRIPT_DIR/main.js" ] && [ -f "$SCRIPT_DIR/manifest.json" ]
+}
+
+if is_release_folder; then
+  # Running from extracted release - use files alongside script
+  INSTALL_MODE="release"
+else
+  # Running from source repo - need to build
+  INSTALL_MODE="source"
+  PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+fi
 
 # Arguments
-FROM_ZIP=""
 DIRECT_VAULT=""
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
   case $1 in
-    --from-zip)
-      FROM_ZIP="$2"
-      shift 2
-      ;;
     --vault)
       DIRECT_VAULT="$2"
       shift 2
       ;;
     -h|--help)
-      echo "Usage: ./scripts/install.sh [OPTIONS]"
+      echo "Usage: ./install.sh [OPTIONS]"
       echo ""
       echo "Options:"
-      echo "  --from-zip FILE   Install from a downloaded release zip"
       echo "  --vault PATH      Install directly to vault (skip interactive selection)"
       echo "  -h, --help        Show this help message"
       echo ""
       echo "Examples:"
-      echo "  ./scripts/install.sh                          # Build and interactive install"
-      echo "  ./scripts/install.sh --from-zip release.zip   # Install from downloaded release"
-      echo "  ./scripts/install.sh --vault ~/Notes          # Direct install to vault"
+      echo "  ./install.sh                          # Interactive vault selection"
+      echo "  ./install.sh --vault ~/Notes          # Direct install to vault"
       exit 0
       ;;
     *)
@@ -134,9 +144,15 @@ install_to_vault() {
     rm -rf "$target_dir"
   fi
   
-  # Install
+  # Install - copy only plugin files (not install.sh)
   mkdir -p "$plugins_dir"
-  cp -r "$source_dir" "$target_dir"
+  mkdir -p "$target_dir"
+  
+  for file in main.js manifest.json styles.css; do
+    if [ -f "$source_dir/$file" ]; then
+      cp "$source_dir/$file" "$target_dir/"
+    fi
+  done
   
   echo -e "${GREEN}✅ Installed to $target_dir${NC}"
   return 0
@@ -149,26 +165,15 @@ main() {
   
   # Step 1: Prepare plugin files
   local plugin_source=""
+  local temp_dir=""
   
-  if [ -n "$FROM_ZIP" ]; then
-    # Install from zip
-    if [ ! -f "$FROM_ZIP" ]; then
-      echo -e "${RED}❌ Zip file not found: $FROM_ZIP${NC}"
-      exit 1
-    fi
+  if [ "$INSTALL_MODE" = "release" ]; then
+    # Running from extracted release folder - use files alongside script
+    echo -e "📦 Installing from release folder..."
+    plugin_source="$SCRIPT_DIR"
     
-    echo -e "📦 Extracting from ${YELLOW}$FROM_ZIP${NC}..."
-    local temp_dir=$(mktemp -d)
-    unzip -q "$FROM_ZIP" -d "$temp_dir"
-    
-    # Find the plugin directory (should be obsidian-pa/)
-    if [ -d "$temp_dir/obsidian-pa" ]; then
-      plugin_source="$temp_dir/obsidian-pa"
-    else
-      echo -e "${RED}❌ Invalid zip: expected obsidian-pa/ folder inside${NC}"
-      rm -rf "$temp_dir"
-      exit 1
-    fi
+    local version=$(node -p "require('$SCRIPT_DIR/manifest.json').version" 2>/dev/null || echo "unknown")
+    echo -e "   Version: ${GREEN}$version${NC}"
   else
     # Build from source
     echo -e "🔨 Building from source..."
@@ -176,7 +181,7 @@ main() {
     npm run build --silent
     
     # Create temp plugin directory
-    local temp_dir=$(mktemp -d)
+    temp_dir=$(mktemp -d)
     plugin_source="$temp_dir/obsidian-pa"
     mkdir -p "$plugin_source"
     

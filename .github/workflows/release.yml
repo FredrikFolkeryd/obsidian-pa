@@ -55,6 +55,8 @@ jobs:
           cp main.js dist/obsidian-pa/
           cp manifest.json dist/obsidian-pa/
           cp styles.css dist/obsidian-pa/ 2>/dev/null || echo '/* obsidian-pa styles */' > dist/obsidian-pa/styles.css
+          # Include install script in the zip
+          cp scripts/install.sh dist/obsidian-pa/
 
       - name: Create release zip
         run: |
@@ -73,27 +75,26 @@ jobs:
             dist/obsidian-pa/main.js
             dist/obsidian-pa/manifest.json
             dist/obsidian-pa/styles.css
-            scripts/install.sh
           body: |
             ## Installation
 
             ### Option 1: Interactive Installer (Recommended)
-            Download `install.sh` and run it - it auto-detects your Obsidian vaults:
             ```bash
-            chmod +x install.sh
-            ./install.sh --from-zip obsidian-pa-${{ steps.version.outputs.version }}.zip
+            # Download and extract
+            curl -L https://github.com/FredrikFolkeryd/obsidian-pa/releases/download/${{ steps.version.outputs.version }}/obsidian-pa-${{ steps.version.outputs.version }}.zip -o /tmp/obsidian-pa.zip
+            unzip -o /tmp/obsidian-pa.zip -d /tmp/
+
+            # Run installer (auto-detects your vaults)
+            /tmp/obsidian-pa/install.sh
             ```
 
-            ### Option 2: Manual unzip
+            ### Option 2: Manual Installation
             1. Download `obsidian-pa-${{ steps.version.outputs.version }}.zip`
-            2. Unzip into your vault's plugins folder: `<vault>/.obsidian/plugins/`
-            3. The zip creates the `obsidian-pa/` folder automatically
-            4. Reload Obsidian and enable the plugin in Settings → Community plugins
+            2. Extract to `<vault>/.obsidian/plugins/` (creates `obsidian-pa/` folder)
+            3. Reload Obsidian and enable in Settings → Community plugins
 
-            ### Option 3: Manual file copy
-            1. Create folder: `<vault>/.obsidian/plugins/obsidian-pa/`
-            2. Download `main.js`, `manifest.json`, and `styles.css` into that folder
-            3. Reload Obsidian and enable the plugin
+            ### Option 3: Individual Files
+            Download `main.js`, `manifest.json`, and `styles.css` into `<vault>/.obsidian/plugins/obsidian-pa/`
 
             ### First-time setup
             1. Go to Settings → Personal Assistant
