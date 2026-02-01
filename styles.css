@@ -50,6 +50,26 @@
   margin-bottom: 12px;
 }
 
+/* Settings: Scope warning (opt-in with no folders) */
+.pa-scope-warning {
+  background-color: var(--background-modifier-warning);
+  border: 1px solid var(--text-warning);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-top: 12px;
+}
+
+.pa-scope-warning p {
+  margin: 0 0 8px 0;
+  color: var(--text-warning);
+}
+
+.pa-scope-warning-detail {
+  font-size: 0.9em;
+  color: var(--text-muted) !important;
+}
+}
+
 /* Settings: Auth help link */
 .pa-auth-help {
   margin-bottom: 16px;

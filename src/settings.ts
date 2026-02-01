@@ -30,6 +30,9 @@ export interface PASettings {
   /** Folders excluded when in opt-out mode */
   excludedFolders: string[];
 
+  /** Chat-only mode: user explicitly acknowledged no file access */
+  chatOnlyMode: boolean;
+
   /** 1Password credential reference (op://vault/item/field) */
   credentialReference?: string;
 
@@ -54,6 +57,7 @@ export const DEFAULT_SETTINGS: PASettings = {
   consentMode: "opt-in",
   includedFolders: [],
   excludedFolders: [],
+  chatOnlyMode: false,
   model: "gpt-4o",
   authMethod: "1password",
   provider: "github-models",
@@ -248,6 +252,8 @@ export class PASettingTab extends PluginSettingTab {
             .setValue(this.plugin.settings.consentMode)
             .onChange(async (value) => {
               this.plugin.settings.consentMode = value as "opt-in" | "opt-out";
+              // Reset chatOnlyMode when changing consent mode
+              this.plugin.settings.chatOnlyMode = false;
               await this.plugin.saveSettings();
               this.display();
             })
@@ -266,9 +272,37 @@ export class PASettingTab extends PluginSettingTab {
                   .split(",")
                   .map((f) => f.trim())
                   .filter((f) => f.length > 0);
+                // Reset chatOnlyMode when folders change
+                this.plugin.settings.chatOnlyMode = false;
                 await this.plugin.saveSettings();
+                this.display();
               })
           );
+
+        // Show warning if opt-in with no folders
+        if (this.plugin.settings.includedFolders.length === 0) {
+          const warningEl = scopeContainer.createDiv({ cls: "pa-scope-warning" });
+          warningEl.createEl("p", {
+            text: "⚠️ No folders specified — the AI cannot access any note content.",
+          });
+          warningEl.createEl("p", {
+            text: "This is fine for general chat (Ask mode), but the AI won't be able to help with your specific notes.",
+            cls: "pa-scope-warning-detail",
+          });
+
+          // Acknowledgment toggle
+          new Setting(warningEl)
+            .setName("Chat-only mode")
+            .setDesc("I understand the AI won't have access to my notes")
+            .addToggle((toggle) =>
+              toggle
+                .setValue(this.plugin.settings.chatOnlyMode)
+                .onChange(async (value) => {
+                  this.plugin.settings.chatOnlyMode = value;
+                  await this.plugin.saveSettings();
+                })
+            );
+        }
       } else {
         new Setting(scopeContainer)
           .setName("Excluded folders")

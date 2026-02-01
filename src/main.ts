@@ -234,6 +234,15 @@ export default class PAPlugin extends Plugin {
       return false;
     }
 
+    // If opt-in mode with no folders, user must explicitly acknowledge chat-only mode
+    if (
+      this.settings.consentMode === "opt-in" &&
+      this.settings.includedFolders.length === 0 &&
+      !this.settings.chatOnlyMode
+    ) {
+      return false;
+    }
+
     // Get provider from settings (not manager, in case it's out of sync)
     const provider = this.providerManager.getProvider(this.settings.provider);
     if (!provider) {
