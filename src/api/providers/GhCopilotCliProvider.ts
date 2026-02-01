@@ -428,9 +428,20 @@ export class GhCopilotCliProvider extends BaseProvider {
       throw new Error("GitHub CLI not found. Install from https://cli.github.com/");
     }
 
+    // Get the directory containing gh - this also contains the copilot binary
+    // Handle both Unix (/) and Windows (\) path separators
+    const pathSep = process.platform === "win32" ? "\\" : "/";
+    const ghDir = ghPath.substring(0, ghPath.lastIndexOf(pathSep));
+
     return new Promise((resolve, reject) => {
       // Arguments as array - never interpreted by shell
       const args = ["copilot", "-p", prompt, "--model", model];
+
+      // Build PATH that includes gh's directory (where copilot binary is)
+      // GUI apps like Obsidian don't have shell PATH, so we set it explicitly
+      // Use ; on Windows, : on Unix
+      const envPathSep = process.platform === "win32" ? ";" : ":";
+      const envPath = ghDir + (process.env.PATH ? `${envPathSep}${process.env.PATH}` : "");
 
       // CRITICAL: shell: false prevents shell interpretation
       // Use full path to gh binary (GUI apps don't have shell PATH)
@@ -438,6 +449,10 @@ export class GhCopilotCliProvider extends BaseProvider {
         shell: false, // <-- CRITICAL SECURITY SETTING
         timeout: 120000, // 2 minute timeout
         windowsHide: true, // Prevent window popup on Windows
+        env: {
+          ...process.env,
+          PATH: envPath,
+        },
       });
 
       this.activeProcess = child;
