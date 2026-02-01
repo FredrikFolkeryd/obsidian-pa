@@ -2,7 +2,7 @@
  * Plugin settings and settings tab
  */
 
-import { App, Notice, PluginSettingTab, Setting } from "obsidian";
+import { App, PluginSettingTab, Setting } from "obsidian";
 import type PAPlugin from "./main";
 import { SetupHelpModal } from "./modals/SetupHelpModal";
 import {
@@ -547,6 +547,9 @@ export class PASettingTab extends PluginSettingTab {
       cls: "pa-status-warn",
     });
 
+    // Status display area (inline feedback)
+    const statusEl = directContainer.createDiv({ cls: "pa-cli-status" });
+
     new Setting(directContainer)
       .setName("GitHub Personal Access Token")
       .setDesc("Enter your GitHub PAT with 'models:read' scope")
@@ -556,8 +559,9 @@ export class PASettingTab extends PluginSettingTab {
         text.onChange(async (value) => {
           if (value.trim()) {
             await this.plugin.storeToken(value.trim());
-            new Notice("Token saved");
-            this.display();
+            this.showCliStatus(statusEl, "success", "Token saved");
+            // Brief delay so user sees the feedback before refresh
+            setTimeout(() => this.display(), 500);
           }
         });
       });
@@ -694,6 +698,9 @@ export class PASettingTab extends PluginSettingTab {
         });
       });
 
+    // Status display for sign out feedback
+    const signOutStatusEl = containerEl.createDiv({ cls: "pa-cli-status" });
+
     // Sign out button
     new Setting(containerEl)
       .setName("Sign out")
@@ -704,8 +711,9 @@ export class PASettingTab extends PluginSettingTab {
           .setWarning()
           .onClick(async () => {
             await this.plugin.clearToken();
-            new Notice("Signed out successfully");
-            this.display();
+            this.showCliStatus(signOutStatusEl, "success", "Signed out successfully");
+            // Brief delay so user sees the feedback before refresh
+            setTimeout(() => this.display(), 500);
           })
       );
   }
