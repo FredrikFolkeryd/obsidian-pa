@@ -27,6 +27,29 @@ The following features are planned for future releases:
 - **Note creation** — AI can draft new notes based on conversations
 - **Link suggestions** — AI recommends connections between notes
 
+## [1.0.0-alpha.4]
+
+### ✨ Features
+
+- **Structured error handling** — Custom error classes with user-friendly messages
+  - Categorised errors: Authentication, TokenValidation, RateLimit, Network, API errors
+  - Retryable error detection for better UX
+  - Consistent error messaging across the plugin
+
+### 🧪 Testing
+
+- **Coverage thresholds** — 35% statement, 70% branch coverage required for CI
+- **Codecov integration** — Coverage tracking and badges in README
+- **Provider integration tests** — 43 new tests for ProviderManager and GitHubModelsProvider
+- **E2E integration tests** — 12 tests for full chat flow with mock vault
+- **Error handling tests** — 25 tests for custom error classes
+
+### 🔧 Changed
+
+- **CI coverage reporting** — Coverage summary in GitHub Actions job summary
+- **ESLint relaxations for tests** — Type safety relaxed in test files for mock compatibility
+- **114 tests total** — Up from 77, 42% statement coverage, 82% branch coverage
+
 ## [1.0.0-alpha.3]
 
 ### ✨ Features
