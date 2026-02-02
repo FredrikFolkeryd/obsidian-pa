@@ -1,5 +1,9 @@
 # Obsidian PA
 
+[![CI](https://github.com/FredrikFolkeryd/obsidian-pa/actions/workflows/ci.yml/badge.svg)](https://github.com/FredrikFolkeryd/obsidian-pa/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/FredrikFolkeryd/obsidian-pa/graph/badge.svg)](https://codecov.io/gh/FredrikFolkeryd/obsidian-pa)
+[![Release](https://img.shields.io/github/v/release/FredrikFolkeryd/obsidian-pa?include_prereleases)](https://github.com/FredrikFolkeryd/obsidian-pa/releases)
+
 An Obsidian plugin that provides an agentic interface to leverage AI agents within your Obsidian vault.
 
 > ⚠️ **Alpha Release** — This plugin is in early development. See [Known Limitations](#known-limitations) below.
