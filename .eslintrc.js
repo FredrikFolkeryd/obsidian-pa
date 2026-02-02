@@ -53,5 +53,19 @@ module.exports = {
     // Allow console.warn/error for debugging, warn on console.log
     "no-console": ["warn", { allow: ["warn", "error", "info"] }],
   },
+  overrides: [
+    {
+      // Relax some strict type checking rules for test files
+      // Mocking often involves any types which are unavoidable
+      files: ["**/*.test.ts", "**/*.spec.ts"],
+      rules: {
+        "@typescript-eslint/no-unsafe-assignment": "off",
+        "@typescript-eslint/no-unsafe-member-access": "off",
+        "@typescript-eslint/no-unsafe-call": "off",
+        "@typescript-eslint/no-unsafe-return": "off",
+        "@typescript-eslint/no-explicit-any": "warn",
+      },
+    },
+  ],
   ignorePatterns: ["main.js", "node_modules/", "*.config.js", "*.config.mjs"],
 };

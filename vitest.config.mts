@@ -15,12 +15,12 @@ export default defineConfig({
       include: ["src/**/*.ts"],
       exclude: ["src/**/*.test.ts", "src/**/*.d.ts", "src/__mocks__/**"],
       // Coverage thresholds - will fail CI if not met
-      // Start low and increase as we add tests
+      // These thresholds should increase as we add tests
       thresholds: {
-        statements: 18,
-        branches: 50,
-        functions: 10,
-        lines: 18,
+        statements: 35,
+        branches: 70,
+        functions: 30,
+        lines: 35,
       },
     },
     // Mock obsidian module since it's not available outside the Obsidian runtime
