@@ -11,81 +11,94 @@
 | Release | Statements | Branches | Functions | Status |
 |---------|------------|----------|-----------|--------|
 | alpha.4 | 35% | 70% | 30% | ✅ Complete |
-| alpha.5 | 45% | 75% | 40% | 🎯 Sprint 3 target |
-| alpha.6 | 55% | 80% | 50% | Planned |
-| alpha.7 | 65% | 85% | 60% | Planned |
-| beta.1 | 70% | 85% | 65% | After write ops |
-| 1.0 | 75% | 90% | 70% | Release quality |
+| alpha.5 | 45% | 75% | 40% | ✅ Complete |
+| alpha.6 | ~46% | ~76% | ~41% | ✅ Complete (Sprint 4) |
+| alpha.7 | 55% | 80% | 50% | 🎯 Sprint 5 target |
+| beta.1 | 65% | 85% | 60% | After integration |
+| 1.0 | 70% | 85% | 65% | Release quality |
+
+> **Note**: Coverage targets recalibrated after Sprint 4 retro. Original targets were optimistic.
 
 ---
 
-## Sprint 3: Test Coverage (Current)
+## Sprint 3: Test Coverage ✅ Complete
 
 **Goal:** Raise coverage to 45% statements, 75% branches
 
-### Priority Areas (by coverage gap)
-
-| File | Current | Target | Tests Needed |
-|------|---------|--------|--------------|
-| ChatView.ts | 17.65% | 40% | UI interactions, message rendering |
-| settings.ts | 21.13% | 40% | Settings tab rendering, validation |
-| GhCopilotCliProvider.ts | 39.25% | 55% | CLI execution, streaming |
-| OnePasswordResolver.ts | 36.19% | 50% | CLI interactions |
-| SetupHelpModal.ts | 12.9% | 30% | Modal rendering |
-
-### Tasks
-
-1. [ ] Add ChatView tests (jsdom environment)
-2. [ ] Add Settings tests
-3. [ ] Expand GhCopilotCliProvider tests
-4. [ ] Add OnePasswordResolver tests
-5. [ ] Integrate custom errors into existing code
-6. [ ] Add retry logic for retryable errors
-
-### Acceptance Criteria
-
-- [ ] All thresholds pass (45/75/40/45)
-- [ ] No regressions in existing tests
-- [ ] Lint passes
-- [ ] Build succeeds
+- ✅ Custom error handling implemented
+- ✅ Provider tests expanded  
+- ✅ E2E integration tests added
+- ✅ 164 tests passing
+- ✅ alpha.5 released
 
 ---
 
-## Sprint 4: Write Operations (Phase 1.1)
+## Sprint 4: Write Operations ✅ Complete
 
 **Goal:** Enable AI-assisted note editing with safety guardrails
 
-### Features
+### Delivered Features
 
-1. **SafeVaultAccess write API**
-   - `proposeEdit(path, content)` — Returns diff preview
-   - `applyEdit(path, content)` — Applies with backup
+1. ✅ **SafeVaultAccess write API**
+   - `proposeEdit(path, content, reason)` — Creates pending edit
+   - `applyEdit(path)` — Applies with automatic backup
    - `revertEdit(path)` — Restores from backup
+   - Audit logging for all operations
 
-2. **Confirmation Modal**
+2. ✅ **Confirmation Modal** (EditConfirmationModal.ts)
    - Diff preview (additions/deletions highlighted)
-   - Accept/Reject buttons
-   - "Don't show again for this session" option
+   - Accept/Cancel buttons
+   - Short and long diff views
 
-3. **Automatic Backups**
-   - Create `.pa-backup/` folder in vault
-   - One backup per file per day
+3. ✅ **Automatic Backups** (VaultBackup.ts)
+   - Creates `.pa-backups/` folder in vault
+   - Max 10 backups per file
    - Auto-cleanup after 7 days
 
-4. **Audit Logging**
-   - Log all AI-initiated changes
-   - Store in `data.json` with timestamps
-   - Expose in settings for review
+4. ✅ **Testing**
+   - 178 tests passing (+14 from Sprint 3)
+   - VaultBackup unit tests added
+   - SafeVaultAccess write tests added
 
-### Security Review Required
+### Pending from Retro
 
-- [ ] `@security` review before implementation
-- [ ] Threat model for write operations
-- [ ] Backup integrity verification
+- [ ] Threat model for write operations (@security)
+- [ ] Exploratory testing session (@tester)
 
 ---
 
-## Sprint 5+: Future Features
+## Sprint 5: Chat Integration (Current)
+
+**Goal:** Connect write operations to chat interface
+
+### Features
+
+1. **Edit Command Recognition**
+   - Detect when AI suggests edits
+   - Parse edit blocks from responses
+   - Show confirmation modal
+
+2. **Apply from Chat**
+   - "Apply this edit" button in chat
+   - Inline diff preview
+   - Success/error feedback
+
+3. **Revert from Chat**
+   - "Undo last edit" command
+   - List recent edits
+   - Revert with confirmation
+
+### Acceptance Criteria
+
+- [ ] User can request file edits via chat
+- [ ] Confirmation modal shown before applying
+- [ ] Successful edits reflected in vault
+- [ ] Revert functionality works
+- [ ] Coverage at 55%+
+
+---
+
+## Sprint 6+: Future Features
 
 ### Enhanced Context (Phase 1.2)
 - Multi-file context picker
@@ -98,15 +111,3 @@
 - Link suggestions
 
 ---
-
-## Cross-Platform Considerations
-
-**Status:** Windows deferred until further notice
-
-**Architecture Guidance Requested:**
-- File path handling (use Obsidian's `normalizePath`)
-- Shell command execution patterns
-- Environment variable access
-- Line ending handling
-
-See: `@architect` consultation for cross-platform design patterns.

@@ -198,16 +198,18 @@ The team holds retrospectives at regular intervals to continuously improve proce
 
 **When to hold a retro:**
 
+- **Every 2-3 sprints** as a standard cadence (recommended minimum)
 - After each milestone/release
 - After significant bugs discovered in production
 - After external feedback from exploratory testing
-- Monthly at minimum during active development
 
 **Retro format:**
 
 1. **What went well?** - Celebrate successes and reinforce good practices
 2. **What could improve?** - Identify friction points and gaps
-3. **Action items** - Concrete changes to workflows, docs, or tooling
+3. **Engineering Baseline review** - Compare practices against EA standards (EA-02, EA-03, EA-07, EA-10)
+4. **Agent definition review** - Check if agent files need updating based on process changes
+5. **Action items** - Concrete changes to workflows, docs, or tooling
 
 **Documentation:**
 
@@ -219,6 +221,7 @@ The team holds retrospectives at regular intervals to continuously improve proce
 
 | Trigger | Example |
 |---------|---------|
+| Sprint cadence | Every 2-3 sprints → scheduled process review |
 | Release completed | v1.0.0 shipped → retro on MVP process |
 | Bug escaped testing | Security issue found → retro on test coverage |
 | User feedback | Onboarding confusing → retro on UX review process |
