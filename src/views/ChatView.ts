@@ -185,6 +185,15 @@ export class ChatView extends ItemView {
       this.stopRequest();
     });
 
+    const exportButton = buttonContainer.createEl("button", {
+      cls: "pa-chat-export-button",
+      text: "Export",
+      attr: { title: "Copy conversation to clipboard as markdown" },
+    });
+    exportButton.addEventListener("click", () => {
+      void this.exportConversation();
+    });
+
     const clearButton = buttonContainer.createEl("button", {
       cls: "pa-chat-clear-button",
       text: "Clear",
@@ -380,6 +389,19 @@ export class ChatView extends ItemView {
       .pa-chat-send-button:disabled {
         opacity: 0.5;
         cursor: not-allowed;
+      }
+
+      .pa-chat-export-button {
+        padding: 8px 16px;
+        background-color: var(--background-secondary);
+        color: var(--text-normal);
+        border: 1px solid var(--background-modifier-border);
+        border-radius: 4px;
+        cursor: pointer;
+      }
+
+      .pa-chat-export-button:hover {
+        background-color: var(--background-modifier-hover);
       }
 
       .pa-chat-clear-button {
@@ -947,5 +969,46 @@ export class ChatView extends ItemView {
     
     this.plugin.settings.conversationHistory = toSave;
     void this.plugin.saveSettings();
+  }
+
+  /**
+   * Export conversation to clipboard as markdown
+   */
+  private async exportConversation(): Promise<void> {
+    const conversationMessages = this.messages.filter(m => m.role !== "system");
+    
+    if (conversationMessages.length === 0) {
+      this.addSystemMessage("No conversation to export.");
+      return;
+    }
+
+    const lines: string[] = [
+      "# AI Conversation Export",
+      "",
+      `Exported: ${new Date().toLocaleString()}`,
+      `Model: ${this.plugin.settings.model}`,
+      "",
+      "---",
+      "",
+    ];
+
+    for (const msg of conversationMessages) {
+      const role = msg.role === "user" ? "**You**" : "**Assistant**";
+      const time = msg.timestamp.toLocaleTimeString();
+      lines.push(`### ${role} *(${time})*`);
+      lines.push("");
+      lines.push(msg.content);
+      lines.push("");
+    }
+
+    const markdown = lines.join("\n");
+
+    try {
+      await navigator.clipboard.writeText(markdown);
+      this.addSystemMessage(`Exported ${conversationMessages.length} messages to clipboard.`);
+    } catch {
+      // Fallback for browsers without clipboard API
+      this.addSystemMessage("Could not copy to clipboard. Check browser permissions.");
+    }
   }
 }
