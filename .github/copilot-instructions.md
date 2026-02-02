@@ -107,6 +107,17 @@ Agents **must** commit work progressively, not in one large batch:
 - **Testing**: Jest/Vitest
 - **Linting**: ESLint with TypeScript rules
 
+### Cross-Platform Considerations
+
+Windows support is deferred, but code should be cross-platform ready. See [docs/cross-platform.md](../docs/cross-platform.md) for detailed guidance.
+
+**Quick rules:**
+- Use `homedir()` from `os` module, not `process.env.HOME`
+- Use `path.join()` for filesystem paths
+- Use Obsidian's `normalizePath()` for vault paths
+- Use `spawn` with `shell: false` for CLI execution
+- Use `\n` for line endings in vault content
+
 ## Project Structure
 
 > **Note**: This is the **target structure** for the project. During early development phases, not all files and directories may exist yet. Agents should create these as needed following this structure.
