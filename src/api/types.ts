@@ -71,6 +71,19 @@ export interface ChatResponse {
 }
 
 /**
+ * Streaming chunk from AI provider
+ */
+export interface StreamChunk {
+  content: string;
+  done: boolean;
+}
+
+/**
+ * Stream callback type
+ */
+export type StreamCallback = (chunk: StreamChunk) => void;
+
+/**
  * Provider capabilities
  */
 export interface ProviderCapabilities {

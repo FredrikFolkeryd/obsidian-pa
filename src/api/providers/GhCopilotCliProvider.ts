@@ -28,6 +28,7 @@ import type {
   ModelInfo,
   ProviderCapabilities,
   Result,
+  StreamCallback,
 } from "../types";
 
 const execAsync = promisify(exec);
@@ -170,7 +171,7 @@ export class GhCopilotCliProvider extends BaseProvider {
 
   public getCapabilities(): ProviderCapabilities {
     return {
-      supportsStreaming: false, // CLI returns full response in non-interactive mode
+      supportsStreaming: true, // CLI supports streaming output
       supportsSystemPrompt: true, // Prepend to prompt
       supportsFunctionCalling: false, // Not supported via CLI
       supportsVision: false, // Not supported via CLI
@@ -256,12 +257,43 @@ export class GhCopilotCliProvider extends BaseProvider {
     const prompt = this.formatMessagesAsPrompt(messages, systemPrompt);
 
     try {
-      const result = await this.invokeCopilotCli(prompt, model);
+      const result = await this.invokeCopilotCli(prompt, model, false);
 
       return {
         content: result,
         model: model,
         // CLI provides usage info but we'd need to parse it
+        usage: undefined,
+        finishReason: "stop",
+      };
+    } catch (error) {
+      throw this.wrapError(error);
+    }
+  }
+
+  /**
+   * Send a streaming chat request via copilot CLI
+   */
+  public override async chatStream(
+    messages: ChatMessage[],
+    options: ChatOptions,
+    onChunk: StreamCallback
+  ): Promise<ChatResponse> {
+    // Verify CLI is ready
+    const status = await this.getCachedCliStatus();
+    if (!status.authenticated) {
+      throw new Error("Copilot CLI not authenticated. Run: copilot");
+    }
+
+    const { model, systemPrompt } = options;
+    const prompt = this.formatMessagesAsPrompt(messages, systemPrompt);
+
+    try {
+      const result = await this.invokeCopilotCliStreaming(prompt, model, onChunk);
+
+      return {
+        content: result,
+        model: model,
         usage: undefined,
         finishReason: "stop",
       };
@@ -423,11 +455,11 @@ export class GhCopilotCliProvider extends BaseProvider {
   }
 
   /**
-   * Invoke the copilot CLI
+   * Invoke the copilot CLI (non-streaming)
    *
    * SECURITY: Uses spawn with shell:false to prevent injection
    */
-  private async invokeCopilotCli(prompt: string, model: string): Promise<string> {
+  private async invokeCopilotCli(prompt: string, model: string, _streaming: boolean): Promise<string> {
     // Prevent concurrent invocations
     if (this.activeProcess) {
       throw new Error("A request is already in progress. Please wait.");
@@ -488,6 +520,101 @@ export class GhCopilotCliProvider extends BaseProvider {
           // Log the actual error for debugging
           console.error("[PA] copilot CLI error:", { code, stderr, stdout });
           reject(new Error(this.sanitiseErrorMessage(stderr || stdout, code)));
+        }
+      });
+
+      child.on("error", (err) => {
+        this.activeProcess = null;
+        console.error("[PA] copilot CLI spawn error:", err);
+        reject(new Error(this.sanitiseErrorMessage(err.message, null)));
+      });
+    });
+  }
+
+  /**
+   * Invoke the copilot CLI with streaming output
+   *
+   * Streams tokens to the callback as they arrive from stdout.
+   * SECURITY: Uses spawn with shell:false to prevent injection
+   */
+  private async invokeCopilotCliStreaming(
+    prompt: string,
+    model: string,
+    onChunk: StreamCallback
+  ): Promise<string> {
+    // Prevent concurrent invocations
+    if (this.activeProcess) {
+      throw new Error("A request is already in progress. Please wait.");
+    }
+
+    // Get the CLI path from cache (should already be set from validation)
+    const cliPath = this.cliStatusCache?.cliPath || this.findCopilotCliPath();
+    if (!cliPath) {
+      throw new Error(
+        "Copilot CLI not found. Install with: brew install copilot-cli"
+      );
+    }
+
+    return new Promise((resolve, reject) => {
+      // Arguments for streaming mode - no --stream off flag
+      const args = [
+        "-p",
+        prompt,
+        "--model",
+        model,
+        "--no-auto-update", // Don't try to update during invocation
+      ];
+
+      // CRITICAL: shell: false prevents shell interpretation
+      const child = spawn(cliPath, args, {
+        shell: false,
+        timeout: 120000, // 2 minute timeout
+        windowsHide: true,
+        env: {
+          ...process.env,
+          HOME: process.env.HOME,
+        },
+      });
+
+      this.activeProcess = child;
+
+      let fullContent = "";
+      let stderr = "";
+      let isInUsageSection = false;
+
+      child.stdout.on("data", (data: Buffer) => {
+        const chunk = data.toString();
+        
+        // Check if we've hit the usage stats section
+        if (
+          chunk.includes("Total usage est:") ||
+          chunk.includes("API time spent:") ||
+          chunk.includes("Total session time:")
+        ) {
+          isInUsageSection = true;
+        }
+
+        // Only stream content before usage section
+        if (!isInUsageSection) {
+          fullContent += chunk;
+          onChunk({ content: chunk, done: false });
+        }
+      });
+
+      child.stderr.on("data", (data: Buffer) => {
+        stderr += data.toString();
+      });
+
+      child.on("close", (code) => {
+        this.activeProcess = null;
+        if (code === 0) {
+          // Signal completion
+          onChunk({ content: "", done: true });
+          // Return trimmed full content (remove trailing whitespace before usage section)
+          resolve(fullContent.trim());
+        } else {
+          console.error("[PA] copilot CLI error:", { code, stderr, fullContent });
+          reject(new Error(this.sanitiseErrorMessage(stderr || fullContent, code)));
         }
       });
 

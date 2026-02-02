@@ -443,6 +443,19 @@ export class ChatView extends ItemView {
       @keyframes pa-spin {
         to { transform: rotate(360deg); }
       }
+
+      .pa-chat-cursor {
+        animation: pa-blink 1s step-end infinite;
+        color: var(--interactive-accent);
+      }
+
+      @keyframes pa-blink {
+        50% { opacity: 0; }
+      }
+
+      .pa-chat-streaming {
+        white-space: pre-wrap;
+      }
     `;
 
     // Only add if not already present
@@ -546,14 +559,49 @@ export class ChatView extends ItemView {
           `If the user wants you to see a note's content, ask them to open it in the editor.`;
       }
 
-      // Call API via provider
-      const response = await provider.chat(conversationHistory, {
-        model: this.plugin.settings.model,
-        systemPrompt,
-      });
-
-      // Remove loading
+      // Call API via provider with streaming
+      const capabilities = provider.getCapabilities();
+      
+      // Create the assistant message placeholder for streaming
+      const assistantMessage: DisplayMessage = {
+        id: this.generateId(),
+        role: "assistant",
+        content: "",
+        timestamp: new Date(),
+      };
+      
+      // Remove loading spinner - we'll show streaming content instead
       loadingEl.remove();
+      
+      // Render empty message that we'll update with streamed content
+      this.messages.push(assistantMessage);
+      const messageEl = this.renderStreamingMessage(assistantMessage);
+      
+      if (capabilities.supportsStreaming) {
+        // Use streaming - update message content as chunks arrive
+        await provider.chatStream(
+          conversationHistory,
+          { model: this.plugin.settings.model, systemPrompt },
+          (chunk) => {
+            if (!chunk.done) {
+              assistantMessage.content += chunk.content;
+              this.updateStreamingMessage(messageEl, assistantMessage.content);
+            }
+          }
+        );
+      } else {
+        // Fall back to non-streaming
+        const response = await provider.chat(conversationHistory, {
+          model: this.plugin.settings.model,
+          systemPrompt,
+        });
+        assistantMessage.content = response.content;
+        this.updateStreamingMessage(messageEl, assistantMessage.content);
+      }
+
+      // Finalize: render with full markdown
+      this.finalizeStreamingMessage(messageEl, assistantMessage.content);
+
       this.isLoading = false;
       this.abortController = null;
       this.updateButtonStates();
@@ -561,16 +609,6 @@ export class ChatView extends ItemView {
       // Update usage stats (persisted daily counter)
       this.incrementUsage();
       this.updateUsageDisplay();
-
-      // Add assistant message
-      const assistantMessage: DisplayMessage = {
-        id: this.generateId(),
-        role: "assistant",
-        content: response.content,
-        timestamp: new Date(),
-      };
-      this.messages.push(assistantMessage);
-      this.renderMessage(assistantMessage);
     } catch (err: unknown) {
       loadingEl.remove();
       this.isLoading = false;
@@ -659,6 +697,79 @@ export class ChatView extends ItemView {
 
     // Scroll to bottom
     this.messagesContainerEl.scrollTop = this.messagesContainerEl.scrollHeight;
+  }
+
+  /**
+   * Render a streaming message placeholder
+   * Returns the message element for updating
+   */
+  private renderStreamingMessage(message: DisplayMessage): HTMLElement {
+    if (!this.messagesContainerEl) {
+      throw new Error("Messages container not initialized");
+    }
+
+    const messageEl = this.messagesContainerEl.createDiv({
+      cls: `pa-chat-message pa-chat-message-${message.role}`,
+    });
+
+    messageEl.createDiv({
+      cls: "pa-chat-message-role",
+      text: "Assistant",
+    });
+
+    const contentEl = messageEl.createDiv({ cls: "pa-chat-message-content" });
+    contentEl.addClass("pa-chat-streaming");
+    
+    // Show cursor indicator
+    contentEl.createSpan({ cls: "pa-chat-cursor", text: "▌" });
+
+    // Scroll to bottom
+    this.messagesContainerEl.scrollTop = this.messagesContainerEl.scrollHeight;
+
+    return messageEl;
+  }
+
+  /**
+   * Update a streaming message with new content
+   */
+  private updateStreamingMessage(messageEl: HTMLElement, content: string): void {
+    const contentEl = messageEl.querySelector(".pa-chat-message-content");
+    if (!contentEl) return;
+
+    // Clear and re-render as plain text (fast update during streaming)
+    contentEl.empty();
+    contentEl.textContent = content;
+    
+    // Add cursor
+    const cursor = document.createElement("span");
+    cursor.className = "pa-chat-cursor";
+    cursor.textContent = "▌";
+    contentEl.appendChild(cursor);
+
+    // Scroll to bottom
+    if (this.messagesContainerEl) {
+      this.messagesContainerEl.scrollTop = this.messagesContainerEl.scrollHeight;
+    }
+  }
+
+  /**
+   * Finalize a streaming message - render as full markdown
+   */
+  private finalizeStreamingMessage(messageEl: HTMLElement, content: string): void {
+    const contentEl = messageEl.querySelector(".pa-chat-message-content");
+    if (!contentEl) return;
+
+    // Remove streaming class and cursor
+    contentEl.removeClass("pa-chat-streaming");
+    contentEl.empty();
+
+    // Render as full markdown
+    void MarkdownRenderer.render(this.app, content, contentEl as HTMLElement, "", this.plugin);
+
+    // Scroll to bottom
+    if (this.messagesContainerEl) {
+      this.messagesContainerEl.scrollTop = this.messagesContainerEl.scrollHeight;
+    }
   }
 
   /**

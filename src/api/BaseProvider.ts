@@ -14,6 +14,7 @@ import type {
   ProviderConfig,
   ProviderType,
   Result,
+  StreamCallback,
 } from "./types";
 
 /**
@@ -107,6 +108,22 @@ export abstract class BaseProvider {
     messages: ChatMessage[],
     options: ChatOptions
   ): Promise<ChatResponse>;
+
+  /**
+   * Send a streaming chat completion request
+   * Providers that support streaming should override this.
+   * Default implementation falls back to non-streaming chat.
+   */
+  public async chatStream(
+    messages: ChatMessage[],
+    options: ChatOptions,
+    onChunk: StreamCallback
+  ): Promise<ChatResponse> {
+    // Default: fall back to non-streaming
+    const response = await this.chat(messages, options);
+    onChunk({ content: response.content, done: true });
+    return response;
+  }
 
   /**
    * Get default model for this provider
