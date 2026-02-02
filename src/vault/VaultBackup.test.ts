@@ -9,8 +9,8 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { VaultBackup, BackupMetadata } from "./VaultBackup";
-import type { App, TFile, TFolder, Vault } from "obsidian";
+import { VaultBackup } from "./VaultBackup";
+import type { App, TFile, Vault } from "obsidian";
 
 // Mock Obsidian types
 import { TFile as MockTFile, TFolder as MockTFolder, Vault as MockVault } from "../__mocks__/obsidian";
@@ -89,6 +89,7 @@ describe("VaultBackup", () => {
 
       await backup.createBackup(sourceFile);
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockApp.vault!.createFolder).toHaveBeenCalled();
     });
 
@@ -168,6 +169,7 @@ describe("VaultBackup", () => {
       const result = await backup.restoreFromBackup("notes/daily.md");
 
       expect(result).toBe(true);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockApp.vault!.modify).toHaveBeenCalledWith(
         originalFile,
         "Backup content"
@@ -204,6 +206,7 @@ describe("VaultBackup", () => {
       const result = await backup.restoreFromBackup("notes/daily.md");
 
       expect(result).toBe(true);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockApp.vault!.create).toHaveBeenCalledWith(
         "notes/daily.md",
         "Backup content"
