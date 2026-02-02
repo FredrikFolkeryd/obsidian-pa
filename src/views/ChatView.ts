@@ -196,10 +196,8 @@ export class ChatView extends ItemView {
     // Add styles
     this.addStyles();
 
-    // Show welcome message
-    this.addSystemMessage(
-      "Hello! I'm your Personal Assistant. How can I help you today?"
-    );
+    // Load saved conversation or show welcome
+    this.loadConversationHistory();
   }
 
   /**
@@ -456,6 +454,15 @@ export class ChatView extends ItemView {
       .pa-chat-streaming {
         white-space: pre-wrap;
       }
+
+      .pa-chat-resume-notice {
+        text-align: center;
+        font-size: 0.75em;
+        color: var(--text-muted);
+        padding: 8px;
+        margin: 8px 0;
+        border-top: 1px dashed var(--background-modifier-border);
+      }
     `;
 
     // Only add if not already present
@@ -609,6 +616,9 @@ export class ChatView extends ItemView {
       // Update usage stats (persisted daily counter)
       this.incrementUsage();
       this.updateUsageDisplay();
+
+      // Save conversation for persistence
+      this.saveConversationHistory();
     } catch (err: unknown) {
       loadingEl.remove();
       this.isLoading = false;
@@ -797,6 +807,11 @@ export class ChatView extends ItemView {
     if (this.messagesContainerEl) {
       this.messagesContainerEl.empty();
     }
+    
+    // Clear persisted history
+    this.plugin.settings.conversationHistory = [];
+    void this.plugin.saveSettings();
+    
     this.addSystemMessage("Conversation cleared. How can I help you?");
   }
 
@@ -878,5 +893,59 @@ export class ChatView extends ItemView {
       this.abortController.abort();
       this.abortController = null;
     }
+  }
+
+  /**
+   * Load conversation history from settings
+   */
+  private loadConversationHistory(): void {
+    const saved = this.plugin.settings.conversationHistory;
+    
+    if (saved.length === 0) {
+      // No history - show welcome message
+      this.addSystemMessage(
+        "Hello! I'm your Personal Assistant. How can I help you today?"
+      );
+      return;
+    }
+
+    // Restore messages from history
+    for (const msg of saved) {
+      const displayMsg: DisplayMessage = {
+        id: msg.id,
+        role: msg.role,
+        content: msg.content,
+        timestamp: new Date(msg.timestamp),
+      };
+      this.messages.push(displayMsg);
+      this.renderMessage(displayMsg);
+    }
+
+    // Add a subtle indicator that history was restored
+    if (this.messagesContainerEl) {
+      const resumeNotice = this.messagesContainerEl.createDiv({ cls: "pa-chat-resume-notice" });
+      resumeNotice.setText(`↑ Previous conversation restored (${saved.length} messages)`);
+    }
+  }
+
+  /**
+   * Save conversation history to settings
+   */
+  private saveConversationHistory(): void {
+    const max = this.plugin.settings.maxHistoryMessages;
+    
+    // Convert to storable format, excluding UI-only system messages
+    const toSave = this.messages
+      .filter(m => m.role !== "system") // Don't persist system UI messages
+      .slice(-max) // Keep only the last N messages
+      .map(m => ({
+        id: m.id,
+        role: m.role,
+        content: m.content,
+        timestamp: m.timestamp.toISOString(),
+      }));
+    
+    this.plugin.settings.conversationHistory = toSave;
+    void this.plugin.saveSettings();
   }
 }

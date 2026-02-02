@@ -51,6 +51,17 @@ export interface PASettings {
   /** Daily usage tracking */
   usageDate: string; // YYYY-MM-DD
   usageRequests: number;
+
+  /** Persisted conversation history */
+  conversationHistory: Array<{
+    id: string;
+    role: "system" | "user" | "assistant";
+    content: string;
+    timestamp: string; // ISO date string
+  }>;
+
+  /** Maximum messages to persist (prevents bloat) */
+  maxHistoryMessages: number;
 }
 
 /**
@@ -67,6 +78,8 @@ export const DEFAULT_SETTINGS: PASettings = {
   provider: "github-models",
   usageDate: "",
   usageRequests: 0,
+  conversationHistory: [],
+  maxHistoryMessages: 50,
 };
 
 /**
