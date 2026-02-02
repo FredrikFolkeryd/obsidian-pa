@@ -21,13 +21,26 @@ The following features are planned for future releases:
 
 #### Enhanced Context (Phase 1.2)
 - **Multi-file context** — AI can reference multiple notes in a single conversation
-- **Conversation persistence** — Chat history saved across sessions
-- **Streaming responses** — See AI responses as they're generated
 
 #### Agentic Capabilities (Phase 2.0)
 - **Task automation** — AI can perform multi-step workflows
 - **Note creation** — AI can draft new notes based on conversations
 - **Link suggestions** — AI recommends connections between notes
+
+## [1.0.0-alpha.3]
+
+### ✨ Features
+
+- **Streaming responses** — AI responses now stream in real-time with a blinking cursor
+- **Conversation persistence** — Chat history saved across Obsidian sessions (up to 50 messages)
+- **Export conversation** — Copy conversation to clipboard as formatted markdown
+- **Stop button** — Cancel in-progress AI requests
+- **Send button state** — Disabled during AI thinking to prevent duplicate requests
+
+### 🔄 Changed
+
+- Updated README with alpha warning banner and known limitations section
+- Added limitation notice link in chat header pointing to documentation
 
 ## [1.0.0-alpha.2]
 

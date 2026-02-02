@@ -91,11 +91,17 @@ This is an **alpha release** with the following limitations:
 | Limitation | Status | Planned |
 |------------|--------|---------|
 | **Read-only access** | AI can read notes but cannot edit them | Phase 1.1 |
-| **No streaming** | Responses appear all at once after completion | Phase 1.2 |
-| **No conversation persistence** | Chat history lost on plugin reload | Phase 1.2 |
 | **Single-file context** | AI only sees the currently open note | Phase 1.2 |
 | **macOS/Linux focus** | Windows paths less tested | Ongoing |
 | **Manual installation** | Not yet in Community Plugins | Future |
+
+### What's Working Well
+
+As of alpha.3:
+- ✅ **Streaming responses** — See AI output in real-time with blinking cursor
+- ✅ **Conversation persistence** — Chat history survives Obsidian restarts
+- ✅ **Export conversations** — Copy to clipboard as markdown
+- ✅ **Stop requests** — Cancel in-progress AI requests
 
 ### Why Read-Only?
 
