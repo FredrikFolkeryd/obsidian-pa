@@ -24,7 +24,10 @@ export class ChatView extends ItemView {
   private messages: DisplayMessage[] = [];
   private inputEl: HTMLTextAreaElement | null = null;
   private messagesContainerEl: HTMLElement | null = null;
+  private sendButtonEl: HTMLButtonElement | null = null;
+  private stopButtonEl: HTMLButtonElement | null = null;
   private isLoading = false;
+  private abortController: AbortController | null = null;
   private lastActiveFile: TFile | null = null;
   private usageStatsEl: HTMLElement | null = null;
   private modelInfoEl: HTMLElement | null = null;
@@ -129,6 +132,18 @@ export class ChatView extends ItemView {
     this.usageStatsEl = infoRow.createSpan({ cls: "pa-chat-usage" });
     this.updateUsageDisplay();
 
+    // Separator
+    infoRow.createSpan({ cls: "pa-chat-info-sep", text: "•" });
+
+    // Limitation notice with link
+    const limitNotice = infoRow.createEl("a", {
+      cls: "pa-chat-limit-notice",
+      text: "Read-only mode",
+      href: "https://github.com/FredrikFolkeryd/obsidian-pa#known-limitations",
+    });
+    limitNotice.setAttribute("target", "_blank");
+    limitNotice.setAttribute("title", "AI can read notes but cannot edit them. Click to learn more.");
+
     // Create messages container
     this.messagesContainerEl = container.createDiv({ cls: "pa-chat-messages" });
 
@@ -153,12 +168,21 @@ export class ChatView extends ItemView {
 
     const buttonContainer = inputContainer.createDiv({ cls: "pa-chat-buttons" });
 
-    const sendButton = buttonContainer.createEl("button", {
+    this.sendButtonEl = buttonContainer.createEl("button", {
       cls: "pa-chat-send-button",
       text: "Send",
     });
-    sendButton.addEventListener("click", () => {
+    this.sendButtonEl.addEventListener("click", () => {
       void this.sendMessage();
+    });
+
+    this.stopButtonEl = buttonContainer.createEl("button", {
+      cls: "pa-chat-stop-button",
+      text: "Stop",
+    });
+    this.stopButtonEl.style.display = "none";
+    this.stopButtonEl.addEventListener("click", () => {
+      this.stopRequest();
     });
 
     const clearButton = buttonContainer.createEl("button", {
@@ -373,6 +397,32 @@ export class ChatView extends ItemView {
         background-color: var(--background-modifier-hover);
       }
 
+      .pa-chat-stop-button {
+        flex: 1;
+        padding: 8px 16px;
+        background-color: var(--text-error);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+
+      .pa-chat-stop-button:hover {
+        opacity: 0.9;
+      }
+
+      .pa-chat-limit-notice {
+        color: var(--text-muted);
+        text-decoration: none;
+        opacity: 0.8;
+        font-size: 0.9em;
+      }
+
+      .pa-chat-limit-notice:hover {
+        color: var(--text-accent);
+        text-decoration: underline;
+      }
+
       .pa-chat-loading {
         display: flex;
         align-items: center;
@@ -460,9 +510,13 @@ export class ChatView extends ItemView {
     // Clear input
     this.inputEl.value = "";
 
-    // Show loading
+    // Show loading and update button states
     this.isLoading = true;
+    this.updateButtonStates();
     const loadingEl = this.showLoading();
+
+    // Create abort controller for cancellation
+    this.abortController = new AbortController();
 
     try {
       // Build conversation history (excluding system UI messages)
@@ -501,6 +555,8 @@ export class ChatView extends ItemView {
       // Remove loading
       loadingEl.remove();
       this.isLoading = false;
+      this.abortController = null;
+      this.updateButtonStates();
 
       // Update usage stats (persisted daily counter)
       this.incrementUsage();
@@ -518,6 +574,14 @@ export class ChatView extends ItemView {
     } catch (err: unknown) {
       loadingEl.remove();
       this.isLoading = false;
+      this.abortController = null;
+      this.updateButtonStates();
+
+      // Check if request was aborted
+      if (err instanceof Error && err.name === "AbortError") {
+        this.addSystemMessage("Request cancelled.");
+        return;
+      }
 
       const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
       this.addSystemMessage(`Error: ${errorMessage}`);
@@ -677,5 +741,31 @@ export class ChatView extends ItemView {
     }
     this.plugin.settings.usageRequests++;
     void this.plugin.saveSettings();
+  }
+
+  /**
+   * Update button states based on loading status
+   */
+  private updateButtonStates(): void {
+    if (this.sendButtonEl) {
+      this.sendButtonEl.disabled = this.isLoading;
+      this.sendButtonEl.style.display = this.isLoading ? "none" : "block";
+    }
+    if (this.stopButtonEl) {
+      this.stopButtonEl.style.display = this.isLoading ? "block" : "none";
+    }
+    if (this.inputEl) {
+      this.inputEl.disabled = this.isLoading;
+    }
+  }
+
+  /**
+   * Stop the current request
+   */
+  private stopRequest(): void {
+    if (this.abortController) {
+      this.abortController.abort();
+      this.abortController = null;
+    }
   }
 }

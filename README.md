@@ -2,6 +2,8 @@
 
 An Obsidian plugin that provides an agentic interface to leverage AI agents within your Obsidian vault.
 
+> ⚠️ **Alpha Release** — This plugin is in early development. See [Known Limitations](#known-limitations) below.
+
 ## Overview
 
 Obsidian PA enables users to interact with AI capabilities directly in their note-taking workflow, bringing agentic development practices to personal knowledge management.
@@ -81,6 +83,32 @@ If you use the [BRAT plugin](https://github.com/TfTHacker/obsidian42-brat) for b
 1. Open BRAT settings
 2. Click "Add Beta plugin"
 3. Enter: `FredrikFolkeryd/obsidian-pa`
+
+## Known Limitations
+
+This is an **alpha release** with the following limitations:
+
+| Limitation | Status | Planned |
+|------------|--------|---------|
+| **Read-only access** | AI can read notes but cannot edit them | Phase 1.1 |
+| **No streaming** | Responses appear all at once after completion | Phase 1.2 |
+| **No conversation persistence** | Chat history lost on plugin reload | Phase 1.2 |
+| **Single-file context** | AI only sees the currently open note | Phase 1.2 |
+| **macOS/Linux focus** | Windows paths less tested | Ongoing |
+| **Manual installation** | Not yet in Community Plugins | Future |
+
+### Why Read-Only?
+
+The AI currently operates in **read-only mode** for safety. It can:
+- ✅ Read notes in your allowed folders
+- ✅ Answer questions about your content
+- ✅ Suggest edits (you copy/paste manually)
+
+It cannot:
+- ❌ Modify, create, or delete notes
+- ❌ Execute commands in your vault
+
+Write support is planned for Phase 1.1 with safety features including confirmation dialogs, automatic backups, and audit logging.
 
 ## Development
 

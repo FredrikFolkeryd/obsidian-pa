@@ -9,6 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _Changes that will be in the next release._
 
+### 🔮 Planned Features (Future Releases)
+
+The following features are planned for future releases:
+
+#### Write Operations (Phase 1.1)
+- **AI-assisted note editing** — Allow the AI to suggest and apply changes to your notes
+- **Confirmation modal with diff preview** — Review all changes before they're applied
+- **Automatic backups** — Every edit creates a backup for easy rollback
+- **Audit logging** — Full history of AI-initiated changes
+
+#### Enhanced Context (Phase 1.2)
+- **Multi-file context** — AI can reference multiple notes in a single conversation
+- **Conversation persistence** — Chat history saved across sessions
+- **Streaming responses** — See AI responses as they're generated
+
+#### Agentic Capabilities (Phase 2.0)
+- **Task automation** — AI can perform multi-step workflows
+- **Note creation** — AI can draft new notes based on conversations
+- **Link suggestions** — AI recommends connections between notes
+
 ## [1.0.0-alpha.2]
 
 ### 🔄 Changed
