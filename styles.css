@@ -337,3 +337,101 @@
   color: var(--text-error);
   border: 1px solid var(--text-error);
 }
+
+/* Edit Confirmation Modal */
+.pa-edit-confirmation-modal {
+  max-width: 800px;
+  width: 90vw;
+}
+
+.pa-edit-confirmation-modal h2 {
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  padding-bottom: 8px;
+}
+
+.pa-diff-container {
+  margin: 16px 0;
+}
+
+.pa-diff-container h3 {
+  font-size: 1em;
+  margin-bottom: 8px;
+  color: var(--text-muted);
+}
+
+.pa-diff-view {
+  background-color: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  padding: 8px;
+  max-height: 400px;
+  overflow-y: auto;
+  font-family: var(--font-monospace);
+  font-size: 0.9em;
+  line-height: 1.4;
+}
+
+.pa-diff-line {
+  display: flex;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.pa-diff-prefix {
+  flex-shrink: 0;
+  width: 20px;
+  user-select: none;
+  color: var(--text-muted);
+}
+
+.pa-diff-content {
+  flex: 1;
+}
+
+.pa-diff-unchanged {
+  color: var(--text-normal);
+}
+
+.pa-diff-removed {
+  background-color: rgba(255, 100, 100, 0.15);
+  color: var(--text-error);
+}
+
+.pa-diff-removed .pa-diff-prefix {
+  color: var(--text-error);
+}
+
+.pa-diff-added {
+  background-color: rgba(100, 255, 100, 0.15);
+  color: var(--text-success);
+}
+
+.pa-diff-added .pa-diff-prefix {
+  color: var(--text-success);
+}
+
+.pa-diff-summary p {
+  margin: 4px 0;
+  color: var(--text-muted);
+}
+
+.pa-diff-preview {
+  margin-top: 8px;
+}
+
+.pa-diff-more {
+  font-style: italic;
+  color: var(--text-muted);
+  margin-top: 8px;
+}
+
+.pa-modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--background-modifier-border);
+}
+

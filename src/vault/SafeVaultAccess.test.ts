@@ -133,16 +133,60 @@ describe("SafeVaultAccess", () => {
   });
 
   describe("write operations", () => {
-    it("should throw error on writeFile", () => {
-      expect(() => safeVault.writeFile("any/path.md", "content")).toThrow(
-        "Write operations are not available in Phase 1.0.0"
+    it("should propose an edit and create pending edit entry", async () => {
+      // Enable write mode for this test
+      safeVault.enableWrites();
+
+      const edit = await safeVault.proposeEdit(
+        "notes/daily.md",
+        "New content",
+        "Test edit"
       );
+
+      expect(edit).not.toBeNull();
+      expect(edit!.path).toBe("notes/daily.md");
+      expect(edit!.newContent).toBe("New content");
+      expect(edit!.reason).toBe("Test edit");
+      expect(edit!.timestamp).toBeDefined();
+
+      // Should be retrievable by path
+      const pending = safeVault.getPendingEdit(edit!.path);
+      expect(pending).toEqual(edit);
+
+      // Cancel to clean up
+      safeVault.cancelEdit(edit!.path);
+
+      // Disable write mode
+      safeVault.disableWrites();
     });
 
-    it("should throw error on modifyFile", () => {
-      expect(() => safeVault.modifyFile("any/path.md", (c) => c)).toThrow(
-        "Modify operations are not available in Phase 1.0.0"
+    it("should reject proposeEdit when write mode is disabled", async () => {
+      // Ensure write mode is disabled
+      safeVault.disableWrites();
+
+      const edit = await safeVault.proposeEdit(
+        "notes/daily.md",
+        "content",
+        "reason"
       );
+
+      // Should return null when writes disabled
+      expect(edit).toBeNull();
+    });
+
+    it("should reject proposeEdit for disallowed paths", async () => {
+      safeVault.enableWrites();
+
+      const edit = await safeVault.proposeEdit(
+        "private/secret.md",
+        "content",
+        "reason"
+      );
+
+      // Should return null for disallowed paths
+      expect(edit).toBeNull();
+
+      safeVault.disableWrites();
     });
 
     it("should throw error on deleteFile", () => {

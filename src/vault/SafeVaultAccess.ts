@@ -4,11 +4,17 @@
  * Provides read-only vault access by default with explicit safety guards
  * to prevent accidental content destruction.
  *
+ * Phase 1.1: Write operations with safety guardrails:
+ * - Automatic backup before modification
+ * - User confirmation required
+ * - Audit logging for all changes
+ *
  * CRITICAL: This wrapper enforces the "MUST NOT destroy content" requirement.
  */
 
 import { App, TFile, TFolder, Vault } from "obsidian";
 import type { PASettings } from "../settings";
+import { VaultBackup, type BackupMetadata } from "./VaultBackup";
 
 /**
  * Result of a vault read operation
@@ -20,15 +26,91 @@ export interface VaultReadResult {
 }
 
 /**
- * Safe vault wrapper with read-only default
+ * Proposed edit awaiting user confirmation
+ */
+export interface ProposedEdit {
+  path: string;
+  originalContent: string;
+  newContent: string;
+  timestamp: number;
+  reason: string;
+}
+
+/**
+ * Result of a write operation
+ */
+export interface WriteResult {
+  success: boolean;
+  path: string;
+  backupPath?: string;
+  error?: string;
+}
+
+/**
+ * Audit log entry for write operations
+ */
+export interface WriteAuditEntry {
+  timestamp: number;
+  operation: "create" | "modify" | "revert";
+  path: string;
+  reason: string;
+  backupPath?: string;
+  success: boolean;
+  error?: string;
+}
+
+/**
+ * Safe vault wrapper with read-only default and guarded writes
  */
 export class SafeVaultAccess {
   private app: App;
   private settings: PASettings;
+  private backup: VaultBackup;
+  private pendingEdits: Map<string, ProposedEdit> = new Map();
+  private auditLog: WriteAuditEntry[] = [];
+  private writeEnabled = false;
 
   public constructor(app: App, settings: PASettings) {
     this.app = app;
     this.settings = settings;
+    this.backup = new VaultBackup(app);
+  }
+
+  /**
+   * Enable write operations (must be explicitly enabled)
+   * This is a safety mechanism to prevent accidental writes.
+   */
+  public enableWrites(): void {
+    this.writeEnabled = true;
+  }
+
+  /**
+   * Disable write operations
+   */
+  public disableWrites(): void {
+    this.writeEnabled = false;
+    this.pendingEdits.clear();
+  }
+
+  /**
+   * Check if writes are enabled
+   */
+  public isWriteEnabled(): boolean {
+    return this.writeEnabled;
+  }
+
+  /**
+   * Get the audit log of all write operations
+   */
+  public getAuditLog(): WriteAuditEntry[] {
+    return [...this.auditLog];
+  }
+
+  /**
+   * Clear the audit log
+   */
+  public clearAuditLog(): void {
+    this.auditLog = [];
   }
 
   /**
@@ -181,36 +263,202 @@ export class SafeVaultAccess {
   }
 
   // =========================================================================
-  // WRITE OPERATIONS - Intentionally NOT implemented for Phase 1.0.0
+  // WRITE OPERATIONS - Phase 1.1 with safety guardrails
   // =========================================================================
 
   /**
-   * Write operations are NOT available in Phase 1.0.0
+   * Propose an edit to a file (requires user confirmation before applying)
    *
-   * When implemented in future phases, they will require:
-   * 1. User confirmation modal
-   * 2. Automatic backup creation
-   * 3. Transaction logging for rollback
-   * 4. Dry-run preview mode
-   *
-   * @throws Always throws - write operations not yet implemented
+   * @param path - The file path to edit
+   * @param newContent - The proposed new content
+   * @param reason - Why the edit is being proposed (for audit log)
+   * @returns The proposed edit for preview, or null if not allowed
    */
-  public writeFile(_path: string, _content: string): never {
-    throw new Error(
-      "Write operations are not available in Phase 1.0.0. " +
-        "AI suggestions are read-only and require manual action."
-    );
+  public async proposeEdit(
+    path: string,
+    newContent: string,
+    reason: string
+  ): Promise<ProposedEdit | null> {
+    if (!this.writeEnabled) {
+      console.warn("[SafeVault] Write operations are disabled");
+      return null;
+    }
+
+    if (!this.isPathAllowed(path)) {
+      console.warn(`[SafeVault] Write access denied to file: ${path}`);
+      return null;
+    }
+
+    // Get current content
+    const file = this.app.vault.getAbstractFileByPath(path);
+    let originalContent = "";
+
+    if (file instanceof TFile) {
+      try {
+        originalContent = await this.app.vault.read(file);
+      } catch (error) {
+        console.error(`[SafeVault] Error reading file for edit: ${path}`, error);
+        return null;
+      }
+    }
+
+    const proposed: ProposedEdit = {
+      path,
+      originalContent,
+      newContent,
+      timestamp: Date.now(),
+      reason,
+    };
+
+    this.pendingEdits.set(path, proposed);
+    return proposed;
   }
 
   /**
-   * Modify operations are NOT available in Phase 1.0.0
-   * @throws Always throws - modify operations not yet implemented
+   * Get a pending edit for a path
    */
-  public modifyFile(_path: string, _transformer: (content: string) => string): never {
-    throw new Error(
-      "Modify operations are not available in Phase 1.0.0. " +
-        "AI suggestions are read-only and require manual action."
-    );
+  public getPendingEdit(path: string): ProposedEdit | null {
+    return this.pendingEdits.get(path) ?? null;
+  }
+
+  /**
+   * Get all pending edits
+   */
+  public getAllPendingEdits(): ProposedEdit[] {
+    return Array.from(this.pendingEdits.values());
+  }
+
+  /**
+   * Cancel a pending edit
+   */
+  public cancelEdit(path: string): boolean {
+    return this.pendingEdits.delete(path);
+  }
+
+  /**
+   * Apply a pending edit after user confirmation
+   *
+   * @param path - The file path to apply the edit to
+   * @returns The result of the write operation
+   */
+  public async applyEdit(path: string): Promise<WriteResult> {
+    const pending = this.pendingEdits.get(path);
+    if (!pending) {
+      return {
+        success: false,
+        path,
+        error: "No pending edit for this path",
+      };
+    }
+
+    if (!this.writeEnabled) {
+      return {
+        success: false,
+        path,
+        error: "Write operations are disabled",
+      };
+    }
+
+    const file = this.app.vault.getAbstractFileByPath(path);
+    let backupMeta: BackupMetadata | null = null;
+
+    try {
+      if (file instanceof TFile) {
+        // Create backup before modifying
+        backupMeta = await this.backup.createBackup(file, pending.reason);
+        if (!backupMeta) {
+          // Don't proceed without backup
+          const error = "Failed to create backup - aborting edit for safety";
+          this.logAudit("modify", path, pending.reason, false, error);
+          return { success: false, path, error };
+        }
+
+        // Apply the edit
+        await this.app.vault.modify(file, pending.newContent);
+        this.logAudit("modify", path, pending.reason, true, undefined, backupMeta.backupPath);
+      } else {
+        // Create new file
+        await this.app.vault.create(path, pending.newContent);
+        this.logAudit("create", path, pending.reason, true);
+      }
+
+      // Remove from pending
+      this.pendingEdits.delete(path);
+
+      return {
+        success: true,
+        path,
+        backupPath: backupMeta?.backupPath,
+      };
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : "Unknown error";
+      this.logAudit(
+        file instanceof TFile ? "modify" : "create",
+        path,
+        pending.reason,
+        false,
+        errorMsg,
+        backupMeta?.backupPath
+      );
+      return {
+        success: false,
+        path,
+        error: errorMsg,
+        backupPath: backupMeta?.backupPath,
+      };
+    }
+  }
+
+  /**
+   * Revert a file to its most recent backup
+   *
+   * @param path - The file path to revert
+   * @returns The result of the revert operation
+   */
+  public async revertEdit(path: string): Promise<WriteResult> {
+    if (!this.writeEnabled) {
+      return {
+        success: false,
+        path,
+        error: "Write operations are disabled",
+      };
+    }
+
+    const success = await this.backup.restoreFromBackup(path);
+    this.logAudit("revert", path, "User requested revert", success);
+
+    return {
+      success,
+      path,
+      error: success ? undefined : "Failed to restore from backup",
+    };
+  }
+
+  /**
+   * Log an audit entry for a write operation
+   */
+  private logAudit(
+    operation: WriteAuditEntry["operation"],
+    path: string,
+    reason: string,
+    success: boolean,
+    error?: string,
+    backupPath?: string
+  ): void {
+    this.auditLog.push({
+      timestamp: Date.now(),
+      operation,
+      path,
+      reason,
+      backupPath,
+      success,
+      error,
+    });
+
+    // Keep audit log bounded (last 100 entries)
+    if (this.auditLog.length > 100) {
+      this.auditLog = this.auditLog.slice(-100);
+    }
   }
 
   /**

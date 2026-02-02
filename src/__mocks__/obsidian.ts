@@ -231,3 +231,12 @@ export const MarkdownRenderer = {
     // Mock
   },
 };
+
+/**
+ * Mock normalizePath function
+ * In Obsidian, this normalizes path separators and removes leading/trailing slashes
+ */
+export function normalizePath(path: string): string {
+  // Simple mock: just ensure forward slashes and no double slashes
+  return path.replace(/\\/g, "/").replace(/\/+/g, "/").replace(/^\/|\/$/g, "");
+}
