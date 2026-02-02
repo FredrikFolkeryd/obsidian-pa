@@ -516,9 +516,17 @@ export class ChatView extends ItemView {
     const content = this.inputEl.value.trim();
     if (!content) return;
 
+    // CRITICAL: Set loading state and clear input IMMEDIATELY to prevent double-submit
+    // This must happen synchronously before any async operations
+    this.isLoading = true;
+    this.inputEl.value = "";
+    this.updateButtonStates();
+
     // Check if AI is enabled
     if (!this.plugin.settings.consentEnabled) {
       this.addSystemMessage("Please enable AI features in settings first.");
+      this.isLoading = false;
+      this.updateButtonStates();
       return;
     }
 
@@ -526,6 +534,8 @@ export class ChatView extends ItemView {
     const provider = this.plugin.providerManager?.getActiveProvider();
     if (!provider) {
       this.addSystemMessage("No AI provider configured. Please check settings.");
+      this.isLoading = false;
+      this.updateButtonStates();
       return;
     }
 
@@ -536,6 +546,8 @@ export class ChatView extends ItemView {
         ? "gh copilot CLI" 
         : "GitHub token";
       this.addSystemMessage(`Please configure ${providerName} in settings. ${authResult.error || ""}`);
+      this.isLoading = false;
+      this.updateButtonStates();
       return;
     }
 
@@ -549,12 +561,7 @@ export class ChatView extends ItemView {
     this.messages.push(userMessage);
     this.renderMessage(userMessage);
 
-    // Clear input
-    this.inputEl.value = "";
-
-    // Show loading and update button states
-    this.isLoading = true;
-    this.updateButtonStates();
+    // Show loading spinner
     const loadingEl = this.showLoading();
 
     // Create abort controller for cancellation

@@ -63,13 +63,20 @@
 ### Pending from Retro
 
 - [ ] Threat model for write operations (@security)
-- [ ] Exploratory testing session (@tester)
+- [x] Exploratory testing session (@tester) — feedback incorporated
 
 ---
 
 ## Sprint 5: Chat Integration (Current)
 
-**Goal:** Connect write operations to chat interface
+**Goal:** Connect write operations to chat interface + UX polish
+
+### Exploratory Testing Fixes (from alpha.6)
+
+1. ✅ **Double-submit prevention**
+   - Input cleared and disabled immediately on submit
+   - Loading state set synchronously before async work
+   - Prevents duplicate messages from rapid Enter/click
 
 ### Features
 
@@ -95,19 +102,106 @@
 - [ ] Successful edits reflected in vault
 - [ ] Revert functionality works
 - [ ] Coverage at 55%+
+- [x] No double-submit on rapid input
 
 ---
 
-## Sprint 6+: Future Features
+## Sprint 6: Edit Flow Polish
 
-### Enhanced Context (Phase 1.2)
-- Multi-file context picker
-- Token budget management
-- Smart context suggestions
+**Goal:** Smooth edit experience with robust parsing
 
-### Agentic Capabilities (Phase 2.0)
-- Task automation framework
-- Note creation from chat
-- Link suggestions
+### Features
+
+1. **Robust Edit Block Parsing**
+   - Handle markdown code blocks with language hints
+   - Support partial file replacements
+   - Graceful fallback for unparseable responses
+
+2. **Edit Preview Improvements**
+   - Side-by-side diff view option
+   - Syntax highlighting in preview
+   - Show affected line numbers
+
+3. **Edit History**
+   - List recent edits in sidebar
+   - Quick revert from history
+   - Export edit log
+
+### Acceptance Criteria
+
+- [ ] AI responses with code blocks parsed reliably
+- [ ] User can preview edits before applying
+- [ ] Edit history accessible from chat
+- [ ] Coverage at 60%+
+
+---
+
+## Sprint 7: Enhanced Context (Phase 1.2)
+
+**Goal:** Smarter file context for better AI responses
+
+### Features
+
+1. **Multi-file Context Picker**
+   - Select multiple files to include
+   - Folder selection with recursion
+   - Context size indicator
+
+2. **Token Budget Management**
+   - Show estimated token usage
+   - Warn when approaching limits
+   - Auto-truncate intelligently
+
+3. **Smart Context Suggestions**
+   - Suggest related notes based on links
+   - Recent files quick-add
+   - Tag-based context groups
+
+### Acceptance Criteria
+
+- [ ] User can select multiple files as context
+- [ ] Token budget visible and respected
+- [ ] Context suggestions reduce friction
+- [ ] Coverage at 65%+
+
+---
+
+## Sprint 8: Agentic Foundations (Phase 2.0)
+
+**Goal:** Enable AI to perform multi-step tasks
+
+### Features
+
+1. **Task Automation Framework**
+   - Define repeatable tasks
+   - Chain multiple operations
+   - Progress tracking
+
+2. **Note Creation from Chat**
+   - "Create a note about X" command
+   - Template selection
+   - Auto-linking to context
+
+3. **Link Suggestions**
+   - AI suggests wikilinks
+   - Backlink discovery
+   - Orphan note detection
+
+### Acceptance Criteria
+
+- [ ] User can define and run tasks
+- [ ] Notes created via chat appear in vault
+- [ ] Link suggestions improve connectivity
+- [ ] Coverage at 70%+ (beta-ready)
+
+---
+
+## Future Backlog
+
+- **Performance**: Lazy loading, virtual scrolling for long chats
+- **Sync**: Cloud backup of conversations
+- **Plugins**: Extension API for custom commands
+- **Mobile**: Obsidian Mobile compatibility testing
+- **Accessibility**: Keyboard navigation, screen reader support
 
 ---
