@@ -477,10 +477,42 @@ export class ChatView extends ItemView {
         text-align: center;
       }
 
+      .pa-chat-message-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 5px;
+      }
+
       .pa-chat-message-role {
         font-size: 0.8em;
         opacity: 0.7;
-        margin-bottom: 5px;
+      }
+
+      .pa-chat-copy-btn {
+        opacity: 0;
+        transition: opacity 0.15s ease;
+        padding: 2px;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        color: var(--text-muted);
+        border-radius: 4px;
+      }
+
+      .pa-chat-message:hover .pa-chat-copy-btn {
+        opacity: 0.6;
+      }
+
+      .pa-chat-copy-btn:hover {
+        opacity: 1 !important;
+        color: var(--text-normal);
+        background: var(--background-modifier-hover);
+      }
+
+      .pa-chat-copy-success {
+        color: var(--text-success) !important;
+        opacity: 1 !important;
       }
 
       .pa-chat-message-content {
@@ -1009,10 +1041,23 @@ export class ChatView extends ItemView {
     });
 
     if (message.role !== "system") {
-      messageEl.createDiv({
+      const headerEl = messageEl.createDiv({ cls: "pa-chat-message-header" });
+      headerEl.createDiv({
         cls: "pa-chat-message-role",
         text: message.role === "user" ? "You" : "Assistant",
       });
+      
+      // Add copy button for assistant messages
+      if (message.role === "assistant") {
+        const copyBtn = headerEl.createEl("button", {
+          cls: "pa-chat-copy-btn clickable-icon",
+          attr: { "aria-label": "Copy message" },
+        });
+        copyBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+        copyBtn.addEventListener("click", () => {
+          void this.copyMessageContent(message.content, copyBtn);
+        });
+      }
     }
 
     const contentEl = messageEl.createDiv({ cls: "pa-chat-message-content" });
@@ -1041,10 +1086,20 @@ export class ChatView extends ItemView {
       cls: `pa-chat-message pa-chat-message-${message.role}`,
     });
 
-    messageEl.createDiv({
+    const headerEl = messageEl.createDiv({ cls: "pa-chat-message-header" });
+    headerEl.createDiv({
       cls: "pa-chat-message-role",
       text: "Assistant",
     });
+    
+    // Add copy button (will work after streaming completes)
+    const copyBtn = headerEl.createEl("button", {
+      cls: "pa-chat-copy-btn clickable-icon",
+      attr: { "aria-label": "Copy message" },
+    });
+    copyBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+    // Store message reference for copy - will be updated when finalized
+    copyBtn.dataset.messageId = message.id;
 
     const contentEl = messageEl.createDiv({ cls: "pa-chat-message-content" });
     contentEl.addClass("pa-chat-streaming");
@@ -1095,6 +1150,14 @@ export class ChatView extends ItemView {
     // Render as full markdown
     void MarkdownRenderer.render(this.app, content, contentEl as HTMLElement, "", this.plugin);
 
+    // Wire up copy button now that we have final content
+    const copyBtn = messageEl.querySelector(".pa-chat-copy-btn") as HTMLElement | null;
+    if (copyBtn) {
+      copyBtn.addEventListener("click", () => {
+        void this.copyMessageContent(content, copyBtn);
+      });
+    }
+
     // Check for edit suggestions in the response
     if (mayContainEdits(content)) {
       const contextFile = this.getContextFile();
@@ -1108,6 +1171,27 @@ export class ChatView extends ItemView {
     // Scroll to bottom
     if (this.messagesContainerEl) {
       this.messagesContainerEl.scrollTop = this.messagesContainerEl.scrollHeight;
+    }
+  }
+
+  /**
+   * Copy message content to clipboard
+   */
+  private async copyMessageContent(content: string, buttonEl: HTMLElement): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(content);
+      
+      // Show feedback
+      const originalHTML = buttonEl.innerHTML;
+      buttonEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+      buttonEl.addClass("pa-chat-copy-success");
+      
+      setTimeout(() => {
+        buttonEl.innerHTML = originalHTML;
+        buttonEl.removeClass("pa-chat-copy-success");
+      }, 1500);
+    } catch {
+      new Notice("Could not copy to clipboard");
     }
   }
 
