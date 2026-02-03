@@ -699,6 +699,11 @@ export class GhCopilotCliProvider extends BaseProvider {
         "Selected model is not available. Go to Settings → Model Settings and choose a valid model.",
       ],
       [/network|connection|ENOTFOUND|ECONNREFUSED/i, "Network error. Check your internet connection."],
+      [/ENOENT|not found|command not found/i, "Copilot CLI not found. Reinstall GitHub Copilot CLI."],
+      [/permission denied|EACCES/i, "Permission denied. Check CLI executable permissions."],
+      [/spawn|fork|child_process/i, "Failed to start Copilot CLI process."],
+      [/signal|SIGTERM|SIGKILL|killed/i, "Request was cancelled or terminated."],
+      [/JSON|parse|syntax/i, "Received invalid response from Copilot CLI."],
     ];
 
     for (const [pattern, message] of patterns) {
@@ -707,11 +712,45 @@ export class GhCopilotCliProvider extends BaseProvider {
       }
     }
 
-    // Generic error
-    if (exitCode !== null) {
-      return `Copilot CLI error (exit ${exitCode}). Check console for details.`;
+    // For unrecognized errors, include a sanitized snippet of the actual error
+    // This helps users (and support) understand what went wrong
+    const sanitized = this.sanitizeForDisplay(rawError);
+    
+    if (exitCode !== null && exitCode !== 0) {
+      return `Copilot CLI failed (exit ${exitCode}): ${sanitized}`;
     }
-    return "Copilot CLI error. Check console for details.";
+    return `Copilot CLI error: ${sanitized}`;
+  }
+
+  /**
+   * Sanitize error text for display to user
+   * Removes potentially sensitive info and truncates
+   */
+  private sanitizeForDisplay(errorText: string): string {
+    // Remove potential paths containing usernames
+    let sanitized = errorText
+      .replace(/\/Users\/[^/\s]+/g, "~")
+      .replace(/\/home\/[^/\s]+/g, "~")
+      .replace(/C:\\Users\\[^\\]+/gi, "~")
+      // Remove tokens/keys that might be in errors
+      .replace(/token[=:]\s*\S+/gi, "token=***")
+      .replace(/key[=:]\s*\S+/gi, "key=***")
+      .replace(/bearer\s+\S+/gi, "bearer ***")
+      // Clean up excessive whitespace
+      .replace(/\s+/g, " ")
+      .trim();
+    
+    // Truncate to reasonable length
+    if (sanitized.length > 150) {
+      sanitized = sanitized.slice(0, 147) + "...";
+    }
+    
+    // If empty after sanitization, provide generic message
+    if (!sanitized) {
+      return "Unknown error occurred";
+    }
+    
+    return sanitized;
   }
 
   /**
