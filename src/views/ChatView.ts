@@ -1191,8 +1191,8 @@ export class ChatView extends ItemView {
     this.addCodeBlockCopyButtons(contentEl as HTMLElement, content);
 
     // Wire up copy button now that we have final content
-    const copyBtn = messageEl.querySelector(".pa-chat-copy-btn") as HTMLElement | null;
-    if (copyBtn) {
+    const copyBtn = messageEl.querySelector(".pa-chat-copy-btn");
+    if (copyBtn instanceof HTMLElement) {
       copyBtn.addEventListener("click", () => {
         void this.copyMessageContent(content, copyBtn);
       });
