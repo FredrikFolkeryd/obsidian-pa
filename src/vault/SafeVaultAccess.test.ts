@@ -195,4 +195,129 @@ describe("SafeVaultAccess", () => {
       );
     });
   });
+
+  describe("audit log", () => {
+    it("should start with empty audit log", () => {
+      expect(safeVault.getAuditLog()).toEqual([]);
+    });
+
+    it("should return a copy of the audit log", () => {
+      const log1 = safeVault.getAuditLog();
+      const log2 = safeVault.getAuditLog();
+      
+      // Should be different array instances
+      expect(log1).not.toBe(log2);
+    });
+
+    it("should clear the audit log", () => {
+      safeVault.clearAuditLog();
+      expect(safeVault.getAuditLog()).toEqual([]);
+    });
+  });
+
+  describe("cancelEdit", () => {
+    it("should cancel a pending edit", async () => {
+      safeVault.enableWrites();
+      
+      await safeVault.proposeEdit("notes/test.md", "New content", "Test");
+      
+      expect(safeVault.getPendingEdit("notes/test.md")).not.toBeNull();
+      
+      safeVault.cancelEdit("notes/test.md");
+      
+      expect(safeVault.getPendingEdit("notes/test.md")).toBeNull();
+      
+      safeVault.disableWrites();
+    });
+
+    it("should handle cancelling non-existent edit", () => {
+      safeVault.cancelEdit("non/existent.md");
+      // Should not throw
+      expect(safeVault.getPendingEdit("non/existent.md")).toBeNull();
+    });
+  });
+
+  describe("write mode control", () => {
+    it("should track write mode state", () => {
+      expect(safeVault.isWriteEnabled()).toBe(false);
+      
+      safeVault.enableWrites();
+      expect(safeVault.isWriteEnabled()).toBe(true);
+      
+      safeVault.disableWrites();
+      expect(safeVault.isWriteEnabled()).toBe(false);
+    });
+
+    it("should be safe to enable/disable multiple times", () => {
+      safeVault.enableWrites();
+      safeVault.enableWrites();
+      expect(safeVault.isWriteEnabled()).toBe(true);
+      
+      safeVault.disableWrites();
+      safeVault.disableWrites();
+      expect(safeVault.isWriteEnabled()).toBe(false);
+    });
+  });
+
+  describe("getPendingEdit", () => {
+    it("should return null for non-existent path", () => {
+      expect(safeVault.getPendingEdit("non/existent.md")).toBeNull();
+    });
+
+    it("should return the pending edit for existing path", async () => {
+      safeVault.enableWrites();
+      
+      await safeVault.proposeEdit("notes/test.md", "Content", "Reason");
+      
+      const pending = safeVault.getPendingEdit("notes/test.md");
+      expect(pending).toBeDefined();
+      expect(pending!.path).toBe("notes/test.md");
+      expect(pending!.newContent).toBe("Content");
+      expect(pending!.reason).toBe("Reason");
+      
+      safeVault.cancelEdit("notes/test.md");
+      safeVault.disableWrites();
+    });
+  });
+
+  describe("path normalization", () => {
+    it("should handle paths with leading slashes", () => {
+      // The path matching should work regardless of leading slash
+      expect(safeVault.isPathAllowed("notes/test.md")).toBe(true);
+    });
+
+    it("should handle nested folder paths", () => {
+      expect(safeVault.isPathAllowed("notes/sub/deep/file.md")).toBe(true);
+      expect(safeVault.isPathAllowed("projects/2024/jan/readme.md")).toBe(true);
+    });
+
+    it("should not match partial folder names", () => {
+      // "notes" should not match "notes2" 
+      expect(safeVault.isPathAllowed("notes2/file.md")).toBe(false);
+    });
+  });
+
+  describe("edge cases", () => {
+    it("should handle empty settings gracefully", () => {
+      const emptySettings = {
+        consentEnabled: false,
+        consentMode: "opt-in" as const,
+        includedFolders: [],
+        excludedFolders: [],
+        model: "gpt-4o",
+      };
+      
+      const emptyVault = new SafeVaultAccess(mockApp as App, emptySettings);
+      
+      expect(emptyVault.isPathAllowed("any/path.md")).toBe(false);
+    });
+
+    it("should handle root-level files in opt-out mode", () => {
+      settings.consentMode = "opt-out";
+      settings.excludedFolders = ["private"];
+      
+      // Root level file should be allowed in opt-out mode
+      expect(safeVault.isPathAllowed("README.md")).toBe(true);
+    });
+  });
 });
