@@ -14,9 +14,11 @@ _Changes that will be in the next release._
 The following features are planned for future releases:
 
 #### Enhanced Context (Phase 1.2)
+
 - **Multi-file context** — AI can reference multiple notes in a single conversation
 
 #### Agentic Capabilities (Phase 2.0)
+
 - **Task automation** — AI can perform multi-step workflows
 - **Note creation** — AI can draft new notes based on conversations
 - **Link suggestions** — AI recommends connections between notes
@@ -198,4 +200,3 @@ First alpha release of the Obsidian Personal Assistant plugin.
 
 - [Documentation](https://github.com/FredrikFolkeryd/obsidian-pa#readme)
 - [Report an issue](https://github.com/FredrikFolkeryd/obsidian-pa/issues)
-- 

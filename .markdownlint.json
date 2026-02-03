@@ -1,0 +1,18 @@
+{
+  "MD013": false,
+  "MD024": {
+    "siblings_only": true
+  },
+  "MD029": {
+    "style": "ordered"
+  },
+  "MD031": false,
+  "MD032": false,
+  "MD033": {
+    "allowed_elements": ["edit", "new-or-modified", "file", "purpose", "integration", "impact", "considerations", "resource", "how", "alignment", "status", "risk", "mitigation", "concrete", "question"]
+  },
+  "MD036": false,
+  "MD040": false,
+  "MD058": false,
+  "MD060": false
+}

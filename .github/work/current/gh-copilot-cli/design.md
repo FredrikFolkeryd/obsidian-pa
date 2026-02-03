@@ -713,15 +713,15 @@ private wrapError(error: unknown): Error {
 
 ### Phase 2: Settings & UX
 
-6. Add CLI status check button in settings
-7. Add installation instructions
-8. Add appropriate error messages
+1. Add CLI status check button in settings
+2. Add installation instructions
+3. Add appropriate error messages
 
 ### Phase 3: Testing & Polish
 
-9. Write unit tests with mocked CLI
-10. Manual testing on macOS/Windows
-11. Documentation updates
+1. Write unit tests with mocked CLI
+2. Manual testing on macOS/Windows
+3. Documentation updates
 
 ### Estimated Effort
 

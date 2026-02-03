@@ -231,6 +231,7 @@ export const platform = {
 ### Current Status
 
 The codebase uses `\n` consistently, which is correct for:
+
 - Obsidian vault content (normalized by Obsidian)
 - In-memory string operations
 - Network protocols (HTTP, API responses)
@@ -311,14 +312,17 @@ child.stdout.on("data", (data: Buffer) => {
 When Windows support is implemented:
 
 ### Unit Tests
+
 - Mock `process.platform` to test platform-specific branches
 - Test path construction on different platforms
 
 ### Integration Tests
+
 - CI matrix: `macos-latest`, `ubuntu-latest`, `windows-latest`
 - Test CLI discovery on each platform
 
 ### Manual Testing
+
 - Test in Obsidian on each platform
 - Verify CLI paths resolve correctly
 

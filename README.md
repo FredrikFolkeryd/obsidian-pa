@@ -70,7 +70,7 @@ unzip -o /tmp/obsidian-pa.zip -d /tmp/
 
 The installer will auto-detect your Obsidian vaults and let you choose where to install.
 
-**Alternative: Manual copy**
+#### Alternative: Manual copy
 
 If you prefer to install manually:
 
@@ -100,6 +100,7 @@ This is an **alpha release** with the following limitations:
 ### What's Working Well
 
 As of alpha.3:
+
 - ✅ **Streaming responses** — See AI output in real-time with blinking cursor
 - ✅ **Conversation persistence** — Chat history survives Obsidian restarts
 - ✅ **Export conversations** — Copy to clipboard as markdown
@@ -108,11 +109,13 @@ As of alpha.3:
 ### Why Read-Only?
 
 The AI currently operates in **read-only mode** for safety. It can:
+
 - ✅ Read notes in your allowed folders
 - ✅ Answer questions about your content
 - ✅ Suggest edits (you copy/paste manually)
 
 It cannot:
+
 - ❌ Modify, create, or delete notes
 - ❌ Execute commands in your vault
 
