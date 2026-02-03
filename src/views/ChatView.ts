@@ -786,30 +786,42 @@ export class ChatView extends ItemView {
       this.messages.push(assistantMessage);
       const messageEl = this.renderStreamingMessage(assistantMessage);
       
-      if (capabilities.supportsStreaming) {
-        // Use streaming - update message content as chunks arrive
-        await provider.chatStream(
-          conversationHistory,
-          { model: this.plugin.settings.model, systemPrompt },
-          (chunk) => {
-            if (!chunk.done) {
-              assistantMessage.content += chunk.content;
-              this.updateStreamingMessage(messageEl, assistantMessage.content);
+      try {
+        if (capabilities.supportsStreaming) {
+          // Use streaming - update message content as chunks arrive
+          await provider.chatStream(
+            conversationHistory,
+            { model: this.plugin.settings.model, systemPrompt },
+            (chunk) => {
+              if (!chunk.done) {
+                assistantMessage.content += chunk.content;
+                this.updateStreamingMessage(messageEl, assistantMessage.content);
+              }
             }
-          }
-        );
-      } else {
-        // Fall back to non-streaming
-        const response = await provider.chat(conversationHistory, {
-          model: this.plugin.settings.model,
-          systemPrompt,
-        });
-        assistantMessage.content = response.content;
-        this.updateStreamingMessage(messageEl, assistantMessage.content);
-      }
+          );
+        } else {
+          // Fall back to non-streaming
+          const response = await provider.chat(conversationHistory, {
+            model: this.plugin.settings.model,
+            systemPrompt,
+          });
+          assistantMessage.content = response.content;
+          this.updateStreamingMessage(messageEl, assistantMessage.content);
+        }
 
-      // Finalize: render with full markdown
-      this.finalizeStreamingMessage(messageEl, assistantMessage.content);
+        // Finalize: render with full markdown
+        this.finalizeStreamingMessage(messageEl, assistantMessage.content);
+      } catch (streamError) {
+        // Clean up the failed streaming message element
+        messageEl.remove();
+        // Remove the failed assistant message from history
+        const msgIndex = this.messages.indexOf(assistantMessage);
+        if (msgIndex !== -1) {
+          this.messages.splice(msgIndex, 1);
+        }
+        // Re-throw to be handled by outer catch
+        throw streamError;
+      }
 
       this.isLoading = false;
       this.abortController = null;
@@ -822,7 +834,10 @@ export class ChatView extends ItemView {
       // Save conversation for persistence
       this.saveConversationHistory();
     } catch (err: unknown) {
-      loadingEl.remove();
+      // Note: loadingEl may already be removed if error occurred during streaming
+      if (loadingEl.parentNode) {
+        loadingEl.remove();
+      }
       this.isLoading = false;
       this.abortController = null;
       this.updateButtonStates();
