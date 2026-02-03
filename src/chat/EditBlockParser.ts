@@ -326,8 +326,10 @@ function inferLanguage(path: string): string | undefined {
 export function mayContainEdits(response: string): boolean {
   // Quick heuristics - check for common patterns
   return (
-    // Fenced blocks with path-like language hints
-    /```[a-zA-Z]*:[^\s`]+\.[a-zA-Z]+/.test(response) ||
+    // Fenced blocks with path-like language hints (lang:path or just path)
+    /```(?:[a-zA-Z]*:)?[^\s`]*\/[^\s`]+\.[a-zA-Z]+/.test(response) ||
+    // Fenced blocks with file extension (no path separator needed)
+    /```[^\s`]+\.(?:md|txt|js|ts|css|html|json|yaml|yml)\n/.test(response) ||
     // XML edit blocks
     /<edit\s+(?:path|file)=/i.test(response) ||
     // Contextual mentions followed by code blocks
