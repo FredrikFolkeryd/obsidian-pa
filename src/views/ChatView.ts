@@ -732,7 +732,15 @@ export class ChatView extends ItemView {
       
       let systemPrompt =
         "You are a helpful AI assistant integrated into Obsidian. " +
-        "Help the user with their notes, writing, and knowledge management.";
+        "Help the user with their notes, writing, and knowledge management.\n\n" +
+        "## Edit Capabilities\n" +
+        "You CAN edit the user's notes! When asked to edit, create, or modify a file, " +
+        "provide your changes in a fenced code block with the file path, like this:\n\n" +
+        "```path/to/file.md\n" +
+        "The complete new content of the file goes here.\n" +
+        "```\n\n" +
+        "The user will see an 'Apply Edit' button to review and apply your changes. " +
+        "Always include the FULL file path and the COMPLETE new content (not just the changed parts).";
 
       if (allowedFiles.length > 0) {
         // Build context from all visible allowed files
@@ -758,14 +766,15 @@ export class ChatView extends ItemView {
         
         const fileLabel = allowedFiles.length === 1 ? "note" : "notes";
         systemPrompt +=
-          `\n\nYou have access to ${allowedFiles.length} open ${fileLabel}:\n\n` +
+          `\n\n## Open Notes\n` +
+          `You have access to ${allowedFiles.length} open ${fileLabel}:\n\n` +
           fileContexts.join("\n\n") +
-          `\n\nYou can reference and discuss these notes' content. ` +
+          `\n\nYou can reference, discuss, and EDIT these notes. ` +
           `The first note marked with 📝 is the currently focused/active note.`;
       } else {
         systemPrompt +=
           `\n\nNo notes are currently visible, or all open notes are in folders the user has excluded from AI access. ` +
-          `If the user wants you to see a note's content, ask them to open it in the editor.`;
+          `If the user wants you to see or edit a note's content, ask them to open it in the editor.`;
       }
 
       // Call API via provider with streaming
