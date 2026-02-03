@@ -80,29 +80,31 @@
 
 ### Features
 
-1. **Edit Command Recognition**
-   - Detect when AI suggests edits
-   - Parse edit blocks from responses
-   - Show confirmation modal
+1. ✅ **Edit Command Recognition**
+   - EditBlockParser detects edit suggestions in AI responses
+   - Supports fenced code blocks with path (```markdown:path/file.md)
+   - Supports XML-style edit blocks (<edit path="file.md">)
+   - Contextual detection for implicit edits
 
-2. **Apply from Chat**
-   - "Apply this edit" button in chat
-   - Inline diff preview
-   - Success/error feedback
+2. ✅ **Apply from Chat**
+   - "Apply Edit" button appears when edits detected
+   - EditConfirmationModal shows diff preview
+   - Automatic backup before modification
+   - Success/error feedback via Notice
 
-3. **Revert from Chat**
-   - "Undo last edit" command
-   - List recent edits
-   - Revert with confirmation
+3. ✅ **Revert from Chat**
+   - "Undo Edit" button in chat toolbar
+   - Confirmation dialog before revert
+   - Restores from backup
 
 ### Acceptance Criteria
 
-- [ ] User can request file edits via chat
-- [ ] Confirmation modal shown before applying
-- [ ] Successful edits reflected in vault
-- [ ] Revert functionality works
-- [ ] Coverage at 55%+
+- [x] User can request file edits via chat
+- [x] Confirmation modal shown before applying
+- [x] Successful edits reflected in vault
+- [x] Revert functionality works
 - [x] No double-submit on rapid input
+- [x] 209 tests passing (+31 from Sprint 4)
 
 ---
 

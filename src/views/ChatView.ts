@@ -2,9 +2,11 @@
  * Chat View - Main AI conversation interface
  */
 
-import { ItemView, WorkspaceLeaf, MarkdownRenderer, TFile, MarkdownView } from "obsidian";
+import { ItemView, WorkspaceLeaf, MarkdownRenderer, TFile, MarkdownView, Notice } from "obsidian";
 import type PAPlugin from "../main";
 import type { ChatMessage } from "../api/GitHubModelsClient";
+import { parseEditBlocks, mayContainEdits, type ParsedEditBlock } from "../chat/EditBlockParser";
+import { showEditConfirmation } from "../modals/EditConfirmationModal";
 
 export const VIEW_TYPE_CHAT = "pa-chat-view";
 
@@ -194,6 +196,15 @@ export class ChatView extends ItemView {
       void this.exportConversation();
     });
 
+    const revertButton = buttonContainer.createEl("button", {
+      cls: "pa-chat-revert-button",
+      text: "Undo Edit",
+      attr: { title: "Revert the last AI edit" },
+    });
+    revertButton.addEventListener("click", () => {
+      void this.handleRevertLastEdit();
+    });
+
     const clearButton = buttonContainer.createEl("button", {
       cls: "pa-chat-clear-button",
       text: "Clear",
@@ -207,6 +218,48 @@ export class ChatView extends ItemView {
 
     // Load saved conversation or show welcome
     this.loadConversationHistory();
+  }
+
+  /**
+   * Handle reverting the last edit
+   */
+  private async handleRevertLastEdit(): Promise<void> {
+    const safeVault = this.plugin.safeVault;
+    const auditLog = safeVault.getAuditLog();
+    
+    // Find the last successful modification
+    const lastEdit = [...auditLog]
+      .reverse()
+      .find((entry) => entry.operation === "modify" && entry.success);
+    
+    if (!lastEdit) {
+      new Notice("No recent edits to revert");
+      return;
+    }
+    
+    // Confirm revert
+    const confirmed = confirm(
+      `Revert the last edit to "${lastEdit.path}"?\n\n` +
+      `This will restore the file from backup.`
+    );
+    
+    if (!confirmed) return;
+    
+    safeVault.enableWrites();
+    
+    try {
+      const result = await safeVault.revertEdit(lastEdit.path);
+      
+      if (result.success) {
+        new Notice(`✓ Reverted ${lastEdit.path}`);
+        this.addSystemMessage(`Reverted \`${lastEdit.path}\` to previous version.`);
+      } else {
+        new Notice(`✗ Failed to revert: ${result.error}`);
+        this.addSystemMessage(`Failed to revert: ${result.error}`);
+      }
+    } finally {
+      safeVault.disableWrites();
+    }
   }
 
   /**
@@ -792,7 +845,7 @@ export class ChatView extends ItemView {
   }
 
   /**
-   * Finalize a streaming message - render as full markdown
+   * Finalize a streaming message - render as full markdown and detect edits
    */
   private finalizeStreamingMessage(messageEl: HTMLElement, content: string): void {
     const contentEl = messageEl.querySelector(".pa-chat-message-content");
@@ -805,10 +858,151 @@ export class ChatView extends ItemView {
     // Render as full markdown
     void MarkdownRenderer.render(this.app, content, contentEl as HTMLElement, "", this.plugin);
 
+    // Check for edit suggestions in the response
+    if (mayContainEdits(content)) {
+      const contextFile = this.getContextFile();
+      const parseResult = parseEditBlocks(content, contextFile?.path);
+      
+      if (parseResult.hasEdits) {
+        this.addEditActions(messageEl, parseResult.blocks);
+      }
+    }
+
     // Scroll to bottom
     if (this.messagesContainerEl) {
       this.messagesContainerEl.scrollTop = this.messagesContainerEl.scrollHeight;
     }
+  }
+
+  /**
+   * Add edit action buttons to a message
+   */
+  private addEditActions(messageEl: HTMLElement, blocks: ParsedEditBlock[]): void {
+    const actionsEl = messageEl.createDiv({ cls: "pa-edit-actions" });
+    
+    for (const block of blocks) {
+      const actionRow = actionsEl.createDiv({ cls: "pa-edit-action-row" });
+      
+      // File indicator
+      actionRow.createSpan({ 
+        cls: "pa-edit-file-indicator",
+        text: `📝 ${block.path}`,
+      });
+      
+      // Apply button
+      const applyBtn = actionRow.createEl("button", {
+        cls: "pa-edit-apply-btn",
+        text: "Apply Edit",
+      });
+      applyBtn.addEventListener("click", () => {
+        void this.handleApplyEdit(block);
+      });
+    }
+
+    // Add styles for edit actions
+    this.addEditActionStyles();
+  }
+
+  /**
+   * Handle applying an edit from the chat
+   */
+  private async handleApplyEdit(block: ParsedEditBlock): Promise<void> {
+    const safeVault = this.plugin.safeVault;
+    
+    // Enable writes for this operation
+    safeVault.enableWrites();
+    
+    try {
+      // Propose the edit (creates backup internally)
+      const proposed = await safeVault.proposeEdit(
+        block.path,
+        block.content,
+        "AI-suggested edit from chat"
+      );
+      
+      if (!proposed) {
+        new Notice(`Cannot edit ${block.path} - file not accessible or writes disabled`);
+        return;
+      }
+      
+      // Show confirmation modal
+      const result = await showEditConfirmation(this.app, proposed);
+      
+      if (result.confirmed) {
+        // Apply the edit
+        const writeResult = await safeVault.applyEdit(block.path);
+        
+        if (writeResult.success) {
+          new Notice(`✓ Applied edit to ${block.path}`);
+          this.addSystemMessage(`Edit applied to \`${block.path}\`. ${writeResult.backupPath ? "Backup created." : ""}`);
+        } else {
+          new Notice(`✗ Failed to apply edit: ${writeResult.error}`);
+          this.addSystemMessage(`Failed to apply edit: ${writeResult.error}`);
+        }
+      } else {
+        // User cancelled
+        safeVault.cancelEdit(block.path);
+        this.addSystemMessage("Edit cancelled.");
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : "Unknown error";
+      new Notice(`Error applying edit: ${errorMsg}`);
+      this.addSystemMessage(`Error: ${errorMsg}`);
+    } finally {
+      // Disable writes after operation
+      safeVault.disableWrites();
+    }
+  }
+
+  /**
+   * Add styles for edit actions
+   */
+  private addEditActionStyles(): void {
+    if (document.getElementById("pa-edit-action-styles")) return;
+    
+    const style = document.createElement("style");
+    style.id = "pa-edit-action-styles";
+    style.textContent = `
+      .pa-edit-actions {
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid var(--background-modifier-border);
+      }
+
+      .pa-edit-action-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 8px;
+      }
+
+      .pa-edit-file-indicator {
+        flex: 1;
+        font-size: 0.9em;
+        color: var(--text-muted);
+        font-family: var(--font-monospace);
+      }
+
+      .pa-edit-apply-btn {
+        padding: 4px 12px;
+        font-size: 0.85em;
+        background: var(--interactive-accent);
+        color: var(--text-on-accent);
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+
+      .pa-edit-apply-btn:hover {
+        opacity: 0.9;
+      }
+
+      .pa-edit-apply-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    `;
+    document.head.appendChild(style);
   }
 
   /**

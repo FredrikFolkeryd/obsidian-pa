@@ -16,12 +16,14 @@ import {
   isOnePasswordReference,
   resolveOnePasswordSecret,
 } from "./auth/OnePasswordResolver";
+import { SafeVaultAccess } from "./vault/SafeVaultAccess";
 
 export default class PAPlugin extends Plugin {
   public settings!: PASettings;
   private apiClient: GitHubModelsClient | null = null;
   private settingsTab!: PASettingTab;
   public providerManager: ProviderManager;
+  public safeVault!: SafeVaultAccess;
 
   public constructor(app: Parameters<typeof Plugin>[0], manifest: Parameters<typeof Plugin>[1]) {
     super(app, manifest);
@@ -129,6 +131,9 @@ export default class PAPlugin extends Plugin {
     
     // Sync provider setting to manager
     this.providerManager.setActiveProvider(this.settings.provider);
+    
+    // Initialize SafeVaultAccess with current settings
+    this.safeVault = new SafeVaultAccess(this.app, this.settings);
   }
 
   /**
@@ -138,6 +143,8 @@ export default class PAPlugin extends Plugin {
     await this.saveData(this.settings);
     // Sync provider setting to manager
     this.providerManager.setActiveProvider(this.settings.provider);
+    // Update SafeVaultAccess with new settings
+    this.safeVault = new SafeVaultAccess(this.app, this.settings);
   }
 
   /**
