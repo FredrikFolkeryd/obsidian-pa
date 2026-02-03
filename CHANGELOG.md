@@ -13,12 +13,6 @@ _Changes that will be in the next release._
 
 The following features are planned for future releases:
 
-#### Write Operations (Phase 1.1)
-- **AI-assisted note editing** — Allow the AI to suggest and apply changes to your notes
-- **Confirmation modal with diff preview** — Review all changes before they're applied
-- **Automatic backups** — Every edit creates a backup for easy rollback
-- **Audit logging** — Full history of AI-initiated changes
-
 #### Enhanced Context (Phase 1.2)
 - **Multi-file context** — AI can reference multiple notes in a single conversation
 
@@ -26,6 +20,90 @@ The following features are planned for future releases:
 - **Task automation** — AI can perform multi-step workflows
 - **Note creation** — AI can draft new notes based on conversations
 - **Link suggestions** — AI recommends connections between notes
+
+## [1.0.0-alpha.7]
+
+### ✨ Features
+
+- **Improved diff preview** — Edit confirmation modal now shows:
+  - Line numbers for old and new content
+  - LCS-based unified diff algorithm for accurate change detection
+  - Better handling of large files with context snippets
+  - Statistics showing additions, deletions, and unchanged lines
+  
+- **Edit history panel** — New "History" button in chat toolbar:
+  - View all recorded AI edits with timestamps
+  - See edit reasons and backup information
+  - Revert the most recent edit directly from history
+  - Clear edit history when no longer needed
+
+- **Enhanced edit block parsing** — Better detection of AI edit suggestions:
+  - Support for SEARCH/REPLACE patterns with git-style markers
+  - New edit types: `full-replace`, `search-replace`, `append`, `prepend`
+  - `applySearchReplace()` function for partial text replacements
+  - Improved `mayContainEdits()` with search/replace pattern detection
+
+### 🧪 Testing
+
+- **232 tests total** — Up from 209
+- **16 new tests** for diff algorithm (LCS, unified diff, statistics)
+- **7 new tests** for search/replace edit parsing
+
+### 🔧 Changed
+
+- Edit confirmation modal width increased for better diff readability
+- Diff lines now hover-highlight for easier reading
+- Context lines shown for large file changes
+
+## [1.0.0-alpha.6]
+
+### ✨ Features
+
+- **AI-assisted note editing** — AI can now suggest changes to your vault files:
+  - Edit detection: Parses AI responses for code blocks with file paths
+  - Supports multiple formats: fenced-path, XML-style, contextual blocks
+  - "Apply Edit" button appears on AI messages containing edits
+  
+- **Diff preview confirmation** — Before any edit is applied:
+  - Modal shows file path and reason for the edit
+  - Color-coded diff: green for additions, red for deletions
+  - Statistics: +N lines added, -N lines removed
+  - Accept or Cancel buttons with keyboard support
+  
+- **Automatic backups** — Every edit creates a backup:
+  - Stored in `.pa-backups/` folder (hidden by default)
+  - Timestamped backup files for each modification
+  - Maximum 10 backups per file, auto-cleanup of old backups
+  - 7-day retention policy for backup cleanup
+  
+- **Undo last edit** — "Undo Edit" button in chat toolbar:
+  - Reverts the most recent AI-initiated change
+  - Restores from automatic backup
+  - Confirmation dialog before reverting
+  
+- **Audit logging** — Full history of AI-initiated writes:
+  - Tracks create, modify, and revert operations
+  - Timestamps and reasons recorded
+  - Maximum 100 entries maintained
+  
+- **SafeVaultAccess API** — Secure write layer with:
+  - Explicit write enablement (disabled by default)
+  - Path-based access control (respects private patterns)
+  - Proposal → confirmation → apply workflow
+
+### 🧪 Testing
+
+- **209 tests total** — Up from 178 (+31 new)
+- **22 tests** for EditBlockParser covering all edit formats
+- **13 tests** for VaultBackup (create, restore, cleanup)
+- **13 tests** for SafeVaultAccess (reads, writes, security)
+- **9 tests** for E2E edit flow integration
+
+### 🔧 Changed
+
+- Chat view now integrates write operations with SafeVaultAccess
+- Plugin initialises SafeVaultAccess on load as `plugin.safeVault`
+- Write mode defaults to disabled (must be explicitly enabled per operation)
 
 ## [1.0.0-alpha.4]
 

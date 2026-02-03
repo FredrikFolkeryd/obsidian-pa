@@ -7,6 +7,7 @@ import type PAPlugin from "../main";
 import type { ChatMessage } from "../api/GitHubModelsClient";
 import { parseEditBlocks, mayContainEdits, type ParsedEditBlock } from "../chat/EditBlockParser";
 import { showEditConfirmation } from "../modals/EditConfirmationModal";
+import { showEditHistory } from "../modals/EditHistoryModal";
 
 export const VIEW_TYPE_CHAT = "pa-chat-view";
 
@@ -205,6 +206,15 @@ export class ChatView extends ItemView {
       void this.handleRevertLastEdit();
     });
 
+    const historyButton = buttonContainer.createEl("button", {
+      cls: "pa-chat-history-button",
+      text: "History",
+      attr: { title: "View edit history" },
+    });
+    historyButton.addEventListener("click", () => {
+      void this.handleShowEditHistory();
+    });
+
     const clearButton = buttonContainer.createEl("button", {
       cls: "pa-chat-clear-button",
       text: "Clear",
@@ -253,6 +263,48 @@ export class ChatView extends ItemView {
       if (result.success) {
         new Notice(`✓ Reverted ${lastEdit.path}`);
         this.addSystemMessage(`Reverted \`${lastEdit.path}\` to previous version.`);
+      } else {
+        new Notice(`✗ Failed to revert: ${result.error}`);
+        this.addSystemMessage(`Failed to revert: ${result.error}`);
+      }
+    } finally {
+      safeVault.disableWrites();
+    }
+  }
+
+  /**
+   * Show the edit history modal
+   */
+  private async handleShowEditHistory(): Promise<void> {
+    const safeVault = this.plugin.safeVault;
+    
+    const result = await showEditHistory(this.app, safeVault);
+    
+    if (result.action === "revert" && result.revertPath) {
+      await this.revertSpecificEdit(result.revertPath);
+    } else if (result.action === "clear") {
+      const confirmed = confirm("Clear all edit history? This cannot be undone.");
+      if (confirmed) {
+        safeVault.clearAuditLog();
+        new Notice("Edit history cleared");
+      }
+    }
+  }
+
+  /**
+   * Revert a specific file to its backup
+   */
+  private async revertSpecificEdit(path: string): Promise<void> {
+    const safeVault = this.plugin.safeVault;
+    
+    safeVault.enableWrites();
+    
+    try {
+      const result = await safeVault.revertEdit(path);
+      
+      if (result.success) {
+        new Notice(`✓ Reverted ${path}`);
+        this.addSystemMessage(`Reverted \`${path}\` to previous version.`);
       } else {
         new Notice(`✗ Failed to revert: ${result.error}`);
         this.addSystemMessage(`Failed to revert: ${result.error}`);

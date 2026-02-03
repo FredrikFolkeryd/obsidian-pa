@@ -3,6 +3,12 @@
  *
  * Shows a diff preview and confirmation dialog before applying AI-suggested edits.
  * Provides Accept/Cancel buttons with clear visual feedback.
+ *
+ * Features:
+ * - Line numbers in diff view
+ * - Unified diff with context
+ * - Color-coded additions/deletions
+ * - Statistics (lines added/removed)
  */
 
 import { Modal, App } from "obsidian";
@@ -14,6 +20,16 @@ import type { ProposedEdit } from "../vault/SafeVaultAccess";
 export interface ConfirmationResult {
   confirmed: boolean;
   edit: ProposedEdit;
+}
+
+/**
+ * A single line in the diff output with line number tracking
+ */
+interface DiffLine {
+  type: "add" | "del" | "same" | "context";
+  text: string;
+  oldLineNum?: number;
+  newLineNum?: number;
 }
 
 /**
@@ -103,7 +119,7 @@ export class EditConfirmationModal extends Modal {
   }
 
   /**
-   * Render a simple line-by-line diff
+   * Render a unified diff with line numbers
    */
   private renderDiff(container: HTMLElement): void {
     const oldLines = this.edit.originalContent.split("\n");
@@ -111,23 +127,31 @@ export class EditConfirmationModal extends Modal {
 
     // Check if this is a new file
     if (!this.edit.originalContent) {
-      container.createDiv({ cls: "pa-diff-header" }).setText("New file");
+      container.createDiv({ cls: "pa-diff-header" }).setText("✨ New file");
       const newContent = container.createDiv({ cls: "pa-diff-new-file" });
-      newContent.createEl("pre", { text: this.edit.newContent.slice(0, 2000) });
+      const pre = newContent.createEl("pre");
+      const displayContent = this.edit.newContent.slice(0, 2000);
+      displayContent.split("\n").forEach((line, i) => {
+        const lineEl = pre.createDiv({ cls: "pa-diff-line pa-diff-add" });
+        lineEl.createSpan({ cls: "pa-diff-linenum", text: String(i + 1).padStart(4, " ") });
+        lineEl.createSpan({ cls: "pa-diff-prefix", text: "+" });
+        lineEl.createSpan({ cls: "pa-diff-text", text: line || " " });
+      });
       if (this.edit.newContent.length > 2000) {
         newContent.createDiv({ cls: "pa-diff-truncated", text: "... (truncated)" });
       }
       return;
     }
 
-    // Simple diff visualization
-    const diffLines = this.computeSimpleDiff(oldLines, newLines);
+    // Compute unified diff with line numbers
+    const diffLines = this.computeUnifiedDiff(oldLines, newLines);
     
     // Header with stats
     const stats = this.computeDiffStats(diffLines);
     const header = container.createDiv({ cls: "pa-diff-header" });
     header.createSpan({ text: `+${stats.additions} `, cls: "pa-diff-stat-add" });
-    header.createSpan({ text: `-${stats.deletions}`, cls: "pa-diff-stat-del" });
+    header.createSpan({ text: `-${stats.deletions} `, cls: "pa-diff-stat-del" });
+    header.createSpan({ text: `(${stats.same} unchanged)`, cls: "pa-diff-stat-same" });
 
     // Diff content (scrollable)
     const diffContent = container.createDiv({ cls: "pa-diff-content" });
@@ -141,11 +165,20 @@ export class EditConfirmationModal extends Modal {
       const lineEl = pre.createDiv({
         cls: `pa-diff-line pa-diff-${line.type}`,
       });
-      lineEl.createSpan({
-        cls: "pa-diff-prefix",
-        text: line.type === "add" ? "+" : line.type === "del" ? "-" : " ",
-      });
-      lineEl.createSpan({ cls: "pa-diff-text", text: line.text });
+      
+      // Line numbers (old:new format)
+      const oldNum = line.oldLineNum !== undefined ? String(line.oldLineNum).padStart(4, " ") : "    ";
+      const newNum = line.newLineNum !== undefined ? String(line.newLineNum).padStart(4, " ") : "    ";
+      lineEl.createSpan({ cls: "pa-diff-linenum", text: oldNum });
+      lineEl.createSpan({ cls: "pa-diff-linenum-sep", text: "│" });
+      lineEl.createSpan({ cls: "pa-diff-linenum", text: newNum });
+      
+      // Prefix (+/-/space)
+      const prefix = line.type === "add" ? "+" : line.type === "del" ? "-" : " ";
+      lineEl.createSpan({ cls: "pa-diff-prefix", text: prefix });
+      
+      // Text content (preserve empty lines)
+      lineEl.createSpan({ cls: "pa-diff-text", text: line.text || " " });
     }
 
     if (diffLines.length > maxLines) {
@@ -157,67 +190,86 @@ export class EditConfirmationModal extends Modal {
   }
 
   /**
-   * Compute a simple line diff (not optimal, but good enough for preview)
+   * Compute a unified diff with line numbers using Myers-like algorithm
    */
-  private computeSimpleDiff(
-    oldLines: string[],
-    newLines: string[]
-  ): Array<{ type: "add" | "del" | "same"; text: string }> {
-    const result: Array<{ type: "add" | "del" | "same"; text: string }> = [];
+  private computeUnifiedDiff(oldLines: string[], newLines: string[]): DiffLine[] {
+    const result: DiffLine[] = [];
 
-    // Use a simple LCS-based approach for small files
-    // For large files, just show before/after
+    // For very large files, use a simpler comparison
     if (oldLines.length + newLines.length > 500) {
-      // Too large for detailed diff
-      result.push({ type: "same", text: "--- Original ---" });
-      oldLines.slice(0, 10).forEach((line) => result.push({ type: "del", text: line }));
-      if (oldLines.length > 10) {
-        result.push({ type: "same", text: `... ${oldLines.length - 10} more lines ...` });
-      }
-      result.push({ type: "same", text: "" });
-      result.push({ type: "same", text: "--- New ---" });
-      newLines.slice(0, 10).forEach((line) => result.push({ type: "add", text: line }));
-      if (newLines.length > 10) {
-        result.push({ type: "same", text: `... ${newLines.length - 10} more lines ...` });
-      }
-      return result;
+      return this.computeLargeDiff(oldLines, newLines);
     }
 
-    // Simple diff algorithm - compare lines
-    const oldSet = new Set(oldLines);
-    const newSet = new Set(newLines);
+    // Build a map of old lines for quick lookup
+    const oldLineMap = new Map<string, number[]>();
+    oldLines.forEach((line, i) => {
+      const indices = oldLineMap.get(line) || [];
+      indices.push(i);
+      oldLineMap.set(line, indices);
+    });
 
-    let i = 0;
-    let j = 0;
+    // Use Longest Common Subsequence for accurate diff
+    const lcs = this.computeLCS(oldLines, newLines);
+    
+    let oldIdx = 0;
+    let newIdx = 0;
+    let lcsIdx = 0;
 
-    while (i < oldLines.length || j < newLines.length) {
-      if (i >= oldLines.length) {
-        // Rest are additions
-        result.push({ type: "add", text: newLines[j] });
-        j++;
-      } else if (j >= newLines.length) {
-        // Rest are deletions
-        result.push({ type: "del", text: oldLines[i] });
-        i++;
-      } else if (oldLines[i] === newLines[j]) {
-        // Same line
-        result.push({ type: "same", text: oldLines[i] });
-        i++;
-        j++;
-      } else if (!newSet.has(oldLines[i])) {
-        // Old line was deleted
-        result.push({ type: "del", text: oldLines[i] });
-        i++;
-      } else if (!oldSet.has(newLines[j])) {
-        // New line was added
-        result.push({ type: "add", text: newLines[j] });
-        j++;
-      } else {
-        // Lines changed - show both
-        result.push({ type: "del", text: oldLines[i] });
-        result.push({ type: "add", text: newLines[j] });
-        i++;
-        j++;
+    while (oldIdx < oldLines.length || newIdx < newLines.length) {
+      // Check if current lines match LCS
+      const lcsMatch = lcsIdx < lcs.length ? lcs[lcsIdx] : null;
+      
+      if (lcsMatch && oldIdx === lcsMatch.oldIdx && newIdx === lcsMatch.newIdx) {
+        // This line is in both - unchanged
+        result.push({
+          type: "same",
+          text: oldLines[oldIdx],
+          oldLineNum: oldIdx + 1,
+          newLineNum: newIdx + 1,
+        });
+        oldIdx++;
+        newIdx++;
+        lcsIdx++;
+      } else if (lcsMatch && oldIdx < lcsMatch.oldIdx && newIdx < lcsMatch.newIdx) {
+        // Both need to catch up - show deletion then addition
+        result.push({
+          type: "del",
+          text: oldLines[oldIdx],
+          oldLineNum: oldIdx + 1,
+        });
+        oldIdx++;
+      } else if (lcsMatch && oldIdx < lcsMatch.oldIdx) {
+        // Old needs to catch up - deletion
+        result.push({
+          type: "del",
+          text: oldLines[oldIdx],
+          oldLineNum: oldIdx + 1,
+        });
+        oldIdx++;
+      } else if (lcsMatch && newIdx < lcsMatch.newIdx) {
+        // New needs to catch up - addition
+        result.push({
+          type: "add",
+          text: newLines[newIdx],
+          newLineNum: newIdx + 1,
+        });
+        newIdx++;
+      } else if (oldIdx < oldLines.length) {
+        // No more LCS matches, remaining old lines are deletions
+        result.push({
+          type: "del",
+          text: oldLines[oldIdx],
+          oldLineNum: oldIdx + 1,
+        });
+        oldIdx++;
+      } else if (newIdx < newLines.length) {
+        // No more LCS matches, remaining new lines are additions
+        result.push({
+          type: "add",
+          text: newLines[newIdx],
+          newLineNum: newIdx + 1,
+        });
+        newIdx++;
       }
     }
 
@@ -225,20 +277,154 @@ export class EditConfirmationModal extends Modal {
   }
 
   /**
+   * Compute Longest Common Subsequence between old and new lines
+   */
+  private computeLCS(
+    oldLines: string[],
+    newLines: string[]
+  ): Array<{ oldIdx: number; newIdx: number }> {
+    const m = oldLines.length;
+    const n = newLines.length;
+    
+    // Build LCS table
+    const dp: number[][] = [];
+    for (let row = 0; row <= m; row++) {
+      dp.push(new Array<number>(n + 1).fill(0));
+    }
+    
+    for (let i = 1; i <= m; i++) {
+      for (let j = 1; j <= n; j++) {
+        if (oldLines[i - 1] === newLines[j - 1]) {
+          dp[i][j] = dp[i - 1][j - 1] + 1;
+        } else {
+          dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+        }
+      }
+    }
+    
+    // Backtrack to find LCS
+    const lcs: Array<{ oldIdx: number; newIdx: number }> = [];
+    let i = m;
+    let j = n;
+    
+    while (i > 0 && j > 0) {
+      if (oldLines[i - 1] === newLines[j - 1]) {
+        lcs.unshift({ oldIdx: i - 1, newIdx: j - 1 });
+        i--;
+        j--;
+      } else if (dp[i - 1][j] > dp[i][j - 1]) {
+        i--;
+      } else {
+        j--;
+      }
+    }
+    
+    return lcs;
+  }
+
+  /**
+   * Simplified diff for large files - shows changed regions
+   */
+  private computeLargeDiff(oldLines: string[], newLines: string[]): DiffLine[] {
+    const result: DiffLine[] = [];
+    const contextLines = 3;
+    
+    // Find changed line ranges
+    const changes: Array<{ oldStart: number; oldEnd: number; newStart: number; newEnd: number }> = [];
+    let oldIdx = 0;
+    let newIdx = 0;
+    
+    while (oldIdx < oldLines.length && newIdx < newLines.length) {
+      if (oldLines[oldIdx] === newLines[newIdx]) {
+        oldIdx++;
+        newIdx++;
+      } else {
+        // Found a difference - find extent
+        const changeStart = { old: oldIdx, new: newIdx };
+        while (oldIdx < oldLines.length && newIdx < newLines.length && oldLines[oldIdx] !== newLines[newIdx]) {
+          oldIdx++;
+          newIdx++;
+        }
+        changes.push({ 
+          oldStart: changeStart.old, 
+          oldEnd: oldIdx, 
+          newStart: changeStart.new, 
+          newEnd: newIdx 
+        });
+      }
+    }
+    
+    // Handle remaining lines
+    if (oldIdx < oldLines.length || newIdx < newLines.length) {
+      changes.push({
+        oldStart: oldIdx,
+        oldEnd: oldLines.length,
+        newStart: newIdx,
+        newEnd: newLines.length,
+      });
+    }
+    
+    // Show summary for large files
+    result.push({
+      type: "context",
+      text: `--- Large file: ${oldLines.length} → ${newLines.length} lines, ${changes.length} change(s) ---`,
+    });
+    
+    // Show first few changes with context
+    const maxChanges = 5;
+    for (let c = 0; c < Math.min(changes.length, maxChanges); c++) {
+      const change = changes[c];
+      
+      // Context before
+      for (let i = Math.max(0, change.oldStart - contextLines); i < change.oldStart; i++) {
+        result.push({ type: "same", text: oldLines[i], oldLineNum: i + 1, newLineNum: i + 1 });
+      }
+      
+      // Deletions
+      for (let i = change.oldStart; i < change.oldEnd; i++) {
+        result.push({ type: "del", text: oldLines[i], oldLineNum: i + 1 });
+      }
+      
+      // Additions
+      for (let i = change.newStart; i < change.newEnd; i++) {
+        result.push({ type: "add", text: newLines[i], newLineNum: i + 1 });
+      }
+      
+      // Context after
+      const contextEnd = Math.min(oldLines.length, change.oldEnd + contextLines);
+      for (let i = change.oldEnd; i < contextEnd; i++) {
+        result.push({ type: "same", text: oldLines[i], oldLineNum: i + 1, newLineNum: i + 1 });
+      }
+      
+      if (c < Math.min(changes.length, maxChanges) - 1) {
+        result.push({ type: "context", text: "..." });
+      }
+    }
+    
+    if (changes.length > maxChanges) {
+      result.push({ type: "context", text: `... and ${changes.length - maxChanges} more change(s)` });
+    }
+    
+    return result;
+  }
+
+  /**
    * Compute diff statistics
    */
   private computeDiffStats(
-    diffLines: Array<{ type: "add" | "del" | "same"; text: string }>
-  ): { additions: number; deletions: number } {
+    diffLines: DiffLine[]
+  ): { additions: number; deletions: number; same: number } {
     let additions = 0;
     let deletions = 0;
+    let same = 0;
 
     for (const line of diffLines) {
       if (line.type === "add") additions++;
-      if (line.type === "del") deletions++;
+      else if (line.type === "del") deletions++;
+      else if (line.type === "same") same++;
     }
 
-    return { additions, deletions };
+    return { additions, deletions, same };
   }
 
   /**
@@ -251,7 +437,7 @@ export class EditConfirmationModal extends Modal {
     style.id = "pa-edit-confirmation-styles";
     style.textContent = `
       .pa-edit-confirmation {
-        max-width: 600px;
+        max-width: 700px;
       }
 
       .pa-edit-file-info {
@@ -281,28 +467,34 @@ export class EditConfirmationModal extends Modal {
 
       .pa-diff-stat-add {
         color: var(--text-success);
+        font-weight: 500;
       }
 
       .pa-diff-stat-del {
         color: var(--text-error);
+        font-weight: 500;
+      }
+
+      .pa-diff-stat-same {
+        color: var(--text-muted);
       }
 
       .pa-diff-content {
-        max-height: 300px;
+        max-height: 350px;
         overflow-y: auto;
       }
 
       .pa-diff-pre {
         margin: 0;
-        padding: 8px;
+        padding: 0;
         font-size: 0.8em;
         font-family: var(--font-monospace);
-        line-height: 1.4;
+        line-height: 1.5;
       }
 
       .pa-diff-new-file pre {
         margin: 0;
-        padding: 12px;
+        padding: 0;
         font-size: 0.8em;
         font-family: var(--font-monospace);
         background: var(--background-secondary);
@@ -311,24 +503,59 @@ export class EditConfirmationModal extends Modal {
 
       .pa-diff-line {
         display: flex;
-        white-space: pre-wrap;
-        word-break: break-all;
+        white-space: pre;
+        padding: 0 8px 0 0;
+        min-height: 1.5em;
+      }
+
+      .pa-diff-line:hover {
+        background: var(--background-modifier-hover);
       }
 
       .pa-diff-add {
-        background: rgba(0, 200, 0, 0.1);
+        background: rgba(0, 180, 0, 0.12);
       }
 
       .pa-diff-del {
-        background: rgba(200, 0, 0, 0.1);
+        background: rgba(200, 0, 0, 0.12);
+      }
+
+      .pa-diff-context {
+        background: var(--background-secondary);
+        font-style: italic;
+        color: var(--text-muted);
+      }
+
+      .pa-diff-linenum {
+        display: inline-block;
+        width: 40px;
+        flex-shrink: 0;
+        text-align: right;
+        color: var(--text-faint);
+        background: var(--background-secondary);
+        padding: 0 4px;
+        user-select: none;
+        font-size: 0.9em;
+      }
+
+      .pa-diff-linenum-sep {
+        display: inline-block;
+        width: 12px;
+        flex-shrink: 0;
+        text-align: center;
+        color: var(--background-modifier-border);
+        background: var(--background-secondary);
+        user-select: none;
       }
 
       .pa-diff-prefix {
         display: inline-block;
-        width: 16px;
+        width: 20px;
         flex-shrink: 0;
+        text-align: center;
         color: var(--text-muted);
         user-select: none;
+        font-weight: 600;
       }
 
       .pa-diff-add .pa-diff-prefix {
@@ -339,11 +566,17 @@ export class EditConfirmationModal extends Modal {
         color: var(--text-error);
       }
 
+      .pa-diff-text {
+        flex: 1;
+        overflow-x: auto;
+      }
+
       .pa-diff-truncated {
-        padding: 8px;
+        padding: 12px;
         text-align: center;
         color: var(--text-muted);
         font-style: italic;
+        background: var(--background-secondary);
       }
 
       .pa-edit-buttons {

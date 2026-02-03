@@ -6,6 +6,7 @@ import { describe, it, expect } from "vitest";
 import {
   parseEditBlocks,
   mayContainEdits,
+  applySearchReplace,
 } from "./EditBlockParser";
 
 describe("EditBlockParser", () => {
@@ -267,12 +268,87 @@ Content
       expect(mayContainEdits("here's notes/test.md:\n```")).toBe(true);
     });
 
+    it("should return true for search/replace patterns", () => {
+      expect(mayContainEdits("Replace:\n```\nold\n```\nwith:\n```\nnew\n```")).toBe(true);
+      expect(mayContainEdits("<<<<<<< SEARCH\nold\n=======\nnew\n>>>>>>> REPLACE")).toBe(true);
+    });
+
     it("should return false for plain text", () => {
       expect(mayContainEdits("Just a normal response")).toBe(false);
     });
 
     it("should return false for regular code blocks", () => {
       expect(mayContainEdits("```javascript\nconsole.log();\n```")).toBe(false);
+    });
+  });
+
+  describe("search/replace blocks", () => {
+    it("should parse git-style search/replace blocks", () => {
+      const response = `notes/daily.md:
+<<<<<<< SEARCH
+# Old Title
+=======
+# New Title
+>>>>>>> REPLACE`;
+
+      const result = parseEditBlocks(response);
+
+      expect(result.hasEdits).toBe(true);
+      expect(result.blocks).toHaveLength(1);
+      expect(result.blocks[0].format).toBe("search-replace");
+      expect(result.blocks[0].editType).toBe("search-replace");
+      expect(result.blocks[0].searchText).toBe("# Old Title");
+      expect(result.blocks[0].replaceText).toBe("# New Title");
+    });
+
+    it("should include editType on all blocks", () => {
+      const response = `\`\`\`markdown:notes/test.md
+# Test
+\`\`\``;
+
+      const result = parseEditBlocks(response);
+
+      expect(result.blocks[0].editType).toBe("full-replace");
+    });
+  });
+
+  describe("applySearchReplace", () => {
+    it("should replace exact matches", () => {
+      const original = "# Title\n\nOld content here.\n\nMore text.";
+      const result = applySearchReplace(original, "Old content here.", "New content here.");
+
+      expect(result).toBe("# Title\n\nNew content here.\n\nMore text.");
+    });
+
+    it("should handle multi-line replacements", () => {
+      const original = "# Title\n\n- Item 1\n- Item 2\n\nFooter";
+      const result = applySearchReplace(
+        original,
+        "- Item 1\n- Item 2",
+        "- New Item A\n- New Item B\n- New Item C"
+      );
+
+      expect(result).toBe("# Title\n\n- New Item A\n- New Item B\n- New Item C\n\nFooter");
+    });
+
+    it("should return null if search text not found", () => {
+      const original = "# Title\n\nSome content.";
+      const result = applySearchReplace(original, "Not found text", "Replacement");
+
+      expect(result).toBeNull();
+    });
+
+    it("should handle whitespace-normalized matching", () => {
+      const original = "# Title\n\n  - Item 1  \n  - Item 2  ";
+      const result = applySearchReplace(
+        original,
+        "- Item 1\n- Item 2",
+        "- New Items"
+      );
+
+      // Should find and replace despite whitespace differences
+      expect(result).not.toBeNull();
+      expect(result).toContain("- New Items");
     });
   });
 });

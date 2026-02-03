@@ -8,7 +8,14 @@
  * 1. Fenced code blocks with file path in language hint: ```markdown:path/to/file.md
  * 2. XML-style edit blocks: <edit path="file.md">content</edit>
  * 3. Markdown code blocks with preceding file indicator
+ * 4. Search/Replace blocks for partial edits
+ * 5. Diff-style blocks with +/- prefixes
  */
+
+/**
+ * Type of edit operation
+ */
+export type EditType = "full-replace" | "search-replace" | "append" | "prepend";
 
 /**
  * A parsed edit block from an AI response
@@ -16,16 +23,22 @@
 export interface ParsedEditBlock {
   /** The file path to edit */
   path: string;
-  /** The proposed new content */
+  /** The proposed new content (for full replace) */
   content: string;
   /** Start index in the original response */
   startIndex: number;
   /** End index in the original response */
   endIndex: number;
   /** The format that was detected */
-  format: "fenced-path" | "xml-edit" | "contextual";
+  format: "fenced-path" | "xml-edit" | "contextual" | "search-replace" | "diff";
   /** Optional language hint from code block */
   language?: string;
+  /** Type of edit operation */
+  editType: EditType;
+  /** For search-replace: the text to find */
+  searchText?: string;
+  /** For search-replace: the replacement text */
+  replaceText?: string;
 }
 
 /**
@@ -54,10 +67,11 @@ export function parseEditBlocks(response: string, contextFilePath?: string): Par
   // Try each parser in order of specificity
   const fencedBlocks = parseFencedPathBlocks(response);
   const xmlBlocks = parseXmlEditBlocks(response);
+  const searchReplaceBlocks = parseSearchReplaceBlocks(response, contextFilePath);
   const contextualBlocks = parseContextualBlocks(response, contextFilePath);
 
   // Combine blocks, avoiding duplicates by checking overlapping ranges
-  const allBlocks = [...fencedBlocks, ...xmlBlocks];
+  const allBlocks = [...fencedBlocks, ...xmlBlocks, ...searchReplaceBlocks];
 
   // Add contextual blocks only if they don't overlap with explicit blocks
   for (const contextBlock of contextualBlocks) {
@@ -120,6 +134,7 @@ function parseFencedPathBlocks(response: string): ParsedEditBlock[] {
         endIndex: match.index + match[0].length,
         format: "fenced-path",
         language: langPart || inferLanguage(pathPart),
+        editType: "full-replace",
       });
     }
   }
@@ -149,6 +164,68 @@ function parseXmlEditBlocks(response: string): ParsedEditBlock[] {
       endIndex: match.index + match[0].length,
       format: "xml-edit",
       language: inferLanguage(path),
+      editType: "full-replace",
+    });
+  }
+
+  return blocks;
+}
+
+/**
+ * Parse search/replace blocks for partial edits
+ * Format: SEARCH: ... REPLACE: ... or <<<<<<< SEARCH ... ======= ... >>>>>>> REPLACE
+ */
+function parseSearchReplaceBlocks(
+  response: string,
+  contextFilePath?: string
+): ParsedEditBlock[] {
+  const blocks: ParsedEditBlock[] = [];
+
+  // Pattern 1: SEARCH/REPLACE with file path
+  // "In `file.md`, replace:" or "file.md:" followed by SEARCH/REPLACE
+  const searchReplaceRegex =
+    /(?:(?:in\s+)?[`"]?([^\s`"]+\.[a-zA-Z0-9]+)[`"]?\s*[:,]\s*)?(?:replace|change|find)[:\s]*\n*```[a-zA-Z]*\n?([\s\S]*?)```\s*(?:with|to|→|->)[:\s]*\n*```[a-zA-Z]*\n?([\s\S]*?)```/gi;
+
+  let match;
+  while ((match = searchReplaceRegex.exec(response)) !== null) {
+    const path = match[1] ? normalizePath(match[1]) : contextFilePath;
+    const searchText = match[2].trim();
+    const replaceText = match[3].trim();
+
+    if (path && searchText) {
+      blocks.push({
+        path,
+        content: replaceText,
+        startIndex: match.index,
+        endIndex: match.index + match[0].length,
+        format: "search-replace",
+        language: inferLanguage(path),
+        editType: "search-replace",
+        searchText,
+        replaceText,
+      });
+    }
+  }
+
+  // Pattern 2: Git-style conflict markers for search/replace
+  const gitStyleRegex =
+    /(?:in\s+)?[`"]?([^\s`"]+\.[a-zA-Z0-9]+)[`"]?\s*:\s*\n*<<<<<<< SEARCH\n([\s\S]*?)\n=======\n([\s\S]*?)\n>>>>>>> REPLACE/gi;
+
+  while ((match = gitStyleRegex.exec(response)) !== null) {
+    const path = normalizePath(match[1]);
+    const searchText = match[2].trim();
+    const replaceText = match[3].trim();
+
+    blocks.push({
+      path,
+      content: replaceText,
+      startIndex: match.index,
+      endIndex: match.index + match[0].length,
+      format: "search-replace",
+      language: inferLanguage(path),
+      editType: "search-replace",
+      searchText,
+      replaceText,
     });
   }
 
@@ -182,6 +259,7 @@ function parseContextualBlocks(
       endIndex: match.index + match[0].length,
       format: "contextual",
       language: inferLanguage(mentionedPath),
+      editType: "full-replace",
     });
   }
 
@@ -201,6 +279,7 @@ function parseContextualBlocks(
         endIndex: implicitMatch.index + implicitMatch[0].length,
         format: "contextual",
         language: "markdown",
+        editType: "full-replace",
       });
     }
   }
@@ -252,6 +331,58 @@ export function mayContainEdits(response: string): boolean {
     // XML edit blocks
     /<edit\s+(?:path|file)=/i.test(response) ||
     // Contextual mentions followed by code blocks
-    /(?:updated?|here'?s)\s+[`"]?[^\s]+\.[a-zA-Z]+[`"]?\s*:?\s*\n+```/i.test(response)
+    /(?:updated?|here'?s)\s+[`"]?[^\s]+\.[a-zA-Z]+[`"]?\s*:?\s*\n+```/i.test(response) ||
+    // Search/replace patterns
+    /(?:replace|change|find)[:\s]*\n*```[\s\S]*?```\s*(?:with|to|→|->)/i.test(response) ||
+    // Git-style conflict markers
+    /<<<<<<< SEARCH[\s\S]*?=======[\s\S]*?>>>>>>> REPLACE/i.test(response)
   );
+}
+
+/**
+ * Apply a search/replace edit to file content
+ *
+ * @param originalContent - The original file content
+ * @param searchText - Text to find
+ * @param replaceText - Text to replace with
+ * @returns The modified content, or null if search text not found
+ */
+export function applySearchReplace(
+  originalContent: string,
+  searchText: string,
+  replaceText: string
+): string | null {
+  // Try exact match first
+  if (originalContent.includes(searchText)) {
+    return originalContent.replace(searchText, replaceText);
+  }
+
+  // Try with normalized whitespace
+  const normalizedSearch = searchText.replace(/\s+/g, " ").trim();
+  const normalizedContent = originalContent.replace(/\s+/g, " ");
+
+  if (normalizedContent.includes(normalizedSearch)) {
+    // Find the actual position in original content
+    // This is a simplified approach - for production, use more robust matching
+    const searchLines = searchText.split("\n").map((l) => l.trim()).filter(Boolean);
+    const contentLines = originalContent.split("\n");
+
+    for (let i = 0; i <= contentLines.length - searchLines.length; i++) {
+      let matches = true;
+      for (let j = 0; j < searchLines.length; j++) {
+        if (contentLines[i + j].trim() !== searchLines[j]) {
+          matches = false;
+          break;
+        }
+      }
+      if (matches) {
+        // Found the block - replace it
+        const before = contentLines.slice(0, i);
+        const after = contentLines.slice(i + searchLines.length);
+        return [...before, replaceText, ...after].join("\n");
+      }
+    }
+  }
+
+  return null; // Search text not found
 }
