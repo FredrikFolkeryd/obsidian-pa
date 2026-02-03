@@ -672,32 +672,39 @@ export class ChatView extends ItemView {
     this.inputEl.value = "";
     this.updateButtonStates();
 
+    // Check network connectivity first - fail fast with clear message
+    if (!navigator.onLine) {
+      this.restoreInputOnError(content);
+      this.addSystemMessage(
+        "📡 **Offline** — You appear to be disconnected from the internet. " +
+        "Please check your connection and try again. Your message has been restored to the input box."
+      );
+      return;
+    }
+
     // Check if AI is enabled
     if (!this.plugin.settings.consentEnabled) {
+      this.restoreInputOnError(content);
       this.addSystemMessage("Please enable AI features in settings first.");
-      this.isLoading = false;
-      this.updateButtonStates();
       return;
     }
 
     // Check for active provider
     const provider = this.plugin.providerManager?.getActiveProvider();
     if (!provider) {
+      this.restoreInputOnError(content);
       this.addSystemMessage("No AI provider configured. Please check settings.");
-      this.isLoading = false;
-      this.updateButtonStates();
       return;
     }
 
     // Check if provider is authenticated (use async validateToken for accurate check)
     const authResult = await provider.validateToken();
     if (!authResult.success) {
+      this.restoreInputOnError(content);
       const providerName = this.plugin.settings.provider === "gh-copilot-cli" 
         ? "gh copilot CLI" 
         : "GitHub token";
       this.addSystemMessage(`Please configure ${providerName} in settings. ${authResult.error || ""}`);
-      this.isLoading = false;
-      this.updateButtonStates();
       return;
     }
 
@@ -853,13 +860,53 @@ export class ChatView extends ItemView {
 
       // Check if request was aborted
       if (err instanceof Error && err.name === "AbortError") {
+        // Don't restore input on intentional cancel
         this.addSystemMessage("Request cancelled.");
         return;
       }
 
+      // Remove the user message that failed (it was already added to messages)
+      const userMsgIndex = this.messages.findIndex(m => m.content === content && m.role === "user");
+      if (userMsgIndex !== -1) {
+        this.messages.splice(userMsgIndex, 1);
+        // Remove from DOM - find the last user message element
+        const userMsgEls = this.messagesContainerEl?.querySelectorAll(".pa-chat-message-user");
+        if (userMsgEls && userMsgEls.length > 0) {
+          userMsgEls[userMsgEls.length - 1].remove();
+        }
+      }
+
+      // Restore the message to input for easy retry
+      this.restoreInputOnError(content);
+
+      // Detect network errors specifically
       const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
-      this.addSystemMessage(`Error: ${errorMessage}`);
+      const isNetworkError = !navigator.onLine || 
+        /network|connection|offline|ENOTFOUND|ECONNREFUSED|ETIMEDOUT|fetch failed/i.test(errorMessage);
+
+      if (isNetworkError) {
+        this.addSystemMessage(
+          "📡 **Connection lost** — The request failed due to a network error. " +
+          "Please check your internet connection and try again. " +
+          "Your message has been restored to the input box."
+        );
+      } else {
+        this.addSystemMessage(
+          `**Error:** ${errorMessage}\n\nYour message has been restored to the input box.`
+        );
+      }
     }
+  }
+
+  /**
+   * Restore message to input box on error and reset loading state
+   */
+  private restoreInputOnError(content: string): void {
+    if (this.inputEl) {
+      this.inputEl.value = content;
+    }
+    this.isLoading = false;
+    this.updateButtonStates();
   }
 
   /**
