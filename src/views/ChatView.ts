@@ -697,18 +697,7 @@ export class ChatView extends ItemView {
       return;
     }
 
-    // Check if provider is authenticated (use async validateToken for accurate check)
-    const authResult = await provider.validateToken();
-    if (!authResult.success) {
-      this.restoreInputOnError(content);
-      const providerName = this.plugin.settings.provider === "gh-copilot-cli" 
-        ? "gh copilot CLI" 
-        : "GitHub token";
-      this.addSystemMessage(`Please configure ${providerName} in settings. ${authResult.error || ""}`);
-      return;
-    }
-
-    // Add user message
+    // Add user message IMMEDIATELY for instant feedback
     const userMessage: DisplayMessage = {
       id: this.generateId(),
       role: "user",
@@ -718,8 +707,29 @@ export class ChatView extends ItemView {
     this.messages.push(userMessage);
     this.renderMessage(userMessage);
 
-    // Show loading spinner
-    const loadingEl = this.showLoading();
+    // Show loading spinner with initial "Sending..." state
+    const loadingEl = this.showLoading("Sending...");
+
+    // Check if provider is authenticated (use async validateToken for accurate check)
+    const authResult = await provider.validateToken();
+    if (!authResult.success) {
+      // Remove the user message we just added since auth failed
+      this.messages.pop();
+      const userMsgEls = this.messagesContainerEl?.querySelectorAll(".pa-chat-message-user");
+      if (userMsgEls && userMsgEls.length > 0) {
+        userMsgEls[userMsgEls.length - 1].remove();
+      }
+      loadingEl.remove();
+      this.restoreInputOnError(content);
+      const providerName = this.plugin.settings.provider === "gh-copilot-cli" 
+        ? "gh copilot CLI" 
+        : "GitHub token";
+      this.addSystemMessage(`Please configure ${providerName} in settings. ${authResult.error || ""}`);
+      return;
+    }
+
+    // Update loading state - now connecting to AI
+    this.updateLoadingText(loadingEl, "Connecting...");
 
     // Create abort controller for cancellation
     this.abortController = new AbortController();
@@ -786,6 +796,9 @@ export class ChatView extends ItemView {
 
       // Call API via provider with streaming
       const capabilities = provider.getCapabilities();
+      
+      // Update loading state - now waiting for AI response
+      this.updateLoadingText(loadingEl, "Thinking...");
       
       // Create the assistant message placeholder for streaming
       const assistantMessage: DisplayMessage = {
@@ -1230,20 +1243,30 @@ export class ChatView extends ItemView {
   }
 
   /**
-   * Show loading indicator
+   * Show loading indicator with customizable text
    */
-  private showLoading(): HTMLElement {
+  private showLoading(text = "Thinking..."): HTMLElement {
     if (!this.messagesContainerEl) {
       throw new Error("Messages container not initialized");
     }
 
     const loadingEl = this.messagesContainerEl.createDiv({ cls: "pa-chat-loading" });
     loadingEl.createDiv({ cls: "pa-chat-loading-spinner" });
-    loadingEl.createSpan({ text: "Thinking..." });
+    loadingEl.createSpan({ cls: "pa-chat-loading-text", text });
 
     this.messagesContainerEl.scrollTop = this.messagesContainerEl.scrollHeight;
 
     return loadingEl;
+  }
+
+  /**
+   * Update loading indicator text
+   */
+  private updateLoadingText(loadingEl: HTMLElement, text: string): void {
+    const textEl = loadingEl.querySelector(".pa-chat-loading-text");
+    if (textEl) {
+      textEl.textContent = text;
+    }
   }
 
   /**
