@@ -49,13 +49,15 @@ describe("Chat Flow E2E", () => {
       consentMode: "opt-in",
       includedFolders: ["notes", "projects"],
       excludedFolders: [],
+      chatOnlyMode: false,
       model: "gpt-4o",
-      enabledProviders: ["github-models"],
-      activeProvider: "github-models",
-      tokens: {
-        "github-models": "test-token-123",
-      },
-    } as PASettings;
+      authMethod: "direct",
+      provider: "github-models",
+      usageDate: "",
+      usageRequests: 0,
+      conversationHistory: [],
+      maxHistoryMessages: 50,
+    };
 
     // Setup mock vault with files
     const files = Object.keys(fileContents).map((path) =>
@@ -63,13 +65,13 @@ describe("Chat Flow E2E", () => {
     );
 
     mockVault = new MockVault();
-    mockVault.read = vi.fn((file: TFile) => {
+    mockVault.read = vi.fn().mockImplementation((file: TFile) => {
       return Promise.resolve(fileContents[file.path] ?? "");
-    }) as typeof mockVault.read;
-    mockVault.getAbstractFileByPath = vi.fn((path: string) =>
+    });
+    mockVault.getAbstractFileByPath = vi.fn().mockImplementation((path: string) =>
       files.find((f) => f.path === path) ?? null
-    ) as typeof mockVault.getAbstractFileByPath;
-    mockVault.getMarkdownFiles = vi.fn(() => files as TFile[]);
+    );
+    mockVault.getMarkdownFiles = vi.fn(() => files) as typeof mockVault.getMarkdownFiles;
     mockVault.getRoot = vi.fn(() => ({ path: "/" }) as TFolder);
 
     mockApp = {
@@ -77,8 +79,8 @@ describe("Chat Flow E2E", () => {
     };
 
     // Create instances
-    providerManager = new ProviderManager(settings);
-    // Set the token on the provider (settings.tokens is read at construction but provider needs explicit setToken)
+    providerManager = new ProviderManager();
+    // Set the token on the provider
     providerManager.setProviderToken("github-models", "test-token-123");
     safeVault = new SafeVaultAccess(mockApp as App, settings);
   });
@@ -297,8 +299,8 @@ describe("Chat Flow E2E", () => {
 
     it("should handle authentication failures", async () => {
       // Create manager with no tokens
-      const unauthSettings = { ...settings, tokens: {} };
-      const unauthManager = new ProviderManager(unauthSettings);
+      const unauthManager = new ProviderManager();
+      // Don't set any tokens - manager will be unauthenticated
 
       expect(unauthManager.isAuthenticated()).toBe(false);
 

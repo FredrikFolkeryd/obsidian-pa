@@ -10,29 +10,37 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { VaultBackup } from "./VaultBackup";
-import type { App, TFile, Vault } from "obsidian";
+import type { App, TAbstractFile, TFile, TFolder, Vault } from "obsidian";
 
 // Mock Obsidian types
 import { TFile as MockTFile, TFolder as MockTFolder, Vault as MockVault } from "../__mocks__/obsidian";
 
-const createMockFile = (path: string, mtime?: number): MockTFile => {
+const createMockFile = (path: string, mtime?: number): TFile => {
   const file = new MockTFile();
   file.path = path;
   file.basename = path.split("/").pop()?.replace(".md", "") ?? "";
   file.stat = { mtime: mtime ?? Date.now(), ctime: Date.now(), size: 100 };
   file.parent = null;
-  return file;
+  return file as unknown as TFile;
 };
 
-const createMockFolder = (path: string): MockTFolder => {
+// Helper type to enable setting children on mock folders
+interface MockFolderWithChildren extends TFolder {
+  children: TAbstractFile[];
+}
+
+const createMockFolder = (path: string): MockFolderWithChildren => {
   const folder = new MockTFolder();
   folder.path = path;
   folder.children = [];
-  return folder;
+  return folder as unknown as MockFolderWithChildren;
 };
 
-const createMockApp = (files: MockTFile[] = [], folders: MockTFolder[] = []): Partial<App> => {
+// Use 'unknown[]' internally to avoid mock vs real type conflicts
+const createMockApp = (files: unknown[] = [], folders: unknown[] = []): Partial<App> => {
   const vault = new MockVault();
+  const typedFiles = files as MockTFile[];
+  const typedFolders = folders as MockTFolder[];
 
   vault.read = vi.fn().mockResolvedValue("file content");
   vault.create = vi.fn().mockResolvedValue(createMockFile("backup.md"));
@@ -40,14 +48,14 @@ const createMockApp = (files: MockTFile[] = [], folders: MockTFolder[] = []): Pa
   vault.delete = vi.fn().mockResolvedValue(undefined);
   vault.createFolder = vi.fn().mockResolvedValue(undefined);
 
-  vault.getAbstractFileByPath = vi.fn((path: string) => {
-    const file = files.find((f) => f.path === path);
+  vault.getAbstractFileByPath = vi.fn().mockImplementation((path: string) => {
+    const file = typedFiles.find((f) => f.path === path);
     if (file) return file;
-    const folder = folders.find((f) => f.path === path);
+    const folder = typedFolders.find((f) => f.path === path);
     return folder ?? null;
-  }) as typeof vault.getAbstractFileByPath;
+  });
 
-  vault.getMarkdownFiles = vi.fn(() => files as TFile[]);
+  vault.getMarkdownFiles = vi.fn(() => typedFiles) as typeof vault.getMarkdownFiles;
 
   return {
     vault: vault as unknown as Vault,
@@ -72,7 +80,7 @@ describe("VaultBackup", () => {
       // Simulate file read
       (mockApp.vault!.read as ReturnType<typeof vi.fn>).mockResolvedValue("Original content");
 
-      const result = await backup.createBackup(sourceFile);
+      const result = await backup.createBackup(sourceFile, "test backup");
 
       expect(result).not.toBeNull();
       expect(result!.originalPath).toBe("notes/daily.md");
@@ -87,7 +95,7 @@ describe("VaultBackup", () => {
 
       (mockApp.vault!.read as ReturnType<typeof vi.fn>).mockResolvedValue("content");
 
-      await backup.createBackup(sourceFile);
+      await backup.createBackup(sourceFile, "folder creation test");
 
       // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockApp.vault!.createFolder).toHaveBeenCalled();
@@ -102,7 +110,7 @@ describe("VaultBackup", () => {
         new Error("Read failed")
       );
 
-      const result = await backup.createBackup(sourceFile);
+      const result = await backup.createBackup(sourceFile, "fail test");
 
       expect(result).toBeNull();
     });
@@ -295,7 +303,7 @@ describe("VaultBackup", () => {
 
       (mockApp.vault!.read as ReturnType<typeof vi.fn>).mockResolvedValue("content");
 
-      const result = await backup.createBackup(sourceFile);
+      const result = await backup.createBackup(sourceFile, "path format test");
 
       expect(result!.backupPath).toMatch(
         /^\.pa-backups\/notes\/daily-\d+\.md$/
@@ -309,7 +317,7 @@ describe("VaultBackup", () => {
 
       (mockApp.vault!.read as ReturnType<typeof vi.fn>).mockResolvedValue("content");
 
-      const result = await backup.createBackup(sourceFile);
+      const result = await backup.createBackup(sourceFile, "nested path test");
 
       expect(result!.backupPath).toMatch(
         /^\.pa-backups\/notes\/2024\/daily-\d+\.md$/

@@ -15,6 +15,13 @@ export class App {
 
 export class Vault {
   public read = async (_file: TFile): Promise<string> => "";
+  public create = async (_path: string, _data: string): Promise<TFile> =>
+    new TFile();
+  public modify = async (_file: TFile, _data: string): Promise<void> =>
+    undefined;
+  public delete = async (_file: TAbstractFile, _force?: boolean): Promise<void> =>
+    undefined;
+  public createFolder = async (_path: string): Promise<void> => undefined;
   public getAbstractFileByPath = (_path: string): TAbstractFile | null => null;
   public getMarkdownFiles = (): TFile[] => [];
   public getRoot = (): TFolder => new TFolder();
@@ -42,6 +49,8 @@ export class WorkspaceLeaf {
 export class TAbstractFile {
   public path = "";
   public name = "";
+  public vault!: Vault;
+  public parent: TFolder | null = null;
 }
 
 export class TFile extends TAbstractFile {

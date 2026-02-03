@@ -2,7 +2,7 @@
  * Tests for GitHubModelsProvider
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { GitHubModelsProvider } from "./GitHubModelsProvider";
 
 interface ChatRequestBody {
@@ -220,9 +220,9 @@ describe("GitHubModelsProvider", () => {
         systemPrompt: "You are a helpful assistant",
       });
 
-      const fetchMock = global.fetch as Mock<typeof fetch>;
-      const callArgs = fetchMock.mock.calls[0] as [string, RequestInit];
-      const callBody = JSON.parse(callArgs[1].body as string) as ChatRequestBody;
+      const fetchMock = vi.mocked(global.fetch);
+      const callArgs = fetchMock.mock.calls[0];
+      const callBody = JSON.parse(callArgs[1]?.body as string) as ChatRequestBody;
       expect(callBody.messages[0].role).toBe("system");
       expect(callBody.messages[0].content).toBe("You are a helpful assistant");
     });
