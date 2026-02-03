@@ -32,6 +32,7 @@ export class ChatView extends ItemView {
   private isLoading = false;
   private abortController: AbortController | null = null;
   private lastActiveFile: TFile | null = null;
+  private contextIndicatorEl: HTMLElement | null = null;
   private usageStatsEl: HTMLElement | null = null;
   private modelInfoEl: HTMLElement | null = null;
 
@@ -146,6 +147,10 @@ export class ChatView extends ItemView {
     });
     limitNotice.setAttribute("target", "_blank");
     limitNotice.setAttribute("title", "AI can read notes but cannot edit them. Click to learn more.");
+
+    // Context indicator - shows which files AI can see
+    this.contextIndicatorEl = headerEl.createDiv({ cls: "pa-chat-context" });
+    this.updateContextIndicator(this.getVisibleContextFiles().filter(f => this.isFileAllowed(f.path)));
 
     // Create messages container
     this.messagesContainerEl = container.createDiv({ cls: "pa-chat-messages" });
@@ -401,6 +406,46 @@ export class ChatView extends ItemView {
 
       .pa-chat-usage {
         opacity: 0.8;
+      }
+
+      .pa-chat-context {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.75em;
+        color: var(--text-muted);
+        margin-top: 6px;
+        padding: 4px 8px;
+        background: var(--background-secondary);
+        border-radius: 4px;
+        cursor: help;
+      }
+
+      .pa-chat-context-empty {
+        font-style: italic;
+        opacity: 0.7;
+      }
+
+      .pa-chat-context-label {
+        opacity: 0.9;
+      }
+
+      .pa-chat-context-file {
+        color: var(--text-normal);
+        font-weight: 500;
+      }
+
+      .pa-chat-context-primary {
+        color: var(--text-accent);
+      }
+
+      .pa-chat-context-sep {
+        opacity: 0.5;
+      }
+
+      .pa-chat-context-more {
+        opacity: 0.7;
+        font-style: italic;
       }
 
       .pa-chat-messages {
@@ -678,25 +723,48 @@ export class ChatView extends ItemView {
         .filter((m) => m.role !== "system")
         .map((m) => ({ role: m.role, content: m.content }));
 
-      // Add context from active note if available
-      // Use tracked last active file since getActiveFile() returns null when chat has focus
-      const contextFile = this.getContextFile();
+      // Get all visible files for context
+      const visibleFiles = this.getVisibleContextFiles();
+      const allowedFiles = visibleFiles.filter(f => this.isFileAllowed(f.path));
+      
+      // Update context indicator
+      this.updateContextIndicator(allowedFiles);
+      
       let systemPrompt =
         "You are a helpful AI assistant integrated into Obsidian. " +
         "Help the user with their notes, writing, and knowledge management.";
 
-      if (contextFile && this.isFileAllowed(contextFile.path)) {
-        const fileContent = await this.app.vault.read(contextFile);
+      if (allowedFiles.length > 0) {
+        // Build context from all visible allowed files
+        const fileContexts: string[] = [];
+        let totalChars = 0;
+        const maxTotalChars = 8000; // Limit total context to avoid token overflow
+        
+        for (const file of allowedFiles) {
+          if (totalChars >= maxTotalChars) break;
+          
+          const fileContent = await this.app.vault.read(file);
+          const remainingChars = maxTotalChars - totalChars;
+          const truncatedContent = fileContent.slice(0, Math.min(4000, remainingChars));
+          totalChars += truncatedContent.length;
+          
+          const isPrimary = file === allowedFiles[0];
+          fileContexts.push(
+            `### ${isPrimary ? "📝 Active: " : ""}${file.basename}\n` +
+            `Path: ${file.path}\n` +
+            `\`\`\`\n${truncatedContent}${truncatedContent.length < fileContent.length ? "\n... (truncated)" : ""}\n\`\`\``
+          );
+        }
+        
+        const fileLabel = allowedFiles.length === 1 ? "note" : "notes";
         systemPrompt +=
-          `\n\nYou have access to the user's currently open note:\n` +
-          `Filename: ${contextFile.basename}\n` +
-          `Path: ${contextFile.path}\n` +
-          `Content:\n---\n${fileContent.slice(0, 4000)}\n---\n` +
-          `\nYou can reference and discuss this note's content. ` +
-          `If the user asks about their notes without a file open, let them know they can open a note for you to see it.`;
+          `\n\nYou have access to ${allowedFiles.length} open ${fileLabel}:\n\n` +
+          fileContexts.join("\n\n") +
+          `\n\nYou can reference and discuss these notes' content. ` +
+          `The first note marked with 📝 is the currently focused/active note.`;
       } else {
         systemPrompt +=
-          `\n\nNo note is currently open, or the active note is in a folder the user has excluded from AI access. ` +
+          `\n\nNo notes are currently visible, or all open notes are in folders the user has excluded from AI access. ` +
           `If the user wants you to see a note's content, ask them to open it in the editor.`;
       }
 
@@ -771,30 +839,63 @@ export class ChatView extends ItemView {
   }
 
   /**
-   * Get the file to use for context
-   * Tries getActiveFile first, falls back to finding a markdown leaf, or last tracked file
+   * Get all visible markdown files from open panes
+   * Returns files from all visible splits/panes, not just tabs
    */
-  private getContextFile(): TFile | null {
-    // First try the standard method - works when a markdown pane has focus
-    const activeFile = this.app.workspace.getActiveFile();
-    if (activeFile) {
-      this.lastActiveFile = activeFile;
-      return activeFile;
-    }
+  private getVisibleContextFiles(): TFile[] {
+    const visibleFiles: TFile[] = [];
+    const seenPaths = new Set<string>();
 
-    // If chat has focus, getActiveFile returns null
-    // Find the most recent markdown view leaf
+    // Get all markdown leaves (open panes)
     const leaves = this.app.workspace.getLeavesOfType("markdown");
-    if (leaves.length > 0) {
-      // Get the file from the first markdown leaf (most recently focused)
-      const markdownView = leaves[0].view as MarkdownView;
-      if (markdownView.file) {
-        this.lastActiveFile = markdownView.file;
-        return markdownView.file;
+    
+    for (const leaf of leaves) {
+      const markdownView = leaf.view as MarkdownView;
+      const file = markdownView.file;
+      
+      if (file && !seenPaths.has(file.path)) {
+        // Check if the leaf is actually visible (not in a collapsed sidebar, etc.)
+        // A leaf is visible if it has dimensions
+        const containerEl = leaf.view.containerEl;
+        if (containerEl.offsetWidth > 0 && containerEl.offsetHeight > 0) {
+          seenPaths.add(file.path);
+          visibleFiles.push(file);
+          
+          // Track the first one as the "active" file for edit context
+          if (!this.lastActiveFile) {
+            this.lastActiveFile = file;
+          }
+        }
       }
     }
 
-    // Fall back to last known active file
+    // Also check current active file in case it's not in the visible list
+    const activeFile = this.app.workspace.getActiveFile();
+    if (activeFile && !seenPaths.has(activeFile.path)) {
+      visibleFiles.unshift(activeFile); // Put at front as primary
+      this.lastActiveFile = activeFile;
+    } else if (activeFile) {
+      // Move active file to front if it exists
+      const idx = visibleFiles.findIndex(f => f.path === activeFile.path);
+      if (idx > 0) {
+        visibleFiles.splice(idx, 1);
+        visibleFiles.unshift(activeFile);
+      }
+      this.lastActiveFile = activeFile;
+    }
+
+    return visibleFiles;
+  }
+
+  /**
+   * Get the primary file to use for context (for edit operations)
+   * Falls back to last active file when chat has focus
+   */
+  private getContextFile(): TFile | null {
+    const visibleFiles = this.getVisibleContextFiles();
+    if (visibleFiles.length > 0) {
+      return visibleFiles[0];
+    }
     return this.lastActiveFile;
   }
 
@@ -1115,6 +1216,65 @@ export class ChatView extends ItemView {
     const count = this.getTodayUsage();
     const reqText = count === 1 ? "request" : "requests";
     this.usageStatsEl.setText(`${count} ${reqText} today`);
+  }
+
+  /**
+   * Update the context indicator showing which files AI can see
+   */
+  private updateContextIndicator(files: TFile[]): void {
+    if (!this.contextIndicatorEl) return;
+    
+    this.contextIndicatorEl.empty();
+    
+    if (files.length === 0) {
+      this.contextIndicatorEl.createSpan({ 
+        cls: "pa-chat-context-empty",
+        text: "📄 No notes in context",
+      });
+      this.contextIndicatorEl.setAttribute("title", "Open notes in visible panes to include them in the conversation");
+      return;
+    }
+    
+    const label = this.contextIndicatorEl.createSpan({ cls: "pa-chat-context-label" });
+    label.setText(`📄 Context: `);
+    
+    const fileList = this.contextIndicatorEl.createSpan({ cls: "pa-chat-context-files" });
+    
+    files.forEach((file, idx) => {
+      if (idx > 0) {
+        fileList.createSpan({ text: ", ", cls: "pa-chat-context-sep" });
+      }
+      
+      const fileSpan = fileList.createSpan({ 
+        cls: idx === 0 ? "pa-chat-context-file pa-chat-context-primary" : "pa-chat-context-file",
+        text: file.basename,
+      });
+      fileSpan.setAttribute("title", file.path);
+    });
+    
+    if (files.length > 3) {
+      // Collapse to show only first 3
+      fileList.empty();
+      files.slice(0, 3).forEach((file, idx) => {
+        if (idx > 0) {
+          fileList.createSpan({ text: ", ", cls: "pa-chat-context-sep" });
+        }
+        const fileSpan = fileList.createSpan({ 
+          cls: idx === 0 ? "pa-chat-context-file pa-chat-context-primary" : "pa-chat-context-file",
+          text: file.basename,
+        });
+        fileSpan.setAttribute("title", file.path);
+      });
+      fileList.createSpan({ 
+        cls: "pa-chat-context-more",
+        text: ` +${files.length - 3} more`,
+      });
+    }
+    
+    this.contextIndicatorEl.setAttribute(
+      "title", 
+      `AI can see: ${files.map(f => f.path).join(", ")}`
+    );
   }
 
   /**
