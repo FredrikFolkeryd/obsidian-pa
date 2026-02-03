@@ -198,6 +198,7 @@ When creating or updating documentation:
 - [ ] Links are valid and descriptive
 - [ ] Formatting is consistent
 - [ ] Accessibility guidelines followed
+- [ ] **Markdownlint passes with no warnings** (run markdownlint before committing)
 
 ## Validation Checklist
 
@@ -209,5 +210,6 @@ Before considering work complete:
 - [ ] Code examples tested
 - [ ] Links validated
 - [ ] Structure and formatting reviewed
+- [ ] **Markdownlint clears all warnings** - no false positives hiding real issues
 - [ ] `tech-writer.md` updated with progress and notes
 - [ ] Documentation ready for review

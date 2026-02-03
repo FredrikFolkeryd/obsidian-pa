@@ -255,6 +255,8 @@ Before considering testing work complete:
 - [ ] Coverage targets met or gaps justified
 - [ ] Test code follows quality standards
 - [ ] Mocks are appropriate and maintainable
+- [ ] **ESLint passes on all test files** - run `npm run lint` before committing
+- [ ] **No TypeScript errors in test files** - tests must compile cleanly
 - [ ] Test metrics documented and analysed
 - [ ] `tester.md` updated with progress and findings
 - [ ] Any issues discovered are documented
