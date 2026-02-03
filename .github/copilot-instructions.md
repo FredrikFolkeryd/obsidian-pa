@@ -109,7 +109,7 @@ Agents **must** commit work progressively, not in one large batch:
 
 ### Cross-Platform Considerations
 
-Windows support is deferred, but code should be cross-platform ready. See [docs/cross-platform.md](../docs/cross-platform.md) for detailed guidance.
+Windows support is deferred, but code should be cross-platform ready. See [docs/cross-platform.md](/docs/cross-platform.md) for detailed guidance.
 
 **Quick rules:**
 - Use `homedir()` from `os` module, not `process.env.HOME`
