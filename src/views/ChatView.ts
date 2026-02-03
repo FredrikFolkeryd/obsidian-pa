@@ -526,6 +526,35 @@ export class ChatView extends ItemView {
         margin-bottom: 0;
       }
 
+      .pa-chat-message-content pre {
+        position: relative;
+      }
+
+      .pa-code-copy-btn {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        opacity: 0;
+        transition: opacity 0.15s ease;
+        padding: 4px;
+        border: none;
+        background: var(--background-secondary);
+        cursor: pointer;
+        color: var(--text-muted);
+        border-radius: 4px;
+        z-index: 1;
+      }
+
+      .pa-chat-message-content pre:hover .pa-code-copy-btn {
+        opacity: 0.7;
+      }
+
+      .pa-code-copy-btn:hover {
+        opacity: 1 !important;
+        color: var(--text-normal);
+        background: var(--background-modifier-hover);
+      }
+
       .pa-chat-input-container {
         border-top: 1px solid var(--background-modifier-border);
         padding-top: 10px;
@@ -789,7 +818,15 @@ export class ChatView extends ItemView {
         "The complete new content of the file goes here.\n" +
         "```\n\n" +
         "The user will see an 'Apply Edit' button to review and apply your changes. " +
-        "Always include the FULL file path and the COMPLETE new content (not just the changed parts).";
+        "Always include the FULL file path and the COMPLETE new content (not just the changed parts).\n\n" +
+        "## Copyable Content\n" +
+        "When providing content the user might want to copy (lists, templates, text snippets, etc.), " +
+        "wrap it in a fenced code block with 'markdown' as the language:\n\n" +
+        "```markdown\n" +
+        "Your copyable content here\n" +
+        "```\n\n" +
+        "Each code block has a copy button that copies the raw content without the backticks. " +
+        "Keep your explanations OUTSIDE the code block.";
 
       if (allowedFiles.length > 0) {
         // Build context from all visible allowed files
@@ -1150,6 +1187,9 @@ export class ChatView extends ItemView {
     // Render as full markdown
     void MarkdownRenderer.render(this.app, content, contentEl as HTMLElement, "", this.plugin);
 
+    // Add copy buttons to code blocks
+    this.addCodeBlockCopyButtons(contentEl as HTMLElement, content);
+
     // Wire up copy button now that we have final content
     const copyBtn = messageEl.querySelector(".pa-chat-copy-btn") as HTMLElement | null;
     if (copyBtn) {
@@ -1189,6 +1229,68 @@ export class ChatView extends ItemView {
       setTimeout(() => {
         buttonEl.innerHTML = originalHTML;
         buttonEl.removeClass("pa-chat-copy-success");
+      }, 1500);
+    } catch {
+      new Notice("Could not copy to clipboard");
+    }
+  }
+
+  /**
+   * Add copy buttons to code blocks in rendered markdown
+   * Extracts raw content from the original markdown to copy without backticks
+   */
+  private addCodeBlockCopyButtons(contentEl: HTMLElement, rawContent: string): void {
+    // Extract code block contents from raw markdown
+    const codeBlockRegex = /```(?:[^\n]*)\n([\s\S]*?)```/g;
+    const codeContents: string[] = [];
+    let match;
+    while ((match = codeBlockRegex.exec(rawContent)) !== null) {
+      codeContents.push(match[1].trimEnd());
+    }
+
+    // Find all rendered code blocks and add copy buttons
+    const codeBlocks = contentEl.querySelectorAll("pre > code");
+    codeBlocks.forEach((codeEl, index) => {
+      const preEl = codeEl.parentElement;
+      if (!preEl) return;
+
+      // Make pre relative for absolute positioning of button
+      preEl.style.position = "relative";
+
+      // Get raw content for this block (fall back to rendered text)
+      const rawCode = codeContents[index] ?? codeEl.textContent ?? "";
+
+      // Create copy button
+      const copyBtn = document.createElement("button");
+      copyBtn.className = "pa-code-copy-btn clickable-icon";
+      copyBtn.setAttribute("aria-label", "Copy code");
+      copyBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+      
+      copyBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        void this.copyCodeBlock(rawCode, copyBtn);
+      });
+
+      preEl.appendChild(copyBtn);
+    });
+  }
+
+  /**
+   * Copy code block content to clipboard
+   */
+  private async copyCodeBlock(code: string, buttonEl: HTMLElement): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(code);
+      
+      // Show feedback
+      const originalHTML = buttonEl.innerHTML;
+      buttonEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+      buttonEl.classList.add("pa-chat-copy-success");
+      
+      setTimeout(() => {
+        buttonEl.innerHTML = originalHTML;
+        buttonEl.classList.remove("pa-chat-copy-success");
       }, 1500);
     } catch {
       new Notice("Could not copy to clipboard");
