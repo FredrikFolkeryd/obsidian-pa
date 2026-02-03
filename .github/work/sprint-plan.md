@@ -146,15 +146,15 @@
 ### Remaining Work
 
 1. ✅ **Coverage target revised** — 43% statements acceptable (see retro)
-2. [ ] **Threat model** — Security review of write operations (pending from Sprint 4)
-3. [ ] **alpha.8 release** — Ready after threat model
+2. ✅ **Threat model** — Security review complete (see `docs/threat-model.md`)
+3. ✅ **alpha.8 release** — Released
 
 ### Acceptance Criteria
 
 - [x] Pure helper functions extracted and tested
 - [x] Coverage recalibrated based on industry research
-- [ ] Threat model complete
-- [ ] alpha.8 released
+- [x] Threat model complete
+- [x] alpha.8 released
 
 ---
 

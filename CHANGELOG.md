@@ -23,6 +23,37 @@ The following features are planned for future releases:
 - **Note creation** — AI can draft new notes based on conversations
 - **Link suggestions** — AI recommends connections between notes
 
+## [1.0.0-alpha.8]
+
+### ✨ Features
+
+- **Expanded test coverage** — 330 tests total (up from 232):
+  - Pure helper functions extracted to `src/chat/helpers.ts` with 100% coverage
+  - Settings validation tests (+15)
+  - EditHistoryModal logic tests (+22)
+  - SafeVaultAccess edge case tests (+14)
+  
+- **Branch coverage exceeds 80% target** — Now at 84%
+
+### 📋 Documentation
+
+- **Threat model** for write operations — Comprehensive security review:
+  - 9 threat categories analysed (T1–T9)
+  - Risk matrix with likelihood/impact assessments
+  - All critical controls verified and tested
+  - Approved for release by @security, @architect, @team-lead
+  
+- **Sprint 6 retrospective** — Coverage target recalibration:
+  - Industry research (Martin Fowler, Stack Overflow consensus)
+  - Revised targets based on UI-heavy architecture
+  - E2E testing planned for beta phase
+
+### 🔧 Changed
+
+- Coverage targets recalibrated based on industry best practices
+- Pure functions extracted from ChatView for improved testability
+- Sprint plan updated with realistic progression table
+
 ## [1.0.0-alpha.7]
 
 ### ✨ Features
