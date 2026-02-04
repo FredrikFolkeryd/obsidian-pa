@@ -388,7 +388,7 @@ Updated content here.
       const result = validateTaskPlan(plan);
 
       expect(result.valid).toBe(true);
-      expect(result.warnings.some((w) => w.includes("move operation"))).toBe(
+      expect(result.warnings.some((w: string) => w.includes("move operation"))).toBe(
         true
       );
     });
@@ -408,7 +408,7 @@ Updated content here.
 
       // This could be a warning or error depending on design choice
       // For now, we'll allow it but warn
-      expect(result.warnings.some((w) => w.includes("same.md"))).toBe(true);
+      expect(result.warnings.some((w: string) => w.includes("same.md"))).toBe(true);
     });
   });
 });

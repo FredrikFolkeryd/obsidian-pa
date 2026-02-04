@@ -171,17 +171,20 @@ src/
 ## Consequences
 
 ### Positive
+
 - Clear separation of planning and execution
 - Single approval point reduces friction for multi-step tasks
 - Atomic rollback provides safety net
 - Extensible handler architecture for new step types
 
 ### Negative
+
 - More complex than single-edit model
 - AI must generate well-formed task plans
 - Rollback may not be perfect (e.g., external sync conflicts)
 
 ### Risks
+
 - **R1**: AI generates invalid/unsafe plans → Mitigated by validation layer
 - **R2**: Long-running tasks block UI → Mitigated by async execution with progress
 - **R3**: Partial failures leave vault in inconsistent state → Mitigated by atomic rollback
@@ -189,14 +192,17 @@ src/
 ## Alternatives Considered
 
 ### A. Step-by-step approval
+
 - User approves each step individually
 - **Rejected**: Too much friction for multi-step tasks
 
 ### B. YAML-based task definitions
+
 - Tasks defined in YAML files in vault
 - **Rejected**: Over-engineering for v1; can add later as power-user feature
 
 ### C. Undo stack (vs explicit rollback)
+
 - Track all changes in global undo stack
 - **Rejected**: Harder to reason about task boundaries
 

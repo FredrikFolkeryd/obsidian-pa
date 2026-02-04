@@ -66,7 +66,7 @@ describe("TaskExecutor", () => {
       handlers: new Map([["create-note", mockHandler]]),
     });
     events = [];
-    executor.on((event) => events.push(event));
+    executor.on((event: TaskEvent) => events.push(event));
   });
 
   describe("approve", () => {
@@ -160,7 +160,7 @@ describe("TaskExecutor", () => {
     it("should emit progress events", async () => {
       const plan = createTestPlan({ status: "approved", approvedAt: Date.now() });
       events = [];
-      executor.on((event) => events.push(event));
+      executor.on((event: TaskEvent) => events.push(event));
 
       await executor.execute(plan);
 
@@ -180,7 +180,7 @@ describe("TaskExecutor", () => {
         handlers: new Map([["create-note", failingHandler]]),
       });
       events = [];
-      executor.on((event) => events.push(event));
+      executor.on((event: TaskEvent) => events.push(event));
 
       const plan = createTestPlan({ status: "approved", approvedAt: Date.now() });
       await executor.execute(plan);
@@ -271,7 +271,7 @@ describe("TaskExecutor", () => {
         handlers: new Map([["create-note", handlerWithUndo]]),
       });
       events = [];
-      executor.on((event) => events.push(event));
+      executor.on((event: TaskEvent) => events.push(event));
 
       const plan = createTestPlan({
         status: "completed",
@@ -367,7 +367,7 @@ describe("TaskExecutor", () => {
 
     it("should emit task-cancelled event", () => {
       events = [];
-      executor.on((event) => events.push(event));
+      executor.on((event: TaskEvent) => events.push(event));
 
       const plan = createTestPlan({ status: "running" });
       executor.cancel(plan);
@@ -381,8 +381,8 @@ describe("TaskExecutor", () => {
       const listener1: TaskEvent[] = [];
       const listener2: TaskEvent[] = [];
 
-      executor.on((e) => listener1.push(e));
-      executor.on((e) => listener2.push(e));
+      executor.on((e: TaskEvent) => listener1.push(e));
+      executor.on((e: TaskEvent) => listener2.push(e));
 
       const plan = createTestPlan();
       executor.approve(plan);

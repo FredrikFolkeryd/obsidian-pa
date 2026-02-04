@@ -336,28 +336,30 @@ export function validateTaskPlan(
 
   // Validate each step
   for (const step of plan.steps) {
-    const params = step.params as Record<string, unknown>;
-    const path = params.path as string;
+    const path = "path" in step.params ? (step.params as { path: string }).path : undefined;
 
     // Check content size
-    if ("content" in params && typeof params.content === "string") {
-      const contentSize = new TextEncoder().encode(params.content).length;
-      if (contentSize > fullConfig.maxContentSize) {
-        errors.push(
-          `Step '${step.description}' exceeds maximum content size of ${fullConfig.maxContentSize} bytes`
-        );
+    if ("content" in step.params) {
+      const content = (step.params as { content?: string }).content;
+      if (typeof content === "string") {
+        const contentSize = new TextEncoder().encode(content).length;
+        if (contentSize > fullConfig.maxContentSize) {
+          errors.push(
+            `Step '${step.description}' exceeds maximum content size of ${fullConfig.maxContentSize} bytes`
+          );
+        }
       }
     }
 
     // Warn about dangerous operations
-    if (step.type === "delete-note") {
+    if (step.type === "delete-note" && path) {
       warnings.push(`Plan includes delete operation for: ${path}`);
     }
 
     if (step.type === "move-note") {
-      const moveParams = params as MoveNoteParams;
+      const moveParams = step.params as MoveNoteParams;
       warnings.push(
-        `Plan includes move operation: ${path} → ${moveParams.newPath}`
+        `Plan includes move operation: ${moveParams.path} → ${moveParams.newPath}`
       );
     }
 

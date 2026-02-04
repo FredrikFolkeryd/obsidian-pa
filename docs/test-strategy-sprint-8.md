@@ -188,18 +188,21 @@ Reuse existing mock vault from `src/__mocks__/obsidian.ts`, extended with:
 ## 6. Test Execution Plan
 
 ### Phase 1: Foundation (Week 1)
+
 - [ ] TaskPlanParser unit tests (before implementation - TDD)
 - [ ] TaskExecutor unit tests
 - [ ] CreateNoteHandler tests
 - [ ] ModifyNoteHandler tests
 
 ### Phase 2: Integration (Week 2)
+
 - [ ] TaskFlow E2E tests
 - [ ] Security-focused tests
 - [ ] AddLinkHandler tests
 - [ ] Rollback tests
 
 ### Phase 3: Polish
+
 - [ ] Edge case coverage
 - [ ] Performance tests (large task plans)
 - [ ] Manual exploratory testing
