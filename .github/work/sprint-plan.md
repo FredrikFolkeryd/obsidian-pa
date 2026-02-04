@@ -16,8 +16,8 @@
 | alpha.7 | 43% | 84% | 49% | ✅ Complete (Sprint 5) |
 | alpha.8 | 45% | 85% | 50% | ✅ Complete (Sprint 6) |
 | alpha.9 | 52% | 84% | 55% | ✅ Complete (Sprint 8) |
-| alpha.10 | 56% | 86% | 58% | 🔄 Sprint 9 (657 tests) |
-| beta.1 | 58% | 87% | 62% | After full chat integration |
+| alpha.10 | 56% | 86% | 58% | ✅ Complete (Sprint 9, 669 tests) |
+| beta.1 | 58% | 87% | 62% | 🔄 Ready for release |
 | 1.0 | 60% | 85% | 65% | Release quality + E2E tests |
 
 > **Coverage Recalibration (Sprint 6 Retro)**
@@ -245,7 +245,7 @@
 
 ---
 
-## Sprint 9: Chat Integration & Natural Language Tasks 🔄 In Progress
+## Sprint 9: Chat Integration & Natural Language Tasks ✅ Complete
 
 **Goal:** Wire task automation to chat UI, enable natural language task requests
 
@@ -280,14 +280,23 @@
    - Real-time step progress feedback in chat
    - History tracking on execution
 
-5. ✅ **Integration Tests**
+5. ✅ **Task History View**
+   - `TaskHistoryView` — Dedicated view for browsing executed task plans
+   - Filter by status (all, completed, failed, rolled-back)
+   - Expandable step details
+   - Rollback button for completed plans with confirmation modal
+   - Clear history with confirmation
+   - "Open Task History" command in plugin
+   - 12 tests
+
+6. ✅ **Integration Tests**
    - `TaskPlanFlow.test.ts` — E2E flow tests
    - Parse → Approve → Execute → History lifecycle
    - 8 integration tests
 
 ### Test Coverage
 
-- 657 tests passing (up from 555)
+- 669 tests passing (up from 555)
 - Branch coverage: 86%+ (maintained)
 
 ### Acceptance Criteria
@@ -296,9 +305,9 @@
 - [x] System prompt instructs AI on task plan format
 - [x] Task intent detection from natural language
 - [x] History tracks past operations
-- [ ] Task history view UI
-- [ ] Rollback from history UI
-- [x] 600+ tests (657), 85%+ branch coverage (86%)
+- [x] Task history view UI
+- [x] Rollback from history UI
+- [x] 600+ tests (669), 85%+ branch coverage (86%)
 
 ---
 
