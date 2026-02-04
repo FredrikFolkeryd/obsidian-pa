@@ -107,6 +107,7 @@ After the review:
 - No hardcoded secrets or credentials
 - Dependencies licence-compliant (avoid AGPL-3.0)
 - Tests written for new functionality
+- **Test coverage maintained** (branch coverage ≥80%, see `npm run test:coverage`)
 - ESLint passes without errors
 - Build completes successfully
 

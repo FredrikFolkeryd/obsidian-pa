@@ -72,9 +72,10 @@ Before considering work complete:
 
 1. Run `npm run lint` and fix any issues
 2. Run `npm run test` and ensure all tests pass
-3. Run `npm run build` and verify successful build
-4. Update `developer.md` with final notes
-5. Notify that implementation is ready for review
+3. Run `npm run test:coverage` and verify branch coverage ≥80%
+4. Run `npm run build` and verify successful build
+5. Update `developer.md` with final notes
+6. Notify that implementation is ready for review
 
 ## Guidelines
 

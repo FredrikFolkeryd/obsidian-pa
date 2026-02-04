@@ -115,6 +115,24 @@ Prioritise testing based on:
 - **Medium Risk**: Feature integrations, settings, UI interactions
 - **Low Risk**: Utilities, formatting, edge cases
 
+### Non-Functional Requirements (NFR) Testing
+
+Per EA-02, test strategies should address NFRs where applicable:
+
+| NFR Category | What to Test | How to Test |
+|--------------|--------------|-------------|
+| **Performance** | Response time, memory usage | Benchmark tests, profiling |
+| **Reliability** | Error handling, recovery | Chaos testing, edge cases |
+| **Security** | Input validation, auth | Security-focused unit tests |
+| **Usability** | Accessibility, UX flows | Exploratory testing |
+| **Maintainability** | Code coverage, complexity | Coverage reports, linting |
+
+**When to test NFRs:**
+- Performance: When adding streaming, large file handling, or loops
+- Security: When handling user input, tokens, or vault access
+- Reliability: When adding error paths or async operations
+- Usability: Before major releases, after UI changes
+
 ### Test Types for Obsidian Plugins
 
 #### Unit Tests

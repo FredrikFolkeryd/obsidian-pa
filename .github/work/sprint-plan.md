@@ -73,7 +73,7 @@
 
 ### Pending from Retro
 
-- [ ] Threat model for write operations (@security)
+- [x] Threat model for write operations (@security) — see [docs/threat-model.md](/docs/threat-model.md)
 - [x] Exploratory testing session (@tester) — feedback incorporated
 
 ---
