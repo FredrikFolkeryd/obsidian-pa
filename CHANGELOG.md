@@ -19,9 +19,40 @@ The following features are planned for future releases:
 
 #### Agentic Capabilities (Phase 2.0)
 
-- **Task automation** — AI can perform multi-step workflows
-- **Note creation** — AI can draft new notes based on conversations
+- **Natural language tasks** — "Create a note about X" detection
 - **Link suggestions** — AI recommends connections between notes
+- **Orphan detection** — Find unlinked notes in vault
+
+## [1.0.0-alpha.9]
+
+### ✨ Features
+
+- **Task Automation Framework** — AI can perform multi-step workflows:
+  - `TaskPlanParser` — Parses XML task plans from AI responses
+  - `TaskExecutor` — Plan-Approve-Execute pattern with full rollback
+  - `TaskApprovalModal` — Review and approve task plans before execution
+  - `TaskPlanBlockParser` — Detects task plan blocks in chat responses
+
+- **6 Step Handlers** — Vault operations for task automation:
+  - `CreateNoteHandler` — Create new vault notes
+  - `ModifyNoteHandler` — Edit existing notes with backup
+  - `DeleteNoteHandler` — Delete notes with content backup for undo
+  - `MoveNoteHandler` — Rename/move notes via fileManager
+  - `AddLinkHandler` — Insert wikilinks into notes
+  - `AddTagHandler` — Add frontmatter or inline tags
+
+- **Expanded test coverage** — 555 tests total (up from 375):
+  - 98 handler tests with comprehensive edge cases
+  - 30 TaskPlanParser tests
+  - 21 TaskExecutor tests
+  - 21 TaskPlanBlockParser tests
+  - 10 TaskApprovalModal tests
+
+### 🔧 Changed
+
+- Branch coverage maintained at 84.57%
+- Statement coverage increased to 52.48%
+- Sprint plan updated with Sprint 8 completion
 
 ## [1.0.0-alpha.8]
 
