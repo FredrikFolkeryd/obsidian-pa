@@ -1,15 +1,15 @@
 # Threat Model: Write Operations
 
-**Version**: 1.0  
-**Date**: 2026-02-03  
+**Version**: 1.1  
+**Date**: 2026-02-04  
 **Author**: @security  
-**Status**: Approved for alpha.8
+**Status**: Updated for Sprint 8 (Agentic Foundations)
 
 ---
 
 ## Overview
 
-This threat model covers the AI-assisted write operations introduced in Phase 1.1 of the obsidian-pa plugin. The feature allows the AI assistant to propose edits to vault files, subject to user confirmation.
+This threat model covers the AI-assisted write operations introduced in Phase 1.1 of the obsidian-pa plugin, updated for Phase 2.0 multi-step task automation. The feature allows the AI assistant to propose edits to vault files, subject to user confirmation.
 
 ### Assets Under Protection
 
@@ -276,6 +276,145 @@ public deleteFile(_path: string): never {
 
 ---
 
+## Phase 2.0: Multi-Step Task Automation Threats
+
+The following threats are specific to Sprint 8's agentic features, where AI can execute multi-step task plans with a single user approval.
+
+### T10: Cascading Failure in Multi-Step Tasks
+
+**Description**: A failure mid-task leaves vault in inconsistent state (some steps applied, others not).
+
+| Aspect | Assessment |
+|--------|------------|
+| Likelihood | Medium — Network errors, file conflicts possible |
+| Impact | High — Vault inconsistency, broken links |
+| Risk Level | **High** |
+
+**Mitigations**:
+1. ☐ **Atomic rollback** — All completed steps reverted on failure
+2. ☐ **Transaction log** — Each step's undo action recorded before execution
+3. ☐ **Fail-fast default** — Stop on first error (no partial execution)
+4. ☐ **Rollback confirmation** — Clear UI showing what was undone
+
+**Residual Risk**: Medium — Rollback may not be perfect in all edge cases.
+
+---
+
+### T11: Approval Fatigue / Rubber-Stamping
+
+**Description**: User approves complex multi-step plans without reviewing each step, leading to unintended changes.
+
+| Aspect | Assessment |
+|--------|------------|
+| Likelihood | High — Users may trust AI too much |
+| Impact | Medium — Unintended but reversible changes |
+| Risk Level | **Medium-High** |
+
+**Mitigations**:
+1. ☐ **Clear plan summary** — Show step count, affected files prominently
+2. ☐ **Step limit** — Maximum 10 steps per task (configurable)
+3. ☐ **High-risk warnings** — Flag delete/move operations distinctly
+4. ☐ **Undo available** — Rollback always accessible after execution
+5. ☐ **Preview mode** — Option to run task as dry-run first
+
+**Residual Risk**: Medium — User education and clear UI critical.
+
+---
+
+### T12: Resource Exhaustion via Large Task Plans
+
+**Description**: AI generates task with many steps or large file content, exhausting memory or disk.
+
+| Aspect | Assessment |
+|--------|------------|
+| Likelihood | Low — AI models have output limits |
+| Impact | Medium — Plugin crash or disk full |
+| Risk Level | **Low-Medium** |
+
+**Mitigations**:
+1. ☐ **Max steps per task** — Hard limit of 20 steps
+2. ☐ **Max content size** — Per-file size limit (e.g., 100KB)
+3. ☐ **Task timeout** — Cancel long-running tasks automatically
+4. ☐ **Validation layer** — Reject oversized plans before approval
+
+**Residual Risk**: Low — Limits provide adequate protection.
+
+---
+
+### T13: Malformed Task Plan Injection
+
+**Description**: AI response contains malformed XML/task plan that causes parser crash or unexpected behaviour.
+
+| Aspect | Assessment |
+|--------|------------|
+| Likelihood | Medium — LLM output unpredictable |
+| Impact | Low-Medium — Plugin crash, no data loss |
+| Risk Level | **Medium** |
+
+**Mitigations**:
+1. ☐ **Strict XML parsing** — Reject malformed plans gracefully
+2. ☐ **Schema validation** — Validate step types and required attributes
+3. ☐ **Path sanitisation** — Check all paths before execution
+4. ☐ **Error recovery** — Show user-friendly error, don't crash
+
+**Residual Risk**: Low — Parser robustness is testable.
+
+---
+
+### T14: Privilege Escalation via Task Chaining
+
+**Description**: A task plan includes steps that individually pass consent checks but together achieve forbidden access (e.g., move file to consented folder, then modify).
+
+| Aspect | Assessment |
+|--------|------------|
+| Likelihood | Low — Requires sophisticated attack |
+| Impact | Medium — Access to non-consented content |
+| Risk Level | **Low-Medium** |
+
+**Mitigations**:
+1. ☐ **Per-step consent check** — Verify consent at execution time, not just plan time
+2. ☐ **Source and destination checks** — Move operations check both paths
+3. ☐ **Audit trail** — Full task history for review
+
+**Residual Risk**: Low — Defence in depth at step level.
+
+---
+
+### T15: Rollback Failure
+
+**Description**: Rollback operation fails, leaving vault with partial undo state.
+
+| Aspect | Assessment |
+|--------|------------|
+| Likelihood | Low — Rollback uses same backup mechanism |
+| Impact | High — Inconsistent vault state |
+| Risk Level | **Medium** |
+
+**Mitigations**:
+1. ☐ **Backup before rollback** — Create restore point before undo
+2. ☐ **Manual recovery docs** — Document how to recover from .pa-backups
+3. ☐ **Rollback log** — Show exactly what was/wasn't undone
+4. ☐ **Graceful degradation** — Continue rollback even if one step fails
+
+**Residual Risk**: Medium — Edge cases possible but documented.
+
+---
+
+## Sprint 8 Security Controls
+
+| Control | Type | Status | Tested |
+|---------|------|--------|--------|
+| Plan-Approve-Execute pattern | Preventive | ☐ Planned | ☐ |
+| Atomic rollback | Recovery | ☐ Planned | ☐ |
+| Task step limit | Preventive | ☐ Planned | ☐ |
+| Content size limit | Preventive | ☐ Planned | ☐ |
+| Task timeout | Preventive | ☐ Planned | ☐ |
+| Schema validation | Preventive | ☐ Planned | ☐ |
+| Per-step consent check | Preventive | ☐ Planned | ☐ |
+| Rollback confirmation UI | Detective | ☐ Planned | ☐ |
+
+---
+
 ## Security Controls Summary
 
 | Control | Type | Implemented | Tested |
@@ -294,6 +433,8 @@ public deleteFile(_path: string): never {
 
 ## Risk Matrix
 
+### Phase 1.1 Threats (alpha.8 - Implemented)
+
 | Threat | Likelihood | Impact | Risk | Residual |
 |--------|------------|--------|------|----------|
 | T1: Unintended modification | Medium | High | High | **Low** |
@@ -306,21 +447,46 @@ public deleteFile(_path: string): never {
 | T8: Race conditions | Low | Medium | Low | **Low** |
 | T9: Backup exposure | Low | Low | Low | **Accepted** |
 
+### Phase 2.0 Threats (Sprint 8 - Planned)
+
+| Threat | Likelihood | Impact | Risk | Residual |
+|--------|------------|--------|------|----------|
+| T10: Cascading failure | Medium | High | High | **Medium** (pending) |
+| T11: Approval fatigue | High | Medium | Medium-High | **Medium** (pending) |
+| T12: Resource exhaustion | Low | Medium | Low-Medium | **Low** (pending) |
+| T13: Malformed plan injection | Medium | Low-Medium | Medium | **Low** (pending) |
+| T14: Privilege escalation | Low | Medium | Low-Medium | **Low** (pending) |
+| T15: Rollback failure | Low | High | Medium | **Medium** (pending) |
+
 ---
 
 ## Recommendations
 
-### Immediate (alpha.8)
+### Immediate (alpha.8) ✅ Complete
+
 - ✅ All critical controls implemented
 - ✅ Documentation updated with privacy guidance
 - No blocking issues identified
 
+### Sprint 8 (Agentic Foundations)
+
+- [ ] Implement Plan-Approve-Execute pattern (T10, T11 mitigation)
+- [ ] Add task step limits (max 20) (T12 mitigation)
+- [ ] Add content size limits per file (T12 mitigation)
+- [ ] Implement strict XML parser with schema validation (T13 mitigation)
+- [ ] Per-step consent checking at execution time (T14 mitigation)
+- [ ] Atomic rollback with transaction log (T10, T15 mitigation)
+- [ ] Clear plan summary UI with affected file count (T11 mitigation)
+
 ### Short-term (beta.1)
+
 - [ ] Add content length limits for context files (T5 mitigation)
 - [ ] Consider system prompt hardening against injection
 - [ ] Add telemetry for failed operations (opt-in)
+- [ ] Security tests for all Sprint 8 controls
 
 ### Long-term (1.0)
+
 - [ ] E2E tests for edit flow security scenarios
 - [ ] Security review of any new AI capabilities
 - [ ] Consider local-only AI option for maximum privacy
@@ -329,10 +495,20 @@ public deleteFile(_path: string): never {
 
 ## Approval
 
+### Phase 1.1 (alpha.8)
+
 | Role | Name | Decision |
 |------|------|----------|
 | Security | @security | ✅ Approved for alpha.8 |
 | Architect | @architect | ✅ Controls adequate |
 | Team Lead | @team-lead | ✅ Proceed with release |
 
-**Conclusion**: Write operations are adequately protected for alpha release. The confirmation-before-apply pattern combined with automatic backups provides defence in depth. No unacceptable risks identified.
+### Phase 2.0 (Sprint 8) — Pending Implementation
+
+| Role | Name | Decision |
+|------|------|----------|
+| Security | @security | ⏳ Conditional approval — requires all T10-T15 mitigations |
+| Architect | @architect | ✅ Architecture reviewed (ADR-003) |
+| Team Lead | @team-lead | ⏳ Pending security signoff |
+
+**Conclusion**: Write operations are adequately protected for alpha release. Multi-step task automation introduces elevated risks (T10-T15) that require implementation of planned mitigations before beta release. The Plan-Approve-Execute pattern with atomic rollback is critical for safe agentic operation.
