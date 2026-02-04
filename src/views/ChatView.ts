@@ -8,6 +8,7 @@ import type { ChatMessage } from "../api/GitHubModelsClient";
 import { parseEditBlocks, mayContainEdits, type ParsedEditBlock } from "../chat/EditBlockParser";
 import { showEditConfirmation } from "../modals/EditConfirmationModal";
 import { showEditHistory } from "../modals/EditHistoryModal";
+import { ContextManager, ContextPickerModal, getTokenBudgetForModel, formatTokenCount } from "../context";
 
 export const VIEW_TYPE_CHAT = "pa-chat-view";
 
@@ -35,10 +36,13 @@ export class ChatView extends ItemView {
   private contextIndicatorEl: HTMLElement | null = null;
   private usageStatsEl: HTMLElement | null = null;
   private modelInfoEl: HTMLElement | null = null;
+  private contextManager: ContextManager;
+  private addContextButtonEl: HTMLElement | null = null;
 
   public constructor(leaf: WorkspaceLeaf, plugin: PAPlugin) {
     super(leaf);
     this.plugin = plugin;
+    this.contextManager = new ContextManager(this.app, plugin.settings);
   }
 
   public getViewType(): string {
@@ -148,9 +152,21 @@ export class ChatView extends ItemView {
     limitNotice.setAttribute("target", "_blank");
     limitNotice.setAttribute("title", "AI can read notes but cannot edit them. Click to learn more.");
 
+    // Context row - contains indicator and add context button
+    const contextRow = headerEl.createDiv({ cls: "pa-chat-context-row" });
+
     // Context indicator - shows which files AI can see
-    this.contextIndicatorEl = headerEl.createDiv({ cls: "pa-chat-context" });
+    this.contextIndicatorEl = contextRow.createDiv({ cls: "pa-chat-context" });
     this.updateContextIndicator(this.getVisibleContextFiles().filter(f => this.isFileAllowed(f.path)));
+
+    // Add Context button
+    this.addContextButtonEl = contextRow.createDiv({ cls: "pa-chat-add-context" });
+    this.addContextButtonEl.createSpan({ cls: "pa-chat-add-context-icon", text: "+" });
+    this.addContextButtonEl.createSpan({ text: "Add Context" });
+    this.addContextButtonEl.setAttribute("title", "Select files to include as context");
+    this.addContextButtonEl.addEventListener("click", () => {
+      void this.openContextPicker();
+    });
 
     // Create messages container
     this.messagesContainerEl = container.createDiv({ cls: "pa-chat-messages" });
@@ -801,12 +817,23 @@ export class ChatView extends ItemView {
         .filter((m) => m.role !== "system")
         .map((m) => ({ role: m.role, content: m.content }));
 
-      // Get all visible files for context
-      const visibleFiles = this.getVisibleContextFiles();
-      const allowedFiles = visibleFiles.filter(f => this.isFileAllowed(f.path));
+      // Determine which files to use for context
+      const manuallySelected = this.contextManager.getSelectedItems();
+      let contextFiles: TFile[];
+      
+      if (manuallySelected.length > 0) {
+        // Use manually selected files from context picker
+        contextFiles = manuallySelected
+          .map(item => this.app.vault.getAbstractFileByPath(item.path))
+          .filter((f): f is TFile => f instanceof TFile);
+      } else {
+        // Fall back to visible files
+        const visibleFiles = this.getVisibleContextFiles();
+        contextFiles = visibleFiles.filter(f => this.isFileAllowed(f.path));
+      }
       
       // Update context indicator
-      this.updateContextIndicator(allowedFiles);
+      this.updateContextIndicator(contextFiles);
       
       let systemPrompt =
         "You are a helpful AI assistant integrated into Obsidian. " +
@@ -828,33 +855,38 @@ export class ChatView extends ItemView {
         "Each code block has a copy button that copies the raw content without the backticks. " +
         "Keep your explanations OUTSIDE the code block.";
 
-      if (allowedFiles.length > 0) {
-        // Build context from all visible allowed files
-        const fileContexts: string[] = [];
+      if (contextFiles.length > 0) {
+        // Build context from selected/visible files with token budget awareness
+        const fileContextsArray: string[] = [];
         let totalChars = 0;
-        const maxTotalChars = 8000; // Limit total context to avoid token overflow
         
-        for (const file of allowedFiles) {
+        // Use token budget for context limit (rough: 4 chars ≈ 1 token)
+        const budget = getTokenBudgetForModel(this.plugin.settings.model);
+        const maxContextTokens = budget.contextWindow - budget.reserveForResponse;
+        const maxTotalChars = maxContextTokens * 4;
+        
+        for (const file of contextFiles) {
           if (totalChars >= maxTotalChars) break;
           
           const fileContent = await this.app.vault.read(file);
           const remainingChars = maxTotalChars - totalChars;
-          const truncatedContent = fileContent.slice(0, Math.min(4000, remainingChars));
+          const maxPerFile = Math.min(16000, remainingChars); // Increase per-file limit
+          const truncatedContent = fileContent.slice(0, maxPerFile);
           totalChars += truncatedContent.length;
           
-          const isPrimary = file === allowedFiles[0];
-          fileContexts.push(
+          const isPrimary = file === contextFiles[0];
+          fileContextsArray.push(
             `### ${isPrimary ? "📝 Active: " : ""}${file.basename}\n` +
             `Path: ${file.path}\n` +
             `\`\`\`\n${truncatedContent}${truncatedContent.length < fileContent.length ? "\n... (truncated)" : ""}\n\`\`\``
           );
         }
         
-        const fileLabel = allowedFiles.length === 1 ? "note" : "notes";
+        const fileLabel = contextFiles.length === 1 ? "note" : "notes";
         systemPrompt +=
           `\n\n## Open Notes\n` +
-          `You have access to ${allowedFiles.length} open ${fileLabel}:\n\n` +
-          fileContexts.join("\n\n") +
+          `You have access to ${contextFiles.length} ${fileLabel}:\n\n` +
+          fileContextsArray.join("\n\n") +
           `\n\nYou can reference, discuss, and EDIT these notes. ` +
           `The first note marked with 📝 is the currently focused/active note.`;
       } else {
@@ -1064,6 +1096,100 @@ export class ChatView extends ItemView {
     } else {
       // Allow unless in excluded folders
       return !excludedFolders.some((folder) => path.startsWith(folder + "/") || path === folder);
+    }
+  }
+
+  /**
+   * Open the context picker modal
+   */
+  private openContextPicker(): void {
+    // Get existing selections
+    const existingItems = this.contextManager.getSelectedItems();
+    
+    // Open the picker modal with settings
+    const modal = new ContextPickerModal(
+      this.app,
+      this.plugin.settings,
+      (result) => {
+        if (result) {
+          // Update context manager with new selections
+          this.contextManager.clearContext();
+          for (const item of result.items) {
+            // Get the file and add it
+            const file = this.app.vault.getAbstractFileByPath(item.path);
+            if (file instanceof TFile) {
+              void this.contextManager.addFile(file);
+            }
+          }
+        }
+        // Update the context indicator to reflect new selection
+        this.updateContextIndicatorWithManualSelection();
+        this.updateAddContextButton();
+      },
+      existingItems
+    );
+    
+    modal.open();
+  }
+
+  /**
+   * Update the "Add Context" button with selection count
+   */
+  private updateAddContextButton(): void {
+    if (!this.addContextButtonEl) return;
+    
+    const count = this.contextManager.getSelectedItems().length;
+    
+    // Remove existing count badge
+    const existingBadge = this.addContextButtonEl.querySelector(".pa-chat-context-count");
+    if (existingBadge) {
+      existingBadge.remove();
+    }
+    
+    // Add badge if there are manually selected files
+    if (count > 0) {
+      this.addContextButtonEl.createSpan({ 
+        cls: "pa-chat-context-count", 
+        text: String(count) 
+      });
+    }
+  }
+
+  /**
+   * Update context indicator when manual selection is used
+   */
+  private updateContextIndicatorWithManualSelection(): void {
+    if (!this.contextIndicatorEl) return;
+    
+    const manualItems = this.contextManager.getSelectedItems();
+    
+    if (manualItems.length > 0) {
+      // Use manually selected files
+      const files = manualItems
+        .map(item => this.app.vault.getAbstractFileByPath(item.path))
+        .filter((f): f is TFile => f instanceof TFile);
+      
+      this.updateContextIndicator(files);
+      
+      // Add token indicator
+      const totalTokens = this.contextManager.getTotalTokens();
+      const budget = getTokenBudgetForModel(this.plugin.settings.model);
+      const remaining = budget.contextWindow - budget.reserveForResponse - totalTokens;
+      
+      const tokenSpan = this.contextIndicatorEl.createSpan({ cls: "pa-chat-context-tokens" });
+      tokenSpan.setText(`(${formatTokenCount(totalTokens)} tokens)`);
+      
+      if (remaining < 0) {
+        tokenSpan.addClass("over");
+        tokenSpan.setAttribute("title", "Context exceeds token budget!");
+      } else if (remaining < budget.reserveForResponse) {
+        tokenSpan.addClass("warning");
+        tokenSpan.setAttribute("title", "Context is getting large");
+      }
+    } else {
+      // Fall back to visible files
+      const visibleFiles = this.getVisibleContextFiles().filter(f => this.isFileAllowed(f.path));
+      this.updateContextIndicator(visibleFiles);
     }
   }
 

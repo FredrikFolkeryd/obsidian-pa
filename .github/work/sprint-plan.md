@@ -158,33 +158,39 @@
 
 ---
 
-## Sprint 7: Enhanced Context (Phase 1.2)
+## Sprint 7: Enhanced Context (Phase 1.2) ✅ Complete
 
 **Goal:** Smarter file context for better AI responses
 
-### Features
+### Delivered Features
 
-1. **Multi-file Context Picker**
-   - Select multiple files to include
-   - Folder selection with recursion
-   - Context size indicator
+1. ✅ **Multi-file Context Picker**
+   - New `ContextPickerModal` for selecting multiple files
+   - Folder grouping with search
+   - "Add Context" button in chat header
+   - Selected files count badge
 
-2. **Token Budget Management**
-   - Show estimated token usage
-   - Warn when approaching limits
-   - Auto-truncate intelligently
+2. ✅ **Token Budget Management**
+   - `TokenBudget.ts` with estimation utilities
+   - Model-specific context windows (GPT-4o: 128k, Claude: 200k)
+   - Token usage display in picker
+   - Warning indicators for budget limits
 
-3. **Smart Context Suggestions**
-   - Suggest related notes based on links
-   - Recent files quick-add
-   - Tag-based context groups
+3. ✅ **Smart Context Suggestions**
+   - `ContextManager` with intelligent suggestions
+   - Priority scoring: linked files (100), backlinks (80), same folder (50), same tags (40), recent (30)
+   - Consent-aware filtering (opt-in/opt-out modes)
+
+4. ✅ **Test Coverage**
+   - 45 new tests (TokenBudget: 26, ContextManager: 19)
+   - 375 tests total (up from 330)
 
 ### Acceptance Criteria
 
-- [ ] User can select multiple files as context
-- [ ] Token budget visible and respected
-- [ ] Context suggestions reduce friction
-- [ ] Coverage at 65%+
+- [x] User can select multiple files as context
+- [x] Token budget visible and respected
+- [x] Context suggestions reduce friction
+- [x] Coverage maintained at 85%+ branches
 
 ---
 

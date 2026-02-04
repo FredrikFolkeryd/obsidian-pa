@@ -249,3 +249,12 @@ export function normalizePath(path: string): string {
   // Simple mock: just ensure forward slashes and no double slashes
   return path.replace(/\\/g, "/").replace(/\/+/g, "/").replace(/^\/|\/$/g, "");
 }
+
+/**
+ * Mock getLinkpath function
+ * In Obsidian, this extracts the path from a link (removing # anchors and | aliases)
+ */
+export function getLinkpath(link: string): string {
+  // Remove anchor (#) and alias (|)
+  return link.split("#")[0].split("|")[0];
+}
