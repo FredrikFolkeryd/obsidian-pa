@@ -121,10 +121,13 @@ export function extractCodeBlockContents(markdown: string): string[] {
  * Build a system prompt for AI chat
  *
  * @param contextFiles - Array of { basename, path, content } for visible files
+ * @param options - Optional configuration
+ * @param options.enableTaskPlanning - Whether to include task planning instructions
  * @returns System prompt string
  */
 export function buildSystemPrompt(
-  contextFiles: Array<{ basename: string; path: string; content: string }>
+  contextFiles: Array<{ basename: string; path: string; content: string }>,
+  options?: { enableTaskPlanning?: boolean }
 ): string {
   let systemPrompt =
     "You are a helpful AI assistant integrated into Obsidian. " +
@@ -145,6 +148,11 @@ export function buildSystemPrompt(
     "```\n\n" +
     "Each code block has a copy button that copies the raw content without the backticks. " +
     "Keep your explanations OUTSIDE the code block.";
+
+  // Add task planning capabilities if enabled
+  if (options?.enableTaskPlanning) {
+    systemPrompt += buildTaskPlanningInstructions();
+  }
 
   if (contextFiles.length > 0) {
     const fileContexts = contextFiles.map((file, idx) => {
@@ -240,4 +248,59 @@ export function truncateContextFiles(
   }
 
   return result;
+}
+
+/**
+ * Build task planning instructions for the system prompt
+ *
+ * @returns Task planning instruction string
+ */
+export function buildTaskPlanningInstructions(): string {
+  return `
+
+## Multi-Step Task Plans
+
+For complex requests that require multiple vault operations (creating, editing, moving, linking, or tagging files), you can provide a structured task plan that the user can review and execute with one click.
+
+When appropriate, wrap your plan in a task-plan XML block:
+
+\`\`\`task-plan
+<task-plan description="Brief description of what this plan does">
+  <step type="create-note" path="path/to/new-note.md">
+    <content>
+The full content of the new note.
+Supports markdown.
+    </content>
+  </step>
+  <step type="modify-note" path="path/to/existing.md">
+    <content>
+The complete new content for this file.
+    </content>
+  </step>
+  <step type="add-tag" path="path/to/note.md" tag="project" />
+  <step type="add-link" path="path/to/note.md" target="related-note.md" display="Related Note" />
+  <step type="move-note" path="old/location.md" destination="new/location.md" />
+  <step type="delete-note" path="path/to/remove.md" />
+</task-plan>
+\`\`\`
+
+### Available Step Types
+
+| Type | Required Attributes | Description |
+|------|---------------------|-------------|
+| \`create-note\` | \`path\` | Create a new file with the given content |
+| \`modify-note\` | \`path\` | Replace file content entirely |
+| \`add-tag\` | \`path\`, \`tag\` | Add a tag to frontmatter (creates frontmatter if needed) |
+| \`add-link\` | \`path\`, \`target\` | Append a wikilink at the end of the file |
+| \`move-note\` | \`path\`, \`destination\` | Rename or move a file |
+| \`delete-note\` | \`path\` | Delete a file (backup created automatically) |
+
+### When to Use Task Plans
+
+- Creating multiple related notes (e.g., project structure)
+- Batch operations on several files
+- Complex refactoring across notes
+- Setting up templates with links and tags
+
+For single file edits, prefer the simple fenced code block format instead.`;
 }

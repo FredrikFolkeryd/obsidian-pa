@@ -14,6 +14,7 @@ import {
   formatUsageDisplay,
   extractCodeBlockContents,
   buildSystemPrompt,
+  buildTaskPlanningInstructions,
   formatConversationExport,
   truncateContextFiles,
 } from "./helpers";
@@ -288,6 +289,63 @@ describe("buildSystemPrompt", () => {
     expect(prompt).toContain("2 open notes");
     expect(prompt).toContain("📝 Active: main");
     expect(prompt).not.toContain("📝 Active: other");
+  });
+
+  it("should not include task planning by default", () => {
+    const prompt = buildSystemPrompt([]);
+    expect(prompt).not.toContain("Multi-Step Task Plans");
+    expect(prompt).not.toContain("<task-plan");
+  });
+
+  it("should include task planning when enabled", () => {
+    const prompt = buildSystemPrompt([], { enableTaskPlanning: true });
+    expect(prompt).toContain("Multi-Step Task Plans");
+    expect(prompt).toContain("<task-plan");
+    expect(prompt).toContain("create-note");
+    expect(prompt).toContain("modify-note");
+    expect(prompt).toContain("add-tag");
+    expect(prompt).toContain("add-link");
+    expect(prompt).toContain("move-note");
+    expect(prompt).toContain("delete-note");
+  });
+
+  it("should include step type documentation when task planning enabled", () => {
+    const prompt = buildSystemPrompt([], { enableTaskPlanning: true });
+    expect(prompt).toContain("Available Step Types");
+    expect(prompt).toContain("When to Use Task Plans");
+  });
+});
+
+describe("buildTaskPlanningInstructions", () => {
+  it("should include XML example", () => {
+    const instructions = buildTaskPlanningInstructions();
+    expect(instructions).toContain("<task-plan");
+    expect(instructions).toContain("</task-plan>");
+  });
+
+  it("should document all step types", () => {
+    const instructions = buildTaskPlanningInstructions();
+    expect(instructions).toContain("create-note");
+    expect(instructions).toContain("modify-note");
+    expect(instructions).toContain("delete-note");
+    expect(instructions).toContain("add-tag");
+    expect(instructions).toContain("add-link");
+    expect(instructions).toContain("move-note");
+  });
+
+  it("should include required attributes table", () => {
+    const instructions = buildTaskPlanningInstructions();
+    expect(instructions).toContain("Required Attributes");
+    expect(instructions).toContain("`path`");
+    expect(instructions).toContain("`destination`");
+    expect(instructions).toContain("`target`");
+    expect(instructions).toContain("`tag`");
+  });
+
+  it("should include guidance on when to use task plans", () => {
+    const instructions = buildTaskPlanningInstructions();
+    expect(instructions).toContain("When to Use Task Plans");
+    expect(instructions).toContain("single file edits");
   });
 });
 
