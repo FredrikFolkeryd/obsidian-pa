@@ -6,9 +6,12 @@ import { ItemView, WorkspaceLeaf, MarkdownRenderer, TFile, MarkdownView, Notice 
 import type PAPlugin from "../main";
 import type { ChatMessage } from "../api/GitHubModelsClient";
 import { parseEditBlocks, mayContainEdits, type ParsedEditBlock } from "../chat/EditBlockParser";
+import { parseTaskPlanBlocks, type ParsedTaskPlan } from "../chat/TaskPlanBlockParser";
 import { showEditConfirmation } from "../modals/EditConfirmationModal";
 import { showEditHistory } from "../modals/EditHistoryModal";
+import { showTaskApproval, type TaskApprovalResult } from "../modals/TaskApprovalModal";
 import { ContextManager, ContextPickerModal, getTokenBudgetForModel, formatTokenCount } from "../context";
+import { createTaskExecutor, TaskHistoryManager, type TaskPlan, type TaskEvent } from "../tasks";
 
 export const VIEW_TYPE_CHAT = "pa-chat-view";
 
@@ -38,11 +41,13 @@ export class ChatView extends ItemView {
   private modelInfoEl: HTMLElement | null = null;
   private contextManager: ContextManager;
   private addContextButtonEl: HTMLElement | null = null;
+  private taskHistoryManager: TaskHistoryManager;
 
   public constructor(leaf: WorkspaceLeaf, plugin: PAPlugin) {
     super(leaf);
     this.plugin = plugin;
     this.contextManager = new ContextManager(this.app, plugin.settings);
+    this.taskHistoryManager = new TaskHistoryManager();
   }
 
   public getViewType(): string {
@@ -1334,6 +1339,12 @@ export class ChatView extends ItemView {
       }
     }
 
+    // Check for task plans in the response
+    const taskParseResult = parseTaskPlanBlocks(content);
+    if (taskParseResult.hasPlans) {
+      this.addTaskPlanActions(messageEl, taskParseResult.plans, taskParseResult.validations);
+    }
+
     // Scroll to bottom
     if (this.messagesContainerEl) {
       this.messagesContainerEl.scrollTop = this.messagesContainerEl.scrollHeight;
@@ -1549,6 +1560,175 @@ export class ChatView extends ItemView {
       .pa-edit-apply-btn:disabled {
         opacity: 0.5;
         cursor: not-allowed;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  /**
+   * Add task plan action buttons to a message
+   */
+  private addTaskPlanActions(
+    messageEl: HTMLElement,
+    plans: ParsedTaskPlan[],
+    validations: import("../tasks").TaskPlanValidation[]
+  ): void {
+    const actionsEl = messageEl.createDiv({ cls: "pa-task-plan-actions" });
+
+    for (let i = 0; i < plans.length; i++) {
+      const parsedPlan = plans[i];
+      const validation = validations[i];
+      const plan = parsedPlan.plan;
+
+      const actionRow = actionsEl.createDiv({ cls: "pa-task-plan-action-row" });
+
+      // Plan indicator with step count
+      const stepCount = plan.steps.length;
+      const stepLabel = stepCount === 1 ? "step" : "steps";
+      actionRow.createSpan({
+        cls: "pa-task-plan-indicator",
+        text: `📋 ${plan.description || "Task Plan"} (${stepCount} ${stepLabel})`,
+      });
+
+      // Review & Execute button
+      const executeBtn = actionRow.createEl("button", {
+        cls: "pa-task-plan-execute-btn",
+        text: "Review & Execute",
+      });
+
+      if (!validation.valid) {
+        executeBtn.disabled = true;
+        executeBtn.title = validation.errors.join(", ");
+        executeBtn.setText("Invalid Plan");
+      } else {
+        executeBtn.addEventListener("click", () => {
+          void this.handleExecuteTaskPlan(plan);
+        });
+      }
+    }
+
+    // Add styles for task plan actions
+    this.addTaskPlanActionStyles();
+  }
+
+  /**
+   * Handle executing a task plan
+   */
+  private async handleExecuteTaskPlan(plan: TaskPlan): Promise<void> {
+    const safeVault = this.plugin.safeVault;
+
+    // Show approval modal
+    const approvalResult: TaskApprovalResult = await showTaskApproval(this.app, plan);
+
+    if (!approvalResult.approved) {
+      this.addSystemMessage("Task plan cancelled.");
+      return;
+    }
+
+    // Create executor with all handlers wired up
+    const executor = createTaskExecutor(
+      this.app,
+      safeVault,
+      safeVault.getBackup()
+    );
+
+    // Enable writes for execution
+    safeVault.enableWrites();
+
+    try {
+      // Approve the plan
+      let approvedPlan = executor.approve(plan);
+
+      // Listen for events
+      executor.on((event: TaskEvent) => {
+        if (event.type === "step-completed") {
+          this.addSystemMessage(
+            `✓ Step ${(event.stepIndex ?? 0) + 1} completed`
+          );
+        } else if (event.type === "step-failed") {
+          this.addSystemMessage(
+            `✗ Step ${(event.stepIndex ?? 0) + 1} failed: ${event.error ?? "Unknown error"}`
+          );
+        }
+      });
+
+      // Execute the plan
+      const executedPlan = await executor.execute(approvedPlan);
+
+      // Add to history
+      if (executedPlan.status === "completed") {
+        this.taskHistoryManager.addEntry(executedPlan, "completed");
+        this.addSystemMessage(
+          `✅ Task plan completed successfully (${executedPlan.steps.length} steps)`
+        );
+        new Notice("Task plan executed successfully");
+      } else if (executedPlan.status === "failed") {
+        this.taskHistoryManager.addEntry(executedPlan, "failed", executedPlan.error);
+        this.addSystemMessage(
+          `❌ Task plan failed: ${executedPlan.error ?? "Unknown error"}`
+        );
+        new Notice(`Task plan failed: ${executedPlan.error ?? "Unknown error"}`);
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      this.taskHistoryManager.addEntry(plan, "failed", errorMsg);
+      this.addSystemMessage(`❌ Error executing task plan: ${errorMsg}`);
+      new Notice(`Error executing task plan: ${errorMsg}`);
+    } finally {
+      safeVault.disableWrites();
+    }
+  }
+
+  /**
+   * Add styles for task plan actions
+   */
+  private addTaskPlanActionStyles(): void {
+    if (document.getElementById("pa-task-plan-action-styles")) return;
+
+    const style = document.createElement("style");
+    style.id = "pa-task-plan-action-styles";
+    style.textContent = `
+      .pa-task-plan-actions {
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid var(--background-modifier-border);
+      }
+
+      .pa-task-plan-action-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 8px;
+        padding: 8px;
+        background: var(--background-secondary);
+        border-radius: 6px;
+      }
+
+      .pa-task-plan-indicator {
+        flex: 1;
+        font-size: 0.9em;
+        color: var(--text-normal);
+      }
+
+      .pa-task-plan-execute-btn {
+        padding: 6px 14px;
+        font-size: 0.85em;
+        background: var(--interactive-accent);
+        color: var(--text-on-accent);
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+
+      .pa-task-plan-execute-btn:hover {
+        opacity: 0.9;
+      }
+
+      .pa-task-plan-execute-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background: var(--background-modifier-border);
+        color: var(--text-muted);
       }
     `;
     document.head.appendChild(style);

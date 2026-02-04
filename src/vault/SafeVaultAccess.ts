@@ -100,6 +100,13 @@ export class SafeVaultAccess {
   }
 
   /**
+   * Get the backup manager for task handlers
+   */
+  public getBackup(): VaultBackup {
+    return this.backup;
+  }
+
+  /**
    * Get the audit log of all write operations
    */
   public getAuditLog(): WriteAuditEntry[] {

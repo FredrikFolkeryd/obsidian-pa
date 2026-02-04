@@ -325,3 +325,19 @@ export class TaskApprovalModal extends Modal {
     document.head.appendChild(style);
   }
 }
+
+/**
+ * Show the task approval modal and return the result
+ *
+ * @param app - Obsidian App instance
+ * @param plan - The task plan to approve
+ * @returns Promise that resolves to TaskApprovalResult
+ */
+export function showTaskApproval(app: App, plan: TaskPlan): Promise<TaskApprovalResult> {
+  return new Promise((resolve) => {
+    const modal = new TaskApprovalModal(app, plan, (result) => {
+      resolve(result);
+    });
+    modal.open();
+  });
+}
