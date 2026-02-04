@@ -16,7 +16,8 @@
 | alpha.7 | 43% | 84% | 49% | ✅ Complete (Sprint 5) |
 | alpha.8 | 45% | 85% | 50% | ✅ Complete (Sprint 6) |
 | alpha.9 | 52% | 84% | 55% | ✅ Complete (Sprint 8) |
-| beta.1 | 55% | 85% | 60% | After chat integration |
+| alpha.10 | 56% | 86% | 58% | 🔄 Sprint 9 (657 tests) |
+| beta.1 | 58% | 87% | 62% | After full chat integration |
 | 1.0 | 60% | 85% | 65% | Release quality + E2E tests |
 
 > **Coverage Recalibration (Sprint 6 Retro)**
@@ -244,40 +245,60 @@
 
 ---
 
-## Sprint 9: Chat Integration & Natural Language Tasks
+## Sprint 9: Chat Integration & Natural Language Tasks 🔄 In Progress
 
 **Goal:** Wire task automation to chat UI, enable natural language task requests
 
-### Features
+### Delivered Features
 
-1. **ChatView Task Integration**
-   - "Execute Plan" button when AI returns task plan
-   - Progress indicator during execution
-   - Success/failure notifications
-   - Rollback button on failure
+1. ✅ **Natural Language Task Detection**
+   - `TaskIntentDetector` — Pattern-based intent detection from user messages
+   - 6 intent types: create-note, modify-note, delete-note, add-link, add-tag, move-note
+   - Confidence scoring for detected intents
+   - Helper functions: `mayContainTaskIntent`, `generatePlanDescription`
+   - 49 tests
 
-2. **Natural Language Task Detection**
-   - Detect task intents: "Create a note about...", "Add a link to...", "Tag this note with..."
-   - System prompt enhancement for task plan generation
-   - Suggest task plan for detected intents
+2. ✅ **Task History Manager**
+   - `TaskHistoryManager` — Persistent history of executed task plans
+   - Load/export for storage
+   - Query by status, date range, or affected file
+   - Rollback tracking
+   - Helper functions: `formatHistoryEntry`, `getHistoryStats`
+   - 38 tests
 
-3. **Task History View**
-   - List of executed task plans
-   - Expandable step details
-   - Undo/rollback from history
+3. ✅ **Enhanced System Prompt**
+   - `buildTaskPlanningInstructions()` — Task plan format documentation
+   - `buildSystemPrompt({ enableTaskPlanning: true })` option
+   - XML format examples and step type documentation
+   - 7 tests
 
-4. **Improved UX**
-   - Step-by-step approval mode (optional)
-   - Dry-run preview mode
-   - Keyboard shortcuts for approve/cancel
+4. ✅ **ChatView Task Integration**
+   - `createTaskExecutor()` factory function for wiring handlers
+   - Task plan detection via `parseTaskPlanBlocks`
+   - "Review & Execute" button for valid task plans
+   - `showTaskApproval()` helper for modal flow
+   - Real-time step progress feedback in chat
+   - History tracking on execution
+
+5. ✅ **Integration Tests**
+   - `TaskPlanFlow.test.ts` — E2E flow tests
+   - Parse → Approve → Execute → History lifecycle
+   - 8 integration tests
+
+### Test Coverage
+
+- 657 tests passing (up from 555)
+- Branch coverage: 86%+ (maintained)
 
 ### Acceptance Criteria
 
-- [ ] Users can execute task plans from chat
-- [ ] Natural language triggers task plan generation
-- [ ] Task history shows past operations
-- [ ] Rollback works from chat and history
-- [ ] 600+ tests, 85%+ branch coverage
+- [x] Users can execute task plans from chat
+- [x] System prompt instructs AI on task plan format
+- [x] Task intent detection from natural language
+- [x] History tracks past operations
+- [ ] Task history view UI
+- [ ] Rollback from history UI
+- [x] 600+ tests (657), 85%+ branch coverage (86%)
 
 ---
 
