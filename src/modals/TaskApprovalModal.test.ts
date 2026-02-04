@@ -6,17 +6,34 @@
  */
 
 import { describe, it, expect } from "vitest";
-import type { TaskPlan } from "../tasks/types";
+
+/**
+ * Task step data for testing (minimal interface matching what we extract)
+ */
+interface TestTaskStep {
+  id: string;
+  type: string;
+  status: string;
+  description: string;
+  params: Record<string, unknown>;
+}
+
+interface TestTaskPlan {
+  id: string;
+  status: string;
+  steps: TestTaskStep[];
+  createdAt: number;
+}
 
 /**
  * Calculate statistics for a task plan - extracted for testing
  */
-function calculateStats(plan: TaskPlan): { totalSteps: number; affectedFiles: number } {
+function calculateStats(plan: TestTaskPlan): { totalSteps: number; affectedFiles: number } {
   const totalSteps = plan.steps.length;
   const affectedFiles = new Set<string>();
 
   for (const step of plan.steps) {
-    const params = step.params as Record<string, unknown>;
+    const params = step.params;
     if (params.path && typeof params.path === "string") {
       affectedFiles.add(params.path);
     }
@@ -64,15 +81,15 @@ function getStepIcon(type: string): string {
 describe("TaskApprovalModal", () => {
   describe("calculateStats", () => {
     it("should count total steps", () => {
-      const plan: TaskPlan = {
+      const plan: TestTaskPlan = {
         id: "plan-1",
         status: "pending",
         steps: [
-          { id: "s1", type: "create-note", status: "pending", params: { path: "a.md", content: "" } },
-          { id: "s2", type: "add-tag", status: "pending", params: { path: "a.md", tag: "test" } },
-          { id: "s3", type: "add-link", status: "pending", params: { path: "b.md", target: "c" } },
+          { id: "s1", type: "create-note", status: "pending", description: "Create A", params: { path: "a.md", content: "" } },
+          { id: "s2", type: "add-tag", status: "pending", description: "Tag A", params: { path: "a.md", tag: "test" } },
+          { id: "s3", type: "add-link", status: "pending", description: "Link B", params: { path: "b.md", target: "c" } },
         ],
-        createdAt: new Date().toISOString(),
+        createdAt: Date.now(),
       };
 
       const stats = calculateStats(plan);
@@ -80,15 +97,15 @@ describe("TaskApprovalModal", () => {
     });
 
     it("should count unique affected files", () => {
-      const plan: TaskPlan = {
+      const plan: TestTaskPlan = {
         id: "plan-1",
         status: "pending",
         steps: [
-          { id: "s1", type: "create-note", status: "pending", params: { path: "a.md", content: "" } },
-          { id: "s2", type: "add-tag", status: "pending", params: { path: "a.md", tag: "test" } },
-          { id: "s3", type: "add-link", status: "pending", params: { path: "b.md", target: "c" } },
+          { id: "s1", type: "create-note", status: "pending", description: "Create A", params: { path: "a.md", content: "" } },
+          { id: "s2", type: "add-tag", status: "pending", description: "Tag A", params: { path: "a.md", tag: "test" } },
+          { id: "s3", type: "add-link", status: "pending", description: "Link B", params: { path: "b.md", target: "c" } },
         ],
-        createdAt: new Date().toISOString(),
+        createdAt: Date.now(),
       };
 
       const stats = calculateStats(plan);
@@ -96,7 +113,7 @@ describe("TaskApprovalModal", () => {
     });
 
     it("should count move-note destination as affected file", () => {
-      const plan: TaskPlan = {
+      const plan: TestTaskPlan = {
         id: "plan-1",
         status: "pending",
         steps: [
@@ -104,10 +121,11 @@ describe("TaskApprovalModal", () => {
             id: "s1",
             type: "move-note",
             status: "pending",
+            description: "Move file",
             params: { path: "old.md", destination: "new.md" },
           },
         ],
-        createdAt: new Date().toISOString(),
+        createdAt: Date.now(),
       };
 
       const stats = calculateStats(plan);
@@ -115,11 +133,11 @@ describe("TaskApprovalModal", () => {
     });
 
     it("should handle empty plan", () => {
-      const plan: TaskPlan = {
+      const plan: TestTaskPlan = {
         id: "plan-1",
         status: "pending",
         steps: [],
-        createdAt: new Date().toISOString(),
+        createdAt: Date.now(),
       };
 
       const stats = calculateStats(plan);
@@ -128,13 +146,13 @@ describe("TaskApprovalModal", () => {
     });
 
     it("should handle steps without path params", () => {
-      const plan: TaskPlan = {
+      const plan: TestTaskPlan = {
         id: "plan-1",
         status: "pending",
         steps: [
-          { id: "s1", type: "create-note", status: "pending", params: {} },
+          { id: "s1", type: "create-note", status: "pending", description: "No path", params: {} },
         ],
-        createdAt: new Date().toISOString(),
+        createdAt: Date.now(),
       };
 
       const stats = calculateStats(plan);
@@ -142,13 +160,13 @@ describe("TaskApprovalModal", () => {
     });
 
     it("should ignore non-string paths", () => {
-      const plan: TaskPlan = {
+      const plan: TestTaskPlan = {
         id: "plan-1",
         status: "pending",
         steps: [
-          { id: "s1", type: "create-note", status: "pending", params: { path: 123 as unknown } },
+          { id: "s1", type: "create-note", status: "pending", description: "Bad path", params: { path: 123 } },
         ],
-        createdAt: new Date().toISOString(),
+        createdAt: Date.now(),
       };
 
       const stats = calculateStats(plan);

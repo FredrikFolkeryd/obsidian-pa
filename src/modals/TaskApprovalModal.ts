@@ -130,7 +130,7 @@ export class TaskApprovalModal extends Modal {
     const affectedFiles = new Set<string>();
 
     for (const step of this.plan.steps) {
-      const params = step.params as Record<string, unknown>;
+      const params = step.params as unknown as Record<string, unknown>;
       if (params.path && typeof params.path === "string") {
         affectedFiles.add(params.path);
       }
@@ -173,7 +173,7 @@ export class TaskApprovalModal extends Modal {
     }
 
     // File path
-    const params = step.params as Record<string, unknown>;
+    const params = step.params as unknown as Record<string, unknown>;
     if (params.path && typeof params.path === "string") {
       const pathEl = container.createDiv({ cls: "pa-task-step-path" });
       pathEl.createSpan({ text: "→ " });

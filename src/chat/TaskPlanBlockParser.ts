@@ -9,7 +9,7 @@
  * 2. Fenced code blocks with task-plan language hint: ```task-plan
  */
 
-import { parseTaskPlan, extractTaskPlanXml, validateTaskPlan, ParseError } from "../tasks/TaskPlanParser";
+import { parseTaskPlan, validateTaskPlan, ParseError } from "../tasks/TaskPlanParser";
 import type { TaskPlan, TaskPlanValidation } from "../tasks/types";
 
 /**
