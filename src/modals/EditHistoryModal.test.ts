@@ -45,9 +45,9 @@ describe("EditHistoryModal Logic", () => {
   describe("filterEditsForDisplay", () => {
     it("should filter out revert operations", () => {
       const log: WriteAuditEntry[] = [
-        { path: "a.md", operation: "modify", success: true, timestamp: 1000 },
-        { path: "a.md", operation: "revert", success: true, timestamp: 2000 },
-        { path: "b.md", operation: "create", success: true, timestamp: 3000 },
+        { path: "a.md", operation: "modify", success: true, timestamp: 1000, reason: "test" },
+        { path: "a.md", operation: "revert", success: true, timestamp: 2000, reason: "test" },
+        { path: "b.md", operation: "create", success: true, timestamp: 3000, reason: "test" },
       ];
       
       const result = filterEditsForDisplay(log);
@@ -57,9 +57,9 @@ describe("EditHistoryModal Logic", () => {
 
     it("should filter out failed operations", () => {
       const log: WriteAuditEntry[] = [
-        { path: "a.md", operation: "modify", success: true, timestamp: 1000 },
-        { path: "b.md", operation: "modify", success: false, timestamp: 2000, error: "Failed" },
-        { path: "c.md", operation: "create", success: true, timestamp: 3000 },
+        { path: "a.md", operation: "modify", success: true, timestamp: 1000, reason: "test" },
+        { path: "b.md", operation: "modify", success: false, timestamp: 2000, error: "Failed", reason: "test" },
+        { path: "c.md", operation: "create", success: true, timestamp: 3000, reason: "test" },
       ];
       
       const result = filterEditsForDisplay(log);
@@ -69,9 +69,9 @@ describe("EditHistoryModal Logic", () => {
 
     it("should reverse the order (most recent first)", () => {
       const log: WriteAuditEntry[] = [
-        { path: "first.md", operation: "create", success: true, timestamp: 1000 },
-        { path: "second.md", operation: "modify", success: true, timestamp: 2000 },
-        { path: "third.md", operation: "modify", success: true, timestamp: 3000 },
+        { path: "first.md", operation: "create", success: true, timestamp: 1000, reason: "test" },
+        { path: "second.md", operation: "modify", success: true, timestamp: 2000, reason: "test" },
+        { path: "third.md", operation: "modify", success: true, timestamp: 3000, reason: "test" },
       ];
       
       const result = filterEditsForDisplay(log);
@@ -85,8 +85,8 @@ describe("EditHistoryModal Logic", () => {
 
     it("should return empty array when all entries are filtered", () => {
       const log: WriteAuditEntry[] = [
-        { path: "a.md", operation: "revert", success: true, timestamp: 1000 },
-        { path: "b.md", operation: "modify", success: false, timestamp: 2000 },
+        { path: "a.md", operation: "revert", success: true, timestamp: 1000, reason: "test" },
+        { path: "b.md", operation: "modify", success: false, timestamp: 2000, reason: "test" },
       ];
       
       expect(filterEditsForDisplay(log)).toEqual([]);
@@ -94,8 +94,8 @@ describe("EditHistoryModal Logic", () => {
 
     it("should not mutate the original array", () => {
       const log: WriteAuditEntry[] = [
-        { path: "a.md", operation: "modify", success: true, timestamp: 1000 },
-        { path: "b.md", operation: "modify", success: true, timestamp: 2000 },
+        { path: "a.md", operation: "modify", success: true, timestamp: 1000, reason: "test" },
+        { path: "b.md", operation: "modify", success: true, timestamp: 2000, reason: "test" },
       ];
       const originalOrder = log.map(e => e.path);
       
@@ -187,17 +187,19 @@ describe("EditHistoryModal Logic", () => {
           operation: op,
           success: true,
           timestamp: Date.now(),
+          reason: "test",
         };
         expect(entry.operation).toBe(op);
       }
     });
 
-    it("should handle optional fields", () => {
+    it("should handle optional backupPath field", () => {
       const minimalEntry: WriteAuditEntry = {
         path: "test.md",
         operation: "create",
         success: true,
         timestamp: 1000,
+        reason: "test",
       };
       
       const fullEntry: WriteAuditEntry = {
@@ -209,7 +211,7 @@ describe("EditHistoryModal Logic", () => {
         backupPath: ".pa-backups/test.md.1000.bak",
       };
       
-      expect(minimalEntry.reason).toBeUndefined();
+      expect(minimalEntry.backupPath).toBeUndefined();
       expect(fullEntry.reason).toBe("AI-suggested edit");
       expect(fullEntry.backupPath).toBe(".pa-backups/test.md.1000.bak");
     });
@@ -221,6 +223,7 @@ describe("EditHistoryModal Logic", () => {
         success: false,
         timestamp: 1000,
         error: "Permission denied",
+        reason: "test",
       };
       
       expect(failedEntry.success).toBe(false);
