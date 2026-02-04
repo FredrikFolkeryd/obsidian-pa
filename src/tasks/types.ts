@@ -60,7 +60,7 @@ export interface TaskStepResult {
  */
 export interface UndoAction {
   /** Type of undo operation */
-  type: "delete" | "restore" | "remove-link" | "remove-tag" | "move-back";
+  type: "delete" | "restore" | "recreate" | "remove-link" | "remove-tag" | "move-back";
   /** Target file path */
   path: string;
   /** Additional parameters for undo */
