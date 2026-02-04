@@ -7,5 +7,7 @@ export type { StepHandler, StepHandlerResult, UndoResult } from "./BaseStepHandl
 
 export { CreateNoteHandler } from "./CreateNoteHandler";
 export { ModifyNoteHandler } from "./ModifyNoteHandler";
+export { DeleteNoteHandler } from "./DeleteNoteHandler";
+export { MoveNoteHandler } from "./MoveNoteHandler";
 export { AddLinkHandler } from "./AddLinkHandler";
 export { AddTagHandler } from "./AddTagHandler";
