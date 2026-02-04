@@ -244,6 +244,43 @@
 
 ---
 
+## Sprint 9: Chat Integration & Natural Language Tasks
+
+**Goal:** Wire task automation to chat UI, enable natural language task requests
+
+### Features
+
+1. **ChatView Task Integration**
+   - "Execute Plan" button when AI returns task plan
+   - Progress indicator during execution
+   - Success/failure notifications
+   - Rollback button on failure
+
+2. **Natural Language Task Detection**
+   - Detect task intents: "Create a note about...", "Add a link to...", "Tag this note with..."
+   - System prompt enhancement for task plan generation
+   - Suggest task plan for detected intents
+
+3. **Task History View**
+   - List of executed task plans
+   - Expandable step details
+   - Undo/rollback from history
+
+4. **Improved UX**
+   - Step-by-step approval mode (optional)
+   - Dry-run preview mode
+   - Keyboard shortcuts for approve/cancel
+
+### Acceptance Criteria
+
+- [ ] Users can execute task plans from chat
+- [ ] Natural language triggers task plan generation
+- [ ] Task history shows past operations
+- [ ] Rollback works from chat and history
+- [ ] 600+ tests, 85%+ branch coverage
+
+---
+
 ## Future Backlog
 
 - **Performance**: Lazy loading, virtual scrolling for long chats
