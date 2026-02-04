@@ -10,6 +10,7 @@
 import { Notice, Plugin, WorkspaceLeaf } from "obsidian";
 import { PASettings, DEFAULT_SETTINGS, PASettingTab } from "./settings";
 import { ChatView, VIEW_TYPE_CHAT } from "./views/ChatView";
+import { TaskHistoryView, VIEW_TYPE_TASK_HISTORY } from "./views/TaskHistoryView";
 import { GitHubModelsClient } from "./api/GitHubModelsClient";
 import { ProviderManager } from "./api/ProviderManager";
 import {
@@ -38,12 +39,24 @@ export default class PAPlugin extends Plugin {
     // Register the chat view
     this.registerView(VIEW_TYPE_CHAT, (leaf) => new ChatView(leaf, this));
 
+    // Register the task history view
+    this.registerView(VIEW_TYPE_TASK_HISTORY, (leaf) => new TaskHistoryView(leaf, this));
+
     // Add command to open chat (checks configuration status)
     this.addCommand({
       id: "open-chat",
       name: "Open AI Chat",
       callback: () => {
         this.activateChatView();
+      },
+    });
+
+    // Add command to open task history
+    this.addCommand({
+      id: "open-task-history",
+      name: "Open Task History",
+      callback: () => {
+        this.activateTaskHistoryView();
       },
     });
 
@@ -323,6 +336,40 @@ export default class PAPlugin extends Plugin {
     // Reveal the leaf
     if (leaf) {
       // revealLeaf returns void in some Obsidian versions
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+      Promise.resolve(workspace.revealLeaf(leaf));
+    }
+  }
+
+  /**
+   * Activate the task history view
+   */
+  public activateTaskHistoryView(): void {
+    void this.doActivateTaskHistoryView();
+  }
+
+  /**
+   * Internal async implementation of task history view activation
+   */
+  private async doActivateTaskHistoryView(): Promise<void> {
+    const { workspace } = this.app;
+
+    let leaf: WorkspaceLeaf | null = null;
+    const leaves = workspace.getLeavesOfType(VIEW_TYPE_TASK_HISTORY);
+
+    if (leaves.length > 0) {
+      // A leaf with our view already exists, use that
+      leaf = leaves[0];
+    } else {
+      // Create a new leaf in the right sidebar
+      leaf = workspace.getRightLeaf(false);
+      if (leaf) {
+        await leaf.setViewState({ type: VIEW_TYPE_TASK_HISTORY, active: true });
+      }
+    }
+
+    // Reveal the leaf
+    if (leaf) {
       // eslint-disable-next-line @typescript-eslint/no-floating-promises
       Promise.resolve(workspace.revealLeaf(leaf));
     }
