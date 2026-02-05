@@ -4,7 +4,7 @@
 
 An Obsidian plugin that provides an agentic interface to leverage AI agents within your Obsidian vault.
 
-> ⚠️ **Alpha Release** — This plugin is in early development. See [Known Limitations](#known-limitations) below.
+> 🚀 **Beta Release** — Full task automation now available! See [Changelog](CHANGELOG.md) for details.
 
 ## Overview
 
@@ -15,14 +15,32 @@ Obsidian PA enables users to interact with AI capabilities directly in their not
 
 ## Features
 
-- Seamless AI integration within Obsidian
-- Agentic workflow support
-- **Two provider options:**
+### Core AI Chat
+- 💬 **Streaming AI responses** — Real-time output with conversation persistence
+- 🔄 **Two provider options:**
   - **GitHub Models** (free tier) — GPT-4o, Llama, Mistral, and more
-  - **GitHub Copilot CLI** — Premium models like Claude Opus 4.5 and o1 for Copilot Business/Enterprise users
-- Secure credential management via 1Password CLI or direct entry
-- Folder-based data sharing controls (opt-in or opt-out)
-- Built with TypeScript for type safety and maintainability
+  - **GitHub Copilot CLI** — Premium models like Claude Opus 4.5 for Copilot Business/Enterprise
+- 🔐 **Secure credentials** — 1Password CLI integration or direct token entry
+- 📁 **Folder-based privacy** — Opt-in or opt-out data sharing controls
+
+### Write Operations (New in beta)
+- ✏️ **AI-assisted editing** — Apply suggested edits with diff preview
+- 💾 **Automatic backups** — All changes backed up with one-click revert
+- 📜 **Edit history** — Browse and restore previous versions
+
+### Task Automation (New in beta)
+- 🤖 **Multi-step task plans** — AI executes complex workflows:
+  - Create, modify, delete, and move notes
+  - Add wikilinks and tags
+  - All with confirmation before execution
+- 🗣️ **Natural language tasks** — Say "create a note about X" and it works
+- 📊 **Task history view** — Browse past operations with rollback capability
+- ↩️ **Full rollback support** — Undo entire task plans
+
+### Context Management
+- 📎 **Multi-file context** — Select multiple files for AI to reference
+- 📏 **Token budget** — Visual indicator of context window usage
+- 💡 **Smart suggestions** — AI recommends relevant linked files
 
 ## Prerequisites
 
@@ -88,38 +106,38 @@ If you use the [BRAT plugin](https://github.com/TfTHacker/obsidian42-brat) for b
 
 ## Known Limitations
 
-This is an **alpha release** with the following limitations:
+This is a **beta release** — core features are stable but some areas are still in development:
 
-| Limitation | Status | Planned |
-|------------|--------|---------|
-| **Read-only access** | AI can read notes but cannot edit them | Phase 1.1 |
-| **Single-file context** | AI only sees the currently open note | Phase 1.2 |
-| **macOS/Linux focus** | Windows paths less tested | Ongoing |
-| **Manual installation** | Not yet in Community Plugins | Future |
+| Area | Status | Notes |
+|------|--------|-------|
+| **Windows support** | 🟡 Partial | macOS/Linux focus; Windows paths less tested |
+| **Community Plugins** | 🔴 Pending | Not yet in official directory |
+| **Mobile** | 🔴 Untested | Desktop-first development |
+| **Link suggestions** | 🔵 Planned | AI-recommended connections |
+| **Orphan detection** | 🔵 Planned | Find unlinked notes |
 
 ### What's Working Well
 
-As of alpha.3:
+As of beta.1:
 
-- ✅ **Streaming responses** — See AI output in real-time with blinking cursor
-- ✅ **Conversation persistence** — Chat history survives Obsidian restarts
-- ✅ **Export conversations** — Copy to clipboard as markdown
-- ✅ **Stop requests** — Cancel in-progress AI requests
+- ✅ **Full task automation** — AI can create, modify, delete, and organise notes
+- ✅ **Natural language tasks** — "Create a note about X" just works
+- ✅ **Task history with rollback** — Undo entire operations
+- ✅ **Multi-file context** — AI references multiple notes at once
+- ✅ **Streaming responses** — Real-time output with conversation persistence
+- ✅ **Edit confirmations** — Diff preview before any changes
+- ✅ **Automatic backups** — Every edit is backed up
 
-### Why Read-Only?
+### Safety Features
 
-The AI currently operates in **read-only mode** for safety. It can:
+All write operations include:
 
-- ✅ Read notes in your allowed folders
-- ✅ Answer questions about your content
-- ✅ Suggest edits (you copy/paste manually)
-
-It cannot:
-
-- ❌ Modify, create, or delete notes
-- ❌ Execute commands in your vault
-
-Write support is planned for Phase 1.1 with safety features including confirmation dialogs, automatic backups, and audit logging.
+- ✅ **Confirmation dialogs** — Review changes before applying
+- ✅ **Diff previews** — See exactly what will change
+- ✅ **Automatic backups** — Stored in `.pa-backups/` folder
+- ✅ **One-click revert** — Restore any previous version
+- ✅ **Audit logging** — All operations logged
+- ✅ **Task approval** — Review multi-step plans before execution
 
 ## Development
 
@@ -178,6 +196,10 @@ obsidian-pa/
 Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute to this project.
 
 All commits must follow [Conventional Commits](https://www.conventionalcommits.org/) specification to enable semantic versioning.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for a detailed history of changes.
 
 ## Development Values
 
