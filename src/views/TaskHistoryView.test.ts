@@ -185,9 +185,11 @@ describe("TaskHistoryView", () => {
     it("should add entry to history manager", async () => {
       const mockPlan = {
         id: "test-plan",
+        name: "Test plan",
         description: "Test plan",
         steps: [],
         status: "completed" as const,
+        createdAt: Date.now(),
       };
 
       const historyManager = (
@@ -207,9 +209,11 @@ describe("TaskHistoryView", () => {
     it("should add entry with error for failed status", async () => {
       const mockPlan = {
         id: "test-plan",
+        name: "Failed plan",
         description: "Failed plan",
         steps: [],
         status: "failed" as const,
+        createdAt: Date.now(),
       };
 
       const historyManager = (
@@ -243,14 +247,14 @@ describe("TaskHistoryView integration", () => {
     const mockEntries: TaskHistoryEntry[] = [
       {
         id: "entry-1",
-        plan: { id: "p1", description: "Plan 1", steps: [], status: "completed" },
+        plan: { id: "p1", name: "Plan 1", description: "Plan 1", steps: [], status: "completed", createdAt: Date.now() },
         executedAt: Date.now(),
         status: "completed",
         canRollback: true,
       },
       {
         id: "entry-2",
-        plan: { id: "p2", description: "Plan 2", steps: [], status: "failed" },
+        plan: { id: "p2", name: "Plan 2", description: "Plan 2", steps: [], status: "failed", createdAt: Date.now() },
         executedAt: Date.now() - 3600000,
         status: "failed",
         error: "Step failed",
@@ -258,7 +262,7 @@ describe("TaskHistoryView integration", () => {
       },
       {
         id: "entry-3",
-        plan: { id: "p3", description: "Plan 3", steps: [], status: "rolled-back" },
+        plan: { id: "p3", name: "Plan 3", description: "Plan 3", steps: [], status: "rolled-back", createdAt: Date.now() },
         executedAt: Date.now() - 7200000,
         status: "rolled-back",
         canRollback: false,

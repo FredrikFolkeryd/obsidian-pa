@@ -16,6 +16,7 @@ Obsidian PA enables users to interact with AI capabilities directly in their not
 ## Features
 
 ### Core AI Chat
+
 - 💬 **Streaming AI responses** — Real-time output with conversation persistence
 - 🔄 **Two provider options:**
   - **GitHub Models** (free tier) — GPT-4o, Llama, Mistral, and more
@@ -24,11 +25,13 @@ Obsidian PA enables users to interact with AI capabilities directly in their not
 - 📁 **Folder-based privacy** — Opt-in or opt-out data sharing controls
 
 ### Write Operations (New in beta)
+
 - ✏️ **AI-assisted editing** — Apply suggested edits with diff preview
 - 💾 **Automatic backups** — All changes backed up with one-click revert
 - 📜 **Edit history** — Browse and restore previous versions
 
 ### Task Automation (New in beta)
+
 - 🤖 **Multi-step task plans** — AI executes complex workflows:
   - Create, modify, delete, and move notes
   - Add wikilinks and tags
@@ -38,6 +41,7 @@ Obsidian PA enables users to interact with AI capabilities directly in their not
 - ↩️ **Full rollback support** — Undo entire task plans
 
 ### Context Management
+
 - 📎 **Multi-file context** — Select multiple files for AI to reference
 - 📏 **Token budget** — Visual indicator of context window usage
 - 💡 **Smart suggestions** — AI recommends relevant linked files

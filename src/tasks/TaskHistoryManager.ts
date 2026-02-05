@@ -177,8 +177,8 @@ export class TaskHistoryManager {
   public getEntriesForFile(filePath: string): TaskHistoryEntry[] {
     return this.entries.filter((entry) => {
       return entry.plan.steps.some((step) => {
-        const params = step.params as Record<string, unknown>;
-        return params.path === filePath || params.destination === filePath;
+        const params = step.params as unknown as Record<string, unknown>;
+        return params.path === filePath || params.newPath === filePath;
       });
     });
   }

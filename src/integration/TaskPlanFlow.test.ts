@@ -69,12 +69,12 @@ describe("Task Plan Flow E2E", () => {
       return Promise.resolve(file);
     });
     mockVault.delete = vi.fn().mockResolvedValue(undefined);
-    mockVault.rename = vi.fn().mockResolvedValue(undefined);
+    (mockVault as unknown as { rename: typeof vi.fn }).rename = vi.fn().mockResolvedValue(undefined);
     mockVault.getAbstractFileByPath = vi.fn().mockImplementation((path: string) =>
       files.find((f) => f.path === path) ?? null
     );
     mockVault.getMarkdownFiles = vi.fn(() => files) as typeof mockVault.getMarkdownFiles;
-    mockVault.getRoot = vi.fn(() => ({ path: "/" }) as TFolder);
+    (mockVault as unknown as { getRoot: () => TFolder }).getRoot = () => ({ path: "/" } as TFolder);
 
     mockApp = {
       vault: mockVault as unknown as Vault,
@@ -161,6 +161,7 @@ Second plan:
 
       const plan = {
         id: "test-plan-1",
+        name: "Create test note",
         description: "Create test note",
         status: "pending" as const,
         steps: [
@@ -190,6 +191,7 @@ Second plan:
 
       const plan = {
         id: "test-plan-2",
+        name: "Test history tracking",
         description: "Test history tracking",
         status: "pending" as const,
         steps: [
@@ -225,6 +227,7 @@ Second plan:
 
       const plan = {
         id: "test-plan-3",
+        name: "Event test",
         description: "Event test",
         status: "pending" as const,
         steps: [
@@ -259,6 +262,7 @@ Second plan:
 
       const plan = {
         id: "test-plan-4",
+        name: "Failure test",
         description: "Failure test",
         status: "pending" as const,
         steps: [

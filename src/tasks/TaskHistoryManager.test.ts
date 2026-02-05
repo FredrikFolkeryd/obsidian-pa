@@ -15,6 +15,7 @@ import type { TaskPlan } from "./types";
 function createMockPlan(overrides: Partial<TaskPlan> = {}): TaskPlan {
   return {
     id: `plan-${Date.now()}`,
+    name: "Test Plan",
     description: "Test plan",
     status: "completed",
     steps: [
@@ -275,7 +276,7 @@ describe("TaskHistoryManager", () => {
             type: "move-note",
             description: "Move file",
             status: "completed",
-            params: { path: "old.md", destination: "archive/old.md" },
+            params: { path: "old.md", newPath: "archive/old.md" },
           },
         ],
       });

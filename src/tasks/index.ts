@@ -85,22 +85,22 @@ export type { StepHandler, StepHandlerResult, UndoResult } from "./handlers/Base
  *
  * @param app - Obsidian App instance
  * @param vault - SafeVaultAccess for consent-checked operations
- * @param backup - VaultBackup for backup/restore operations
+ * @param _backup - VaultBackup for backup/restore operations (reserved for future use)
  * @returns Configured TaskExecutor
  */
 export function createTaskExecutor(
   app: App,
   vault: SafeVaultAccess,
-  backup: VaultBackup
+  _backup: VaultBackup
 ): TaskExecutor {
   const handlers = new Map<TaskStepType, StepHandler>();
 
   handlers.set("create-note", new CreateNoteHandler(app, vault));
-  handlers.set("modify-note", new ModifyNoteHandler(app, vault, backup));
-  handlers.set("delete-note", new DeleteNoteHandler(app, vault, backup));
+  handlers.set("modify-note", new ModifyNoteHandler(app, vault));
+  handlers.set("delete-note", new DeleteNoteHandler(app, vault));
   handlers.set("move-note", new MoveNoteHandler(app, vault));
-  handlers.set("add-link", new AddLinkHandler(app, vault, backup));
-  handlers.set("add-tag", new AddTagHandler(app, vault, backup));
+  handlers.set("add-link", new AddLinkHandler(app, vault));
+  handlers.set("add-tag", new AddTagHandler(app, vault));
 
   return new TaskExecutor({ handlers });
 }
