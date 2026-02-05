@@ -58,7 +58,7 @@ export class TaskHistoryView extends ItemView {
    */
   private async loadHistory(): Promise<void> {
     try {
-      const data = await this.plugin.loadData();
+      const data = (await this.plugin.loadData()) as Record<string, unknown> | null;
       const historyData = data?.taskHistory as TaskHistoryData | undefined;
       this.historyManager.load(historyData ?? null);
     } catch (error) {
@@ -75,7 +75,7 @@ export class TaskHistoryView extends ItemView {
     }
 
     try {
-      const existingData = (await this.plugin.loadData()) ?? {};
+      const existingData = ((await this.plugin.loadData()) ?? {}) as Record<string, unknown>;
       existingData.taskHistory = this.historyManager.export();
       await this.plugin.saveData(existingData);
       this.historyManager.markClean();

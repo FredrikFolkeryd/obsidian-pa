@@ -11,7 +11,7 @@ import { SafeVaultAccess } from "../vault/SafeVaultAccess";
 import { VaultBackup } from "../vault/VaultBackup";
 import type { PASettings } from "../settings";
 import type { App, TFile, Vault, TFolder } from "obsidian";
-import { TFile as MockTFile, Vault as MockVault, TFolder as MockTFolder } from "../__mocks__/obsidian";
+import { TFile as MockTFile, Vault as MockVault } from "../__mocks__/obsidian";
 
 describe("Task Plan Flow E2E", () => {
   let settings: PASettings;

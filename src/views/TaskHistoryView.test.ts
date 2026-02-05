@@ -25,7 +25,7 @@ vi.stubGlobal("document", {
 // Mock obsidian
 vi.mock("obsidian", () => ({
   ItemView: class MockItemView {
-    containerEl = {
+    public containerEl = {
       children: [
         null,
         {
@@ -48,12 +48,12 @@ vi.mock("obsidian", () => ({
         },
       ],
     };
-    app = {};
+    public app = {};
   },
   Notice: vi.fn(),
   Modal: class MockModal {
-    app: unknown;
-    contentEl = {
+    public app: unknown;
+    public contentEl = {
       empty: vi.fn(),
       addClass: vi.fn(),
       createEl: vi.fn().mockReturnValue({
@@ -65,11 +65,11 @@ vi.mock("obsidian", () => ({
         }),
       }),
     };
-    constructor(app: unknown) {
+    public constructor(app: unknown) {
       this.app = app;
     }
-    open() {}
-    close() {}
+    public open(): void { /* noop */ }
+    public close(): void { /* noop */ }
   },
 }));
 
@@ -102,15 +102,20 @@ describe("TaskHistoryView", () => {
   let view: TaskHistoryView;
   let mockLeaf: WorkspaceLeaf;
   let mockPlugin: PAPlugin;
+  let loadDataMock: Mock;
+  let saveDataMock: Mock;
 
   beforeEach(() => {
     vi.clearAllMocks();
 
     mockLeaf = {} as WorkspaceLeaf;
 
+    loadDataMock = vi.fn().mockResolvedValue({});
+    saveDataMock = vi.fn().mockResolvedValue(undefined);
+
     mockPlugin = {
-      loadData: vi.fn().mockResolvedValue({}),
-      saveData: vi.fn().mockResolvedValue(undefined),
+      loadData: loadDataMock,
+      saveData: saveDataMock,
       safeVault: {
         getBackup: vi.fn().mockReturnValue({}),
       },
@@ -142,7 +147,7 @@ describe("TaskHistoryView", () => {
   describe("onOpen", () => {
     it("should load history on open", async () => {
       await view.onOpen();
-      expect(mockPlugin.loadData).toHaveBeenCalled();
+      expect(loadDataMock).toHaveBeenCalled();
     });
   });
 
@@ -155,7 +160,7 @@ describe("TaskHistoryView", () => {
 
       await view.onClose();
       // When dirty, save should be called
-      expect(mockPlugin.saveData).toHaveBeenCalled();
+      expect(saveDataMock).toHaveBeenCalled();
     });
 
     it("should not save if not dirty", async () => {
@@ -165,14 +170,14 @@ describe("TaskHistoryView", () => {
 
       await view.onClose();
       // loadData may be called during setup, but saveData should not
-      expect(mockPlugin.saveData).not.toHaveBeenCalled();
+      expect(saveDataMock).not.toHaveBeenCalled();
     });
   });
 
   describe("refresh", () => {
     it("should reload history and render", async () => {
       await view.refresh();
-      expect(mockPlugin.loadData).toHaveBeenCalled();
+      expect(loadDataMock).toHaveBeenCalled();
     });
   });
 
@@ -226,14 +231,15 @@ describe("TaskHistoryView", () => {
     it("should return the history manager instance", () => {
       const manager = view.getHistoryManager();
       expect(manager).toBeDefined();
-      expect(typeof manager.load).toBe("function");
-      expect(typeof manager.getEntries).toBe("function");
+      // Verify it's a TaskHistoryManager by checking it has the expected shape
+      expect(manager).toHaveProperty("load");
+      expect(manager).toHaveProperty("getEntries");
     });
   });
 });
 
 describe("TaskHistoryView integration", () => {
-  it("should handle entries with various statuses", async () => {
+  it("should handle entries with various statuses", () => {
     const mockEntries: TaskHistoryEntry[] = [
       {
         id: "entry-1",

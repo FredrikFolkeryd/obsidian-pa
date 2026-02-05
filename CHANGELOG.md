@@ -13,15 +13,57 @@ _Changes that will be in the next release._
 
 The following features are planned for future releases:
 
-#### Enhanced Context (Phase 1.2)
-
-- **Multi-file context** — AI can reference multiple notes in a single conversation
-
-#### Agentic Capabilities (Phase 2.0)
-
-- **Natural language tasks** — "Create a note about X" detection
 - **Link suggestions** — AI recommends connections between notes
 - **Orphan detection** — Find unlinked notes in vault
+- **Performance** — Lazy loading, virtual scrolling for long chats
+
+## [1.0.0-beta.1] - 2026-02-05
+
+🎉 **First Beta Release** — Full task automation with chat integration!
+
+### ✨ Features
+
+- **Natural Language Task Detection** — Pattern-based intent detection from user messages:
+  - `TaskIntentDetector` — Detects 6 intent types (create, modify, delete, move, add-link, add-tag)
+  - Confidence scoring for detected intents
+  - Helper: `mayContainTaskIntent`, `generatePlanDescription`
+  - 49 tests
+
+- **Task History Manager** — Persistent history of executed task plans:
+  - Load/export for storage
+  - Query by status, date range, or affected file
+  - Rollback tracking
+  - Helpers: `formatHistoryEntry`, `getHistoryStats`
+  - 38 tests
+
+- **Task History View** — Dedicated UI for browsing executed task plans:
+  - Filter by status (all, completed, failed, rolled-back)
+  - Expandable step details
+  - Rollback button with confirmation modal
+  - Clear history option
+  - "Open Task History" command
+  - 12 tests
+
+- **Enhanced System Prompt** — Task planning instructions for AI:
+  - `buildTaskPlanningInstructions()` helper
+  - `buildSystemPrompt({ enableTaskPlanning: true })` option
+  - 7 tests
+
+- **ChatView Task Integration** — Execute task plans directly from chat:
+  - `createTaskExecutor()` factory function
+  - Task plan detection via `parseTaskPlanBlocks`
+  - "Review & Execute" button for valid task plans
+  - Real-time step progress feedback
+  - History tracking on execution
+
+- **Integration Tests** — E2E flow coverage:
+  - Parse → Approve → Execute → History lifecycle
+  - 8 integration tests
+
+### 📊 Test Coverage
+
+- **669 tests** (up from 555 in alpha.9)
+- **86%+ branch coverage** maintained
 
 ## [1.0.0-alpha.9]
 

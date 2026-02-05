@@ -66,7 +66,7 @@ const INTENT_PATTERNS: IntentPattern[] = [
     type: "create-note",
     patterns: [
       /(?:create|make|start|write|draft)\s+(?:a\s+)?(?:new\s+)?note\s+(?:about|on|for|called|named|titled)\s+(.+)/i,
-      /(?:new|add)\s+note\s*[:\-]?\s*(.+)/i,
+      /(?:new|add)\s+note\s*[:|-]?\s*(.+)/i,
       /(?:i\s+)?(?:want|need)\s+(?:a\s+)?(?:new\s+)?note\s+(?:about|on|for)\s+(.+)/i,
     ],
     extractParams: (match, _message) => ({

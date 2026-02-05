@@ -1637,7 +1637,7 @@ export class ChatView extends ItemView {
 
     try {
       // Approve the plan
-      let approvedPlan = executor.approve(plan);
+      const approvedPlan = executor.approve(plan);
 
       // Listen for events
       executor.on((event: TaskEvent) => {
