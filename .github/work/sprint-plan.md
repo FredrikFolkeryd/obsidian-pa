@@ -17,8 +17,9 @@
 | alpha.8 | 45% | 85% | 50% | ✅ Complete (Sprint 6) |
 | alpha.9 | 52% | 84% | 55% | ✅ Complete (Sprint 8) |
 | alpha.10 | 56% | 86% | 58% | ✅ Complete (Sprint 9, 669 tests) |
-| beta.1 | 58% | 87% | 62% | 🔄 Ready for release |
-| 1.0 | 60% | 85% | 65% | Release quality + E2E tests |
+| beta.1 | 58% | 86% | 62% | ✅ Released (669 tests) |
+| beta.2 | 60% | 87% | 65% | 🔄 Sprint 10 target |
+| 1.0 | 65% | 90% | 70% | Release quality + E2E tests |
 
 > **Coverage Recalibration (Sprint 6 Retro)**
 >
@@ -308,6 +309,49 @@
 - [x] Task history view UI
 - [x] Rollback from history UI
 - [x] 600+ tests (669), 85%+ branch coverage (86%)
+
+---
+
+## Sprint 10: Polish & 1.0 Preparation (Current)
+
+**Goal:** Stabilize beta, prepare for 1.0 release
+
+### Planned Features
+
+1. ⬜ **Link Suggestions & Backlink Discovery**
+   - Analyze vault for related notes
+   - Suggest wikilinks based on content similarity
+   - Surface orphan notes that could be linked
+   - Priority from Sprint 8 backlog
+
+2. ⬜ **Task Plan Improvements**
+   - Preview mode for task plans (show what would change)
+   - Partial execution support (run selected steps only)
+   - Better error recovery with step-level retry
+
+3. ⬜ **Documentation & Onboarding**
+   - User guide for task automation features
+   - Setup wizard for first-time users
+   - Troubleshooting FAQ
+
+4. ⬜ **Test Coverage Push**
+   - Target 65% statements, 90% branches for 1.0
+   - E2E tests for critical user flows
+   - Stress tests for large vaults
+
+5. ⬜ **Retro Action Items**
+   - Add `tsc --noEmit` to pre-commit checklist
+   - Document VS Code TS server restart workaround
+   - Review ADR-003 for type consistency
+
+### Acceptance Criteria
+
+- [ ] Link suggestions feature working
+- [ ] Task preview mode implemented
+- [ ] User documentation complete
+- [ ] 700+ tests, 90% branch coverage
+- [ ] All retro action items addressed
+- [ ] beta.2 released
 
 ---
 
