@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Add triage label and comment
+      - name: Add triage label and invoke Copilot
         uses: actions/github-script@v7
         with:
           script: |
@@ -25,18 +25,14 @@ jobs:
               labels: ['triage']
             });
 
-            // Post triage comment
+            // Invoke Copilot with triage instructions
             const body = [
-              '👋 Thanks for opening this issue!',
+              '@copilot Please triage this issue following the instructions in',
+              '`.github/instructions/issue-triage.instructions.md`.',
               '',
-              '**Triage status**: 🔍 Pending review',
-              '',
-              'This issue has been flagged for triage by @FredrikFolkeryd.',
-              '',
-              '**Labels applied**: `triage`',
-              '',
-              '---',
-              '_Automated by the issue triage workflow._'
+              'Analyze the issue, check for duplicates, classify it, assess severity',
+              '(if applicable), apply the appropriate labels, and recommend the',
+              'appropriate agent to handle it.'
             ].join('\n');
 
             await github.rest.issues.createComment({
