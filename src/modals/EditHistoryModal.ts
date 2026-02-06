@@ -9,6 +9,7 @@
 
 import { Modal, App } from "obsidian";
 import type { WriteAuditEntry, SafeVaultAccess } from "../vault/SafeVaultAccess";
+import { formatRelativeTime } from "../chat/helpers";
 
 /**
  * Result from the edit history modal
@@ -157,26 +158,7 @@ export class EditHistoryModal extends Modal {
   }
 
   private formatTime(timestamp: number): string {
-    const now = Date.now();
-    const diff = now - timestamp;
-
-    if (diff < 60000) {
-      return "just now";
-    } else if (diff < 3600000) {
-      const mins = Math.floor(diff / 60000);
-      return `${mins}m ago`;
-    } else if (diff < 86400000) {
-      const hours = Math.floor(diff / 3600000);
-      return `${hours}h ago`;
-    } else {
-      const date = new Date(timestamp);
-      return date.toLocaleDateString(undefined, {
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    }
+    return formatRelativeTime(timestamp);
   }
 
   private addStyles(): void {

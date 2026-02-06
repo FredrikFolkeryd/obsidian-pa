@@ -160,20 +160,26 @@ describe("isFilePathAllowed", () => {
 });
 
 describe("getTodayDateString", () => {
-  it("should return YYYY-MM-DD format", () => {
-    const date = new Date("2024-03-15T10:30:00Z");
+  it("should return YYYY-MM-DD format in local timezone", () => {
+    const date = new Date(2024, 2, 15, 10, 30, 0); // March 15, 2024 local
     const result = getTodayDateString(date);
     expect(result).toBe("2024-03-15");
   });
 
   it("should handle year boundaries", () => {
-    const date = new Date("2025-01-01T00:00:00Z");
+    const date = new Date(2025, 0, 1, 0, 0, 0); // Jan 1, 2025 local
     expect(getTodayDateString(date)).toBe("2025-01-01");
   });
 
   it("should handle leap year dates", () => {
-    const date = new Date("2024-02-29T12:00:00Z");
+    const date = new Date(2024, 1, 29, 12, 0, 0); // Feb 29, 2024 local
     expect(getTodayDateString(date)).toBe("2024-02-29");
+  });
+
+  it("should use local date, not UTC", () => {
+    // Create a date at 23:30 local time — UTC could be the next day
+    const date = new Date(2024, 5, 15, 23, 30, 0); // June 15, 2024 23:30 local
+    expect(getTodayDateString(date)).toBe("2024-06-15");
   });
 });
 
