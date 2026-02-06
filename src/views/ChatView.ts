@@ -1117,19 +1117,25 @@ export class ChatView extends ItemView {
       this.plugin.settings,
       (result) => {
         if (result) {
-          // Update context manager with new selections
-          this.contextManager.clearContext();
-          for (const item of result.items) {
-            // Get the file and add it
-            const file = this.app.vault.getAbstractFileByPath(item.path);
-            if (file instanceof TFile) {
-              void this.contextManager.addFile(file);
+          // Update context manager with new selections asynchronously
+          void (async () => {
+            this.contextManager.clearContext();
+            for (const item of result.items) {
+              // Get the file and add it
+              const file = this.app.vault.getAbstractFileByPath(item.path);
+              if (file instanceof TFile) {
+                await this.contextManager.addFile(file);
+              }
             }
-          }
+            // Update the UI after all files are added
+            this.updateContextIndicatorWithManualSelection();
+            this.updateAddContextButton();
+          })();
+        } else {
+          // If no result (cancelled), still update the UI
+          this.updateContextIndicatorWithManualSelection();
+          this.updateAddContextButton();
         }
-        // Update the context indicator to reflect new selection
-        this.updateContextIndicatorWithManualSelection();
-        this.updateAddContextButton();
       },
       existingItems
     );
