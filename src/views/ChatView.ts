@@ -7,6 +7,7 @@ import type PAPlugin from "../main";
 import type { ChatMessage } from "../api/GitHubModelsClient";
 import { parseEditBlocks, mayContainEdits, type ParsedEditBlock } from "../chat/EditBlockParser";
 import { parseTaskPlanBlocks, type ParsedTaskPlan } from "../chat/TaskPlanBlockParser";
+import { formatConversationExport, getTodayDateString } from "../chat/helpers";
 import { showEditConfirmation } from "../modals/EditConfirmationModal";
 import { showEditHistory } from "../modals/EditHistoryModal";
 import { showTaskApproval, type TaskApprovalResult } from "../modals/TaskApprovalModal";
@@ -1873,7 +1874,7 @@ export class ChatView extends ItemView {
    * Get today's usage count, resetting if it's a new day
    */
   private getTodayUsage(): number {
-    const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+    const today = getTodayDateString();
     if (this.plugin.settings.usageDate !== today) {
       // New day, reset counter
       this.plugin.settings.usageDate = today;
@@ -1887,7 +1888,7 @@ export class ChatView extends ItemView {
    * Increment today's usage count
    */
   private incrementUsage(): void {
-    const today = new Date().toISOString().split("T")[0];
+    const today = getTodayDateString();
     if (this.plugin.settings.usageDate !== today) {
       this.plugin.settings.usageDate = today;
       this.plugin.settings.usageRequests = 0;
@@ -1987,26 +1988,7 @@ export class ChatView extends ItemView {
       return;
     }
 
-    const lines: string[] = [
-      "# AI Conversation Export",
-      "",
-      `Exported: ${new Date().toLocaleString()}`,
-      `Model: ${this.plugin.settings.model}`,
-      "",
-      "---",
-      "",
-    ];
-
-    for (const msg of conversationMessages) {
-      const role = msg.role === "user" ? "**You**" : "**Assistant**";
-      const time = msg.timestamp.toLocaleTimeString();
-      lines.push(`### ${role} *(${time})*`);
-      lines.push("");
-      lines.push(msg.content);
-      lines.push("");
-    }
-
-    const markdown = lines.join("\n");
+    const markdown = formatConversationExport(conversationMessages, this.plugin.settings.model);
 
     try {
       await navigator.clipboard.writeText(markdown);
