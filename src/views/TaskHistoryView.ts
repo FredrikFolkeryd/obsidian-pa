@@ -4,6 +4,7 @@
 
 import { ItemView, WorkspaceLeaf, Notice } from "obsidian";
 import type PAPlugin from "../main";
+import { formatDateTimeISO } from "../chat/helpers";
 import {
   TaskHistoryManager,
   getHistoryStats,
@@ -311,7 +312,7 @@ export class TaskHistoryView extends ItemView {
     if (hours < 24) return `${hours}h ago`;
     if (days < 7) return `${days}d ago`;
 
-    return date.toLocaleDateString();
+    return formatDateTimeISO(date);
   }
 
   /**

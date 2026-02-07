@@ -7,6 +7,8 @@
 import { describe, it, expect } from "vitest";
 import {
   formatRelativeTime,
+  formatDateTimeISO,
+  formatTimeISO,
   generateMessageId,
   isFilePathAllowed,
   getTodayDateString,
@@ -40,17 +42,56 @@ describe("formatRelativeTime", () => {
     expect(formatRelativeTime(now - 86399999, now)).toBe("23h ago");
   });
 
-  it("should return formatted date for timestamps more than 24 hours ago", () => {
+  it("should return ISO 8601 formatted date for timestamps more than 24 hours ago", () => {
     const timestamp = now - 86400000; // 1 day ago
     const result = formatRelativeTime(timestamp, now);
-    // Should contain month abbreviation
-    expect(result).toMatch(/\w+/);
+    // Should be ISO 8601 format: YYYY-MM-DD HH:mm:ss
+    expect(result).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
     expect(result).not.toBe("just now");
     expect(result).not.toMatch(/ago$/);
   });
 
   it("should handle future timestamps", () => {
     expect(formatRelativeTime(now + 60000, now)).toBe("in the future");
+  });
+});
+
+describe("formatDateTimeISO", () => {
+  it("should format as YYYY-MM-DD HH:mm:ss", () => {
+    const date = new Date(2024, 2, 15, 14, 30, 45); // March 15, 2024 14:30:45 local
+    expect(formatDateTimeISO(date)).toBe("2024-03-15 14:30:45");
+  });
+
+  it("should zero-pad single-digit values", () => {
+    const date = new Date(2024, 0, 5, 3, 7, 9); // Jan 5, 2024 03:07:09 local
+    expect(formatDateTimeISO(date)).toBe("2024-01-05 03:07:09");
+  });
+
+  it("should handle midnight", () => {
+    const date = new Date(2024, 5, 1, 0, 0, 0);
+    expect(formatDateTimeISO(date)).toBe("2024-06-01 00:00:00");
+  });
+});
+
+describe("formatTimeISO", () => {
+  it("should format as HH:mm:ss", () => {
+    const date = new Date(2024, 0, 1, 14, 30, 45);
+    expect(formatTimeISO(date)).toBe("14:30:45");
+  });
+
+  it("should zero-pad single-digit values", () => {
+    const date = new Date(2024, 0, 1, 3, 7, 9);
+    expect(formatTimeISO(date)).toBe("03:07:09");
+  });
+
+  it("should handle midnight", () => {
+    const date = new Date(2024, 0, 1, 0, 0, 0);
+    expect(formatTimeISO(date)).toBe("00:00:00");
+  });
+
+  it("should handle end of day", () => {
+    const date = new Date(2024, 0, 1, 23, 59, 59);
+    expect(formatTimeISO(date)).toBe("23:59:59");
   });
 });
 
@@ -380,12 +421,18 @@ describe("formatConversationExport", () => {
     expect(result).toContain("Hi there!");
   });
 
-  it("should include timestamps", () => {
+  it("should include ISO 8601 timestamps", () => {
     const messages = [
-      { role: "user", content: "Test", timestamp: new Date("2024-01-01T10:30:00") },
+      { role: "user", content: "Test", timestamp: new Date(2024, 0, 1, 10, 30, 0) },
     ];
     const result = formatConversationExport(messages, "test");
-    expect(result).toMatch(/\(\d+:\d+/); // Time format
+    expect(result).toContain("(10:30:00)");
+  });
+
+  it("should include ISO 8601 export header timestamp", () => {
+    const result = formatConversationExport([], "test");
+    // Header should have YYYY-MM-DD HH:mm:ss format
+    expect(result).toMatch(/Exported: \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/);
   });
 });
 

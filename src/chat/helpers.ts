@@ -6,6 +6,27 @@
  */
 
 /**
+ * Format a Date as ISO 8601 date-time string in local timezone
+ * @param date - Date to format
+ * @returns String like "2024-03-15 14:30:00"
+ */
+export function formatDateTimeISO(date: Date): string {
+  return `${getTodayDateString(date)} ${formatTimeISO(date)}`;
+}
+
+/**
+ * Format a Date as ISO 8601 time string (HH:mm:ss) in local timezone
+ * @param date - Date to format
+ * @returns String like "14:30:00"
+ */
+export function formatTimeISO(date: Date): string {
+  const h = String(date.getHours()).padStart(2, "0");
+  const m = String(date.getMinutes()).padStart(2, "0");
+  const s = String(date.getSeconds()).padStart(2, "0");
+  return `${h}:${m}:${s}`;
+}
+
+/**
  * Format a timestamp as a relative time string
  * @param timestamp - Unix timestamp in milliseconds
  * @param now - Current time in milliseconds (for testing)
@@ -26,12 +47,7 @@ export function formatRelativeTime(timestamp: number, now = Date.now()): string 
     return `${hours}h ago`;
   } else {
     const date = new Date(timestamp);
-    return date.toLocaleDateString(undefined, {
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return formatDateTimeISO(date);
   }
 }
 
@@ -197,7 +213,7 @@ export function formatConversationExport(
   const lines: string[] = [
     "# AI Conversation Export",
     "",
-    `Exported: ${new Date().toLocaleString()}`,
+    `Exported: ${formatDateTimeISO(new Date())}`,
     `Model: ${model}`,
     "",
     "---",
@@ -206,7 +222,7 @@ export function formatConversationExport(
 
   for (const msg of messages) {
     const role = msg.role === "user" ? "**You**" : "**Assistant**";
-    const time = msg.timestamp.toLocaleTimeString();
+    const time = formatTimeISO(msg.timestamp);
     lines.push(`### ${role} *(${time})*`);
     lines.push("");
     lines.push(msg.content);
