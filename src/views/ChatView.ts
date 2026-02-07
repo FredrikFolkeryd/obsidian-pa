@@ -1254,15 +1254,15 @@ export class ChatView extends ItemView {
     if (!this.contextIndicatorEl) return;
     
     // Check if user has manually selected context
-    const manualItems = this.contextManager.getSelectedItems();
+    const manuallySelectedItems = this.contextManager.getSelectedItems();
     
-    if (manualItems.length > 0) {
+    if (manuallySelectedItems.length > 0) {
       // User has manually selected context - don't auto-update
       return;
     }
     
     // Auto-update with current visible files
-    const visibleFiles = this.getVisibleContextFiles().filter(f => this.isFileAllowed(f.path));
+    const visibleFiles = this.getVisibleContextFiles().filter(file => this.isFileAllowed(file.path));
     this.updateContextIndicator(visibleFiles);
   }
 
