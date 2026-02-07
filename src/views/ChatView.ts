@@ -868,7 +868,7 @@ export class ChatView extends ItemView {
         
         // Use token budget for context limit (rough: 4 chars ≈ 1 token)
         const budget = getTokenBudgetForModel(this.plugin.settings.model);
-        const maxContextTokens = budget.contextWindow - budget.reserveForResponse;
+        const maxContextTokens = budget.maxContextTokens - budget.reserveForResponse;
         const maxTotalChars = maxContextTokens * 4;
         
         for (const file of contextFiles) {
@@ -1186,7 +1186,7 @@ export class ChatView extends ItemView {
       // Add token indicator
       const totalTokens = this.contextManager.getTotalTokens();
       const budget = getTokenBudgetForModel(this.plugin.settings.model);
-      const remaining = budget.contextWindow - budget.reserveForResponse - totalTokens;
+      const remaining = budget.maxContextTokens - budget.reserveForResponse - totalTokens;
       
       const tokenSpan = this.contextIndicatorEl.createSpan({ cls: "pa-chat-context-tokens" });
       tokenSpan.setText(`(${formatTokenCount(totalTokens)} tokens)`);
