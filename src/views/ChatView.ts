@@ -65,6 +65,25 @@ export class ChatView extends ItemView {
 
   public async onOpen(): Promise<void> {
     await this.render();
+    
+    // Register workspace event listeners for auto-updating context
+    this.registerEvent(
+      this.app.workspace.on("active-leaf-change", () => {
+        this.refreshContextIndicator();
+      })
+    );
+    
+    this.registerEvent(
+      this.app.workspace.on("layout-change", () => {
+        this.refreshContextIndicator();
+      })
+    );
+    
+    this.registerEvent(
+      this.app.workspace.on("file-open", () => {
+        this.refreshContextIndicator();
+      })
+    );
   }
 
   /**
@@ -1203,6 +1222,26 @@ export class ChatView extends ItemView {
       const visibleFiles = this.getVisibleContextFiles().filter(f => this.isFileAllowed(f.path));
       this.updateContextIndicator(visibleFiles);
     }
+  }
+
+  /**
+   * Refresh context indicator based on current workspace state
+   * Only updates if using automatic context (not manual selection)
+   */
+  private refreshContextIndicator(): void {
+    if (!this.contextIndicatorEl) return;
+    
+    // Check if user has manually selected context
+    const manualItems = this.contextManager.getSelectedItems();
+    
+    if (manualItems.length > 0) {
+      // User has manually selected context - don't auto-update
+      return;
+    }
+    
+    // Auto-update with current visible files
+    const visibleFiles = this.getVisibleContextFiles().filter(f => this.isFileAllowed(f.path));
+    this.updateContextIndicator(visibleFiles);
   }
 
   /**
