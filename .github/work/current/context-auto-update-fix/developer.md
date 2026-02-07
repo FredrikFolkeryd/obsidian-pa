@@ -69,7 +69,8 @@ When auto context is active, workspace events should trigger a context indicator
    - All listeners call the new `scheduleContextRefresh()` method with debouncing
 
 3. **Updated `onClose()` method** (lines 400-408):
-   - Changed from `async` to synchronous (no awaits needed)
+   - Kept as `async` for backward compatibility with `ItemView` base class
+   - Added eslint-disable comment for `require-await` rule
    - Clears pending timeout on view close to prevent memory leaks
 
 4. **Added `scheduleContextRefresh()` method** (lines 1233-1248):
