@@ -7,6 +7,7 @@
  */
 
 import type { TaskPlan } from "../tasks/types";
+import { formatDateTimeISO } from "../chat/helpers";
 
 /**
  * History entry for an executed task plan
@@ -249,8 +250,7 @@ export class TaskHistoryManager {
  */
 export function formatHistoryEntry(entry: TaskHistoryEntry): string {
   const date = new Date(entry.executedAt);
-  const dateStr = date.toLocaleDateString();
-  const timeStr = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const dateTimeStr = formatDateTimeISO(date);
   const stepCount = entry.plan.steps.length;
   const statusIcon =
     entry.status === "completed"
@@ -259,7 +259,7 @@ export function formatHistoryEntry(entry: TaskHistoryEntry): string {
         ? "❌"
         : "↩️";
 
-  return `${statusIcon} ${dateStr} ${timeStr} — ${entry.plan.description} (${stepCount} step${stepCount !== 1 ? "s" : ""})`;
+  return `${statusIcon} ${dateTimeStr} — ${entry.plan.description} (${stepCount} step${stepCount !== 1 ? "s" : ""})`;
 }
 
 /**
