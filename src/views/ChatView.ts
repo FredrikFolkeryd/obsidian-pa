@@ -397,7 +397,8 @@ export class ChatView extends ItemView {
     document.head.appendChild(styleEl);
   }
 
-  public onClose(): void {
+  // eslint-disable-next-line @typescript-eslint/require-await
+  public async onClose(): Promise<void> {
     // Cleanup timeout if pending
     if (this.contextRefreshTimeout) {
       clearTimeout(this.contextRefreshTimeout);
