@@ -43,6 +43,8 @@ export class ChatView extends ItemView {
   private contextManager: ContextManager;
   private addContextButtonEl: HTMLElement | null = null;
   private taskHistoryManager: TaskHistoryManager;
+  private contextRefreshTimeout: NodeJS.Timeout | null = null;
+  private explicitlyRemovedFiles: Set<string> = new Set();
 
   public constructor(leaf: WorkspaceLeaf, plugin: PAPlugin) {
     super(leaf);
@@ -65,6 +67,26 @@ export class ChatView extends ItemView {
 
   public async onOpen(): Promise<void> {
     await this.render();
+    
+    // Register workspace event listeners for auto-updating context
+    // Use debouncing to prevent redundant updates when multiple events fire
+    this.registerEvent(
+      this.app.workspace.on("active-leaf-change", () => {
+        this.scheduleContextRefresh();
+      })
+    );
+    
+    this.registerEvent(
+      this.app.workspace.on("layout-change", () => {
+        this.scheduleContextRefresh();
+      })
+    );
+    
+    this.registerEvent(
+      this.app.workspace.on("file-open", () => {
+        this.scheduleContextRefresh();
+      })
+    );
   }
 
   /**
@@ -376,8 +398,13 @@ export class ChatView extends ItemView {
     document.head.appendChild(styleEl);
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   public async onClose(): Promise<void> {
-    // Cleanup
+    // Cleanup timeout if pending
+    if (this.contextRefreshTimeout) {
+      clearTimeout(this.contextRefreshTimeout);
+      this.contextRefreshTimeout = null;
+    }
   }
 
   /**
@@ -1111,6 +1138,7 @@ export class ChatView extends ItemView {
   private openContextPicker(): void {
     // Get existing selections
     const existingItems = this.contextManager.getSelectedItems();
+    const existingPaths = new Set(existingItems.map(item => item.path));
     
     // Open the picker modal with settings
     const modal = new ContextPickerModal(
@@ -1118,6 +1146,20 @@ export class ChatView extends ItemView {
       this.plugin.settings,
       (result) => {
         if (result) {
+          // Track which files were removed by user
+          const newPaths = new Set(result.items.map(item => item.path));
+          for (const existingPath of existingPaths) {
+            if (!newPaths.has(existingPath)) {
+              // File was explicitly removed by user
+              this.explicitlyRemovedFiles.add(existingPath);
+            }
+          }
+          
+          // Clear any files that are now being added back
+          for (const item of result.items) {
+            this.explicitlyRemovedFiles.delete(item.path);
+          }
+          
           // Update context manager with new selections asynchronously
           void (async () => {
             this.contextManager.clearContext();
@@ -1202,6 +1244,64 @@ export class ChatView extends ItemView {
       // Fall back to visible files
       const visibleFiles = this.getVisibleContextFiles().filter(f => this.isFileAllowed(f.path));
       this.updateContextIndicator(visibleFiles);
+    }
+  }
+
+  /**
+   * Schedule a context indicator refresh with debouncing
+   * Prevents redundant updates when multiple workspace events fire simultaneously
+   */
+  private scheduleContextRefresh(): void {
+    if (this.contextRefreshTimeout) {
+      clearTimeout(this.contextRefreshTimeout);
+    }
+    
+    this.contextRefreshTimeout = setTimeout(() => {
+      void this.refreshContextIndicator();
+      this.contextRefreshTimeout = null;
+    }, 100); // 100ms debounce delay
+  }
+
+  /**
+   * Refresh context indicator based on current workspace state
+   * Automatically adds newly opened files to context, even if manual selection exists
+   */
+  private async refreshContextIndicator(): Promise<void> {
+    if (!this.contextIndicatorEl) return;
+    
+    // Get currently visible files that are allowed
+    const visibleFiles = this.getVisibleContextFiles().filter(file => this.isFileAllowed(file.path));
+    const visiblePaths = new Set(visibleFiles.map(f => f.path));
+    
+    // Clean up explicitlyRemovedFiles for files that are no longer open
+    // This allows re-adding a file if user closes it and opens it again
+    for (const removedPath of this.explicitlyRemovedFiles) {
+      if (!visiblePaths.has(removedPath)) {
+        this.explicitlyRemovedFiles.delete(removedPath);
+      }
+    }
+    
+    // Get currently selected items
+    const currentlySelected = this.contextManager.getSelectedItems();
+    const currentPaths = new Set(currentlySelected.map(item => item.path));
+    
+    // Find newly opened files (visible but not in context and not explicitly removed)
+    const newFiles = visibleFiles.filter(file => 
+      !currentPaths.has(file.path) && !this.explicitlyRemovedFiles.has(file.path)
+    );
+    
+    // Add new files to context manager
+    for (const file of newFiles) {
+      await this.contextManager.addFile(file);
+    }
+    
+    // Update indicator with all files (existing + newly added)
+    if (newFiles.length > 0 || currentlySelected.length === 0) {
+      // Either we added new files OR there's no selection yet - update the indicator
+      const allContextFiles = this.contextManager.getSelectedItems()
+        .map(item => this.app.vault.getAbstractFileByPath(item.path))
+        .filter((file): file is TFile => file instanceof TFile);
+      this.updateContextIndicator(allContextFiles);
     }
   }
 
