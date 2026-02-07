@@ -36,7 +36,6 @@ Search existing open issues in this repository for potential duplicates:
 Apply the appropriate labels:
 - Issue type: `bug`, `enhancement`, `documentation`, or `question`
 - Severity (bugs only): `critical`, `high`, `medium`, `low`
-- Remove the `triage` label once triage is complete
 
 ## Step 5: Assign to Agent
 
