@@ -43,6 +43,7 @@ export class ChatView extends ItemView {
   private contextManager: ContextManager;
   private addContextButtonEl: HTMLElement | null = null;
   private taskHistoryManager: TaskHistoryManager;
+  private contextRefreshTimeout: NodeJS.Timeout | null = null;
 
   public constructor(leaf: WorkspaceLeaf, plugin: PAPlugin) {
     super(leaf);
@@ -67,21 +68,22 @@ export class ChatView extends ItemView {
     await this.render();
     
     // Register workspace event listeners for auto-updating context
+    // Use debouncing to prevent redundant updates when multiple events fire
     this.registerEvent(
       this.app.workspace.on("active-leaf-change", () => {
-        this.refreshContextIndicator();
+        this.scheduleContextRefresh();
       })
     );
     
     this.registerEvent(
       this.app.workspace.on("layout-change", () => {
-        this.refreshContextIndicator();
+        this.scheduleContextRefresh();
       })
     );
     
     this.registerEvent(
       this.app.workspace.on("file-open", () => {
-        this.refreshContextIndicator();
+        this.scheduleContextRefresh();
       })
     );
   }
@@ -395,8 +397,12 @@ export class ChatView extends ItemView {
     document.head.appendChild(styleEl);
   }
 
-  public async onClose(): Promise<void> {
-    // Cleanup
+  public onClose(): void {
+    // Cleanup timeout if pending
+    if (this.contextRefreshTimeout) {
+      clearTimeout(this.contextRefreshTimeout);
+      this.contextRefreshTimeout = null;
+    }
   }
 
   /**
@@ -1222,6 +1228,21 @@ export class ChatView extends ItemView {
       const visibleFiles = this.getVisibleContextFiles().filter(f => this.isFileAllowed(f.path));
       this.updateContextIndicator(visibleFiles);
     }
+  }
+
+  /**
+   * Schedule a context indicator refresh with debouncing
+   * Prevents redundant updates when multiple workspace events fire simultaneously
+   */
+  private scheduleContextRefresh(): void {
+    if (this.contextRefreshTimeout) {
+      clearTimeout(this.contextRefreshTimeout);
+    }
+    
+    this.contextRefreshTimeout = setTimeout(() => {
+      this.refreshContextIndicator();
+      this.contextRefreshTimeout = null;
+    }, 100); // 100ms debounce delay
   }
 
   /**
