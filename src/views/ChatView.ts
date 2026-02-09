@@ -292,7 +292,8 @@ export class ChatView extends ItemView {
       .find((entry) => entry.operation === "modify" && entry.success);
     
     if (!lastEdit) {
-      new Notice("No recent edits to revert");
+      new Notice("No recent edits to revert", 4000);
+      this.addSystemMessage("**No recent edits to revert.** Apply an edit first before attempting to undo.");
       return;
     }
     
@@ -310,12 +311,19 @@ export class ChatView extends ItemView {
       const result = await safeVault.revertEdit(lastEdit.path);
       
       if (result.success) {
-        new Notice(`✓ Reverted ${lastEdit.path}`);
-        this.addSystemMessage(`Reverted \`${lastEdit.path}\` to previous version.`);
+        new Notice(`✓ Reverted ${lastEdit.path}`, 3000);
+        this.addSystemMessage(`✅ Reverted \`${lastEdit.path}\` to previous version.`);
       } else {
-        new Notice(`✗ Failed to revert: ${result.error}`);
-        this.addSystemMessage(`Failed to revert: ${result.error}`);
+        const errorMsg = result.error || "Unknown error";
+        new Notice(`✗ Failed to revert: ${errorMsg}`, 8000);
+        this.addSystemMessage(`❌ **Failed to revert:** ${errorMsg}\n\nFile: \`${lastEdit.path}\``);
+        console.error("[ChatView] Revert failed:", result);
       }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : "Unknown error";
+      new Notice(`✗ Error during revert: ${errorMsg}`, 8000);
+      this.addSystemMessage(`❌ **Error during revert:** ${errorMsg}\n\nPlease check the developer console for more details.`);
+      console.error("[ChatView] Error during revert:", error);
     } finally {
       safeVault.disableWrites();
     }
@@ -335,7 +343,7 @@ export class ChatView extends ItemView {
       const confirmed = confirm("Clear all edit history? This cannot be undone.");
       if (confirmed) {
         safeVault.clearAuditLog();
-        new Notice("Edit history cleared");
+        new Notice("Edit history cleared", 3000);
       }
     }
   }
@@ -352,12 +360,19 @@ export class ChatView extends ItemView {
       const result = await safeVault.revertEdit(path);
       
       if (result.success) {
-        new Notice(`✓ Reverted ${path}`);
-        this.addSystemMessage(`Reverted \`${path}\` to previous version.`);
+        new Notice(`✓ Reverted ${path}`, 3000);
+        this.addSystemMessage(`✅ Reverted \`${path}\` to previous version.`);
       } else {
-        new Notice(`✗ Failed to revert: ${result.error}`);
-        this.addSystemMessage(`Failed to revert: ${result.error}`);
+        const errorMsg = result.error || "Unknown error";
+        new Notice(`✗ Failed to revert: ${errorMsg}`, 8000);
+        this.addSystemMessage(`❌ **Failed to revert:** ${errorMsg}\n\nFile: \`${path}\``);
+        console.error("[ChatView] Revert failed:", result);
       }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : "Unknown error";
+      new Notice(`✗ Error during revert: ${errorMsg}`, 8000);
+      this.addSystemMessage(`❌ **Error during revert:** ${errorMsg}\n\nPlease check the developer console for more details.`);
+      console.error("[ChatView] Error during revert:", error);
     } finally {
       safeVault.disableWrites();
     }
@@ -1588,7 +1603,9 @@ export class ChatView extends ItemView {
       );
       
       if (!proposed) {
-        new Notice(`Cannot edit ${block.path} - file not accessible or writes disabled`);
+        const errorMsg = `Cannot edit ${block.path} - file not accessible or writes disabled`;
+        new Notice(`✗ ${errorMsg}`, 5000);
+        this.addSystemMessage(`**Error:** ${errorMsg}`);
         return;
       }
       
@@ -1600,11 +1617,12 @@ export class ChatView extends ItemView {
         const writeResult = await safeVault.applyEdit(block.path);
         
         if (writeResult.success) {
-          new Notice(`✓ Applied edit to ${block.path}`);
-          this.addSystemMessage(`Edit applied to \`${block.path}\`. ${writeResult.backupPath ? "Backup created." : ""}`);
+          new Notice(`✓ Applied edit to ${block.path}`, 3000);
+          this.addSystemMessage(`✅ Edit applied to \`${block.path}\`. ${writeResult.backupPath ? "Backup created at `" + writeResult.backupPath + "`." : ""}`);
         } else {
-          new Notice(`✗ Failed to apply edit: ${writeResult.error}`);
-          this.addSystemMessage(`Failed to apply edit: ${writeResult.error}`);
+          const errorMsg = writeResult.error || "Unknown error";
+          new Notice(`✗ Failed to apply edit: ${errorMsg}`, 8000);
+          this.addSystemMessage(`❌ **Failed to apply edit:** ${errorMsg}\n\nFile: \`${block.path}\``);
         }
       } else {
         // User cancelled
@@ -1613,8 +1631,9 @@ export class ChatView extends ItemView {
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
-      new Notice(`Error applying edit: ${errorMsg}`);
-      this.addSystemMessage(`Error: ${errorMsg}`);
+      new Notice(`✗ Error applying edit: ${errorMsg}`, 8000);
+      this.addSystemMessage(`❌ **Error applying edit:** ${errorMsg}\n\nPlease check the developer console for more details.`);
+      console.error("[ChatView] Error applying edit:", error);
     } finally {
       // Disable writes after operation
       safeVault.disableWrites();
