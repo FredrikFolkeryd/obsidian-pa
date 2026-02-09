@@ -299,7 +299,8 @@ export class SafeVaultAccess {
         // This ensures disk content is up-to-date before we read it
         try {
           await view.save();
-          console.log(`[SafeVault] Saved open file before edit: ${path}`);
+          // Debug: Uncomment for troubleshooting
+          // console.log(`[SafeVault] Saved open file before edit: ${path}`);
         } catch (error) {
           console.warn(`[SafeVault] Could not save open file: ${path}`, error);
         }

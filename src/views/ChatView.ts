@@ -1618,7 +1618,10 @@ export class ChatView extends ItemView {
         
         if (writeResult.success) {
           new Notice(`✓ Applied edit to ${block.path}`, 3000);
-          this.addSystemMessage(`✅ Edit applied to \`${block.path}\`. ${writeResult.backupPath ? "Backup created at `" + writeResult.backupPath + "`." : ""}`);
+          const backupMsg = writeResult.backupPath 
+            ? `Backup created at \`${writeResult.backupPath}\`.` 
+            : "";
+          this.addSystemMessage(`✅ Edit applied to \`${block.path}\`. ${backupMsg}`);
         } else {
           const errorMsg = writeResult.error || "Unknown error";
           new Notice(`✗ Failed to apply edit: ${errorMsg}`, 8000);
