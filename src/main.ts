@@ -95,10 +95,11 @@ export default class PAPlugin extends Plugin {
    * Check if this is first run and prompt user to configure
    */
   private async checkFirstRun(): Promise<void> {
-    const hasToken = await this.getStoredToken();
+    // Check if plugin is fully configured
+    const configured = await this.isConfigured();
 
-    // If no token and no credential reference, this is likely first run
-    if (!hasToken && !this.settings.credentialReference) {
+    // If not configured, prompt user to set up
+    if (!configured) {
       // Use a small delay to ensure UI is ready
       setTimeout(() => {
         new Notice(
