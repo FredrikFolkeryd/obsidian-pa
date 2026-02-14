@@ -12,7 +12,7 @@
  * CRITICAL: This wrapper enforces the "MUST NOT destroy content" requirement.
  */
 
-import { App, TFile, TFolder, Vault } from "obsidian";
+import { App, TFile, TFolder, Vault, MarkdownView } from "obsidian";
 import type { PASettings } from "../settings";
 import { VaultBackup, type BackupMetadata } from "./VaultBackup";
 
@@ -274,6 +274,43 @@ export class SafeVaultAccess {
   // =========================================================================
 
   /**
+   * Ensure an open file is saved to disk before reading
+   * 
+   * This prevents reading stale disk content when the file is open in an editor
+   * with unsaved changes. Critical for edit operations to work correctly.
+   * 
+   * @param path - The file path to check and save
+   */
+  private async ensureFileSaved(path: string): Promise<void> {
+    // Skip if workspace is not available (e.g., in tests)
+    if (!this.app.workspace) {
+      return;
+    }
+
+    // Find all markdown editor leaves
+    const leaves = this.app.workspace.getLeavesOfType("markdown");
+    
+    for (const leaf of leaves) {
+      const view = leaf.view as MarkdownView;
+      
+      // Check if this leaf has the file we're interested in
+      if (view.file && view.file.path === path) {
+        // Request save on the editor
+        // This ensures disk content is up-to-date before we read it
+        try {
+          await view.save();
+          // Debug: Uncomment for troubleshooting
+          // console.log(`[SafeVault] Saved open file before edit: ${path}`);
+        } catch (error) {
+          console.warn(`[SafeVault] Could not save open file: ${path}`, error);
+        }
+        // Only save the first matching editor
+        return;
+      }
+    }
+  }
+
+  /**
    * Propose an edit to a file (requires user confirmation before applying)
    *
    * @param path - The file path to edit
@@ -296,8 +333,14 @@ export class SafeVaultAccess {
       return null;
     }
 
-    // Get current content
+    // CRITICAL: Ensure file is saved if open in an editor
+    // This prevents reading stale disk content when file has unsaved changes
     const file = this.app.vault.getAbstractFileByPath(path);
+    if (file instanceof TFile) {
+      await this.ensureFileSaved(path);
+    }
+
+    // Get current content from disk (now guaranteed to be up-to-date)
     let originalContent = "";
 
     if (file instanceof TFile) {
@@ -431,13 +474,26 @@ export class SafeVaultAccess {
       };
     }
 
+    // CRITICAL: Save file if open to prevent conflicts when restoring
+    const file = this.app.vault.getAbstractFileByPath(path);
+    if (file instanceof TFile) {
+      await this.ensureFileSaved(path);
+    }
+
     const success = await this.backup.restoreFromBackup(path);
-    this.logAudit("revert", path, "User requested revert", success);
+    
+    // Provide more detailed error message
+    const error = success 
+      ? undefined 
+      : "Failed to restore from backup. The backup file may not exist or may be corrupted. " +
+        "Check the .pa-backups folder in your vault.";
+    
+    this.logAudit("revert", path, "User requested revert", success, error);
 
     return {
       success,
       path,
-      error: success ? undefined : "Failed to restore from backup",
+      error,
     };
   }
 
