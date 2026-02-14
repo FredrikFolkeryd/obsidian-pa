@@ -325,6 +325,8 @@ export default class PAPlugin extends Plugin {
     if (leaves.length > 0) {
       // A leaf with our view already exists, use that
       leaf = leaves[0];
+      // Set it as active to ensure it opens and gets focus
+      await leaf.setViewState({ type: VIEW_TYPE_CHAT, active: true });
     } else {
       // Create a new leaf in the right sidebar
       leaf = workspace.getRightLeaf(false);
