@@ -177,26 +177,16 @@ function findClosingFence(text: string, startIndex: number): number {
     const isAtLineStart = beforeFence === "\n" || nextFence === 0;
 
     if (isAtLineStart) {
-      // Check if this is an opening or closing fence
-      // Opening fence has content after it on the same line (language/path)
-      // Closing fence has newline or end of string after it
-      const afterFence = nextFence + 3 < text.length ? text[nextFence + 3] : "\n";
-      const afterFence2 = nextFence + 4 < text.length ? text.substring(nextFence + 3, nextFence + 10) : "";
-      
-      // Check if there's text on the same line (opening fence)
-      // A closing fence is followed by newline, space, or end of text
-      const hasTextAfter = afterFence !== "\n" && afterFence !== "" && afterFence !== " " && 
-                          !afterFence2.startsWith("\n");
-
-      if (hasTextAfter) {
-        // Opening fence (nested code block)
-        depth++;
-      } else {
+      // Determine if this is an opening or closing fence
+      if (isClosingFence(text, nextFence)) {
         // Closing fence
         depth--;
         if (depth === 0) {
           return nextFence;
         }
+      } else {
+        // Opening fence (nested code block)
+        depth++;
       }
     }
 
@@ -204,6 +194,30 @@ function findClosingFence(text: string, startIndex: number): number {
   }
 
   return -1;
+}
+
+/**
+ * Check if a fence marker is a closing fence (vs opening fence)
+ * @param text - The text containing the fence
+ * @param fenceIndex - The index of the ``` marker
+ * @returns True if this is a closing fence, false if opening
+ */
+function isClosingFence(text: string, fenceIndex: number): boolean {
+  // Opening fence has content after it on the same line (language/path)
+  // Closing fence has newline, space, or end of string after it
+  const afterFence = fenceIndex + 3 < text.length ? text[fenceIndex + 3] : "\n";
+  const textAfterFence = fenceIndex + 4 < text.length 
+    ? text.substring(fenceIndex + 3, fenceIndex + 10) 
+    : "";
+  
+  // A closing fence is followed by newline, space, or end of text
+  // An opening fence has text (language hint or path) on the same line
+  const hasTextAfter = afterFence !== "\n" && 
+                       afterFence !== "" && 
+                       afterFence !== " " && 
+                       !textAfterFence.startsWith("\n");
+  
+  return !hasTextAfter;
 }
 
 /**
