@@ -159,6 +159,14 @@ export default class PAPlugin extends Plugin {
     this.providerManager.setActiveProvider(this.settings.provider);
     // Update SafeVaultAccess with new settings
     this.safeVault = new SafeVaultAccess(this.app, this.settings);
+    
+    // Notify open ChatView instances to refresh their display
+    const chatLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_CHAT);
+    for (const leaf of chatLeaves) {
+      if (leaf.view instanceof ChatView) {
+        leaf.view.onSettingsChanged();
+      }
+    }
   }
 
   /**
