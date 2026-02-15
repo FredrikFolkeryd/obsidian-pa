@@ -98,6 +98,18 @@ export class ChatView extends ItemView {
   }
 
   /**
+   * Called when plugin settings change
+   * Updates the model display and context manager without re-rendering
+   */
+  public onSettingsChanged(): void {
+    // Update model display in header
+    this.updateModelDisplay();
+    
+    // Update context manager with new settings
+    this.contextManager = new ContextManager(this.app, this.plugin.settings);
+  }
+
+  /**
    * Internal render method - checks configuration and renders appropriate UI
    */
   private async render(): Promise<void> {
