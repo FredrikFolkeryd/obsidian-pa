@@ -163,9 +163,8 @@ export default class PAPlugin extends Plugin {
     // Notify open ChatView instances to refresh their display
     const chatLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_CHAT);
     for (const leaf of chatLeaves) {
-      const view = leaf.view;
-      if (view instanceof ChatView) {
-        view.onSettingsChanged();
+      if (leaf.view instanceof ChatView) {
+        leaf.view.onSettingsChanged();
       }
     }
   }
