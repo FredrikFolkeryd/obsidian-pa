@@ -96,14 +96,22 @@ export class VaultBackup {
    * Restore a file from its most recent backup
    *
    * @param originalPath - The path of the original file
-   * @returns True if restore succeeded, false otherwise
+   * @returns Object with success status and detailed error message
    */
-  public async restoreFromBackup(originalPath: string): Promise<boolean> {
+  public async restoreFromBackup(
+    originalPath: string
+  ): Promise<{ success: boolean; error?: string; backupPath?: string }> {
     try {
       const backups = this.getBackupsForFile(originalPath);
       if (backups.length === 0) {
+        const backupFolder = normalizePath(
+          `${this.config.backupFolder}/${originalPath.substring(0, originalPath.lastIndexOf("/") || 0)}`
+        );
         console.warn("[VaultBackup] No backups found for:", originalPath);
-        return false;
+        return {
+          success: false,
+          error: `No backups found for "${originalPath}". Expected backup location: "${backupFolder}/"`,
+        };
       }
 
       // Get most recent backup
@@ -112,7 +120,10 @@ export class VaultBackup {
 
       if (!(backupFile instanceof TFile)) {
         console.error("[VaultBackup] Backup file not found:", latestBackup.backupPath);
-        return false;
+        return {
+          success: false,
+          error: `Backup file not found at expected path: "${latestBackup.backupPath}"`,
+        };
       }
 
       // Read backup content
@@ -129,10 +140,14 @@ export class VaultBackup {
         await this.app.vault.create(originalPath, content);
       }
 
-      return true;
+      return { success: true, backupPath: latestBackup.backupPath };
     } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
       console.error("[VaultBackup] Failed to restore from backup:", error);
-      return false;
+      return {
+        success: false,
+        error: `Failed to restore backup: ${errorMsg}`,
+      };
     }
   }
 
