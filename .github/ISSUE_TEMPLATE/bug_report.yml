@@ -32,15 +32,6 @@ body:
       required: true
 
   - type: textarea
-    id: actual-behavior
-    attributes:
-      label: What actually happened?
-      description: What was the actual result?
-      placeholder: Actual behavior...
-    validations:
-      required: true
-
-  - type: textarea
     id: screenshots-logs
     attributes:
       label: Screenshots/Logs
