@@ -176,7 +176,8 @@ describe("VaultBackup", () => {
 
       const result = await backup.restoreFromBackup("notes/daily.md");
 
-      expect(result).toBe(true);
+      expect(result.success).toBe(true);
+      expect(result.backupPath).toBe(backupFile.path);
       // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockApp.vault!.modify).toHaveBeenCalledWith(
         originalFile,
@@ -190,7 +191,8 @@ describe("VaultBackup", () => {
 
       const result = await backup.restoreFromBackup("notes/daily.md");
 
-      expect(result).toBe(false);
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("No backups found");
     });
 
     it("should create original file if it doesn't exist", async () => {
@@ -213,7 +215,7 @@ describe("VaultBackup", () => {
 
       const result = await backup.restoreFromBackup("notes/daily.md");
 
-      expect(result).toBe(true);
+      expect(result.success).toBe(true);
       // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockApp.vault!.create).toHaveBeenCalledWith(
         "notes/daily.md",
