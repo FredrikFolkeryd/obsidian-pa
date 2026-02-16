@@ -115,31 +115,109 @@ export function parseEditBlocks(response: string, contextFilePath?: string): Par
 function parseFencedPathBlocks(response: string): ParsedEditBlock[] {
   const blocks: ParsedEditBlock[] = [];
 
-  // Match: ```lang:path/file.ext or ```path/file.ext
-  // The path must contain at least one / or end with a known extension
-  const fencedRegex = /```([a-zA-Z0-9_-]*:)?([^\s`]+\.[a-zA-Z0-9]+)\n([\s\S]*?)```/g;
+  // Match the opening fence with path: ```lang:path/file.ext or ```path/file.ext
+  const openingRegex = /```([a-zA-Z0-9_-]*:)?([^\s`]+\.[a-zA-Z0-9]+)\n/g;
 
-  let match;
-  while ((match = fencedRegex.exec(response)) !== null) {
-    const langPart = match[1]?.replace(":", "") || undefined;
-    const pathPart = match[2];
-    const content = match[3];
+  let openMatch;
+  while ((openMatch = openingRegex.exec(response)) !== null) {
+    const langPart = openMatch[1]?.replace(":", "") || undefined;
+    const pathPart = openMatch[2];
 
     // Validate it looks like a file path (has extension or slash)
-    if (pathPart && (pathPart.includes("/") || /\.[a-zA-Z0-9]+$/.test(pathPart))) {
-      blocks.push({
-        path: normalizePath(pathPart),
-        content: content.trimEnd(),
-        startIndex: match.index,
-        endIndex: match.index + match[0].length,
-        format: "fenced-path",
-        language: langPart || inferLanguage(pathPart),
-        editType: "full-replace",
-      });
+    if (!pathPart || (!pathPart.includes("/") && !/\.[a-zA-Z0-9]+$/.test(pathPart))) {
+      continue;
     }
+
+    // Find the matching closing fence by counting nested fences
+    const contentStart = openMatch.index + openMatch[0].length;
+    const closingIndex = findClosingFence(response, contentStart);
+
+    if (closingIndex === -1) {
+      // No matching closing fence found
+      continue;
+    }
+
+    const content = response.substring(contentStart, closingIndex);
+
+    blocks.push({
+      path: normalizePath(pathPart),
+      content: content.trimEnd(),
+      startIndex: openMatch.index,
+      endIndex: closingIndex + 3, // +3 for the ```
+      format: "fenced-path",
+      language: langPart || inferLanguage(pathPart),
+      editType: "full-replace",
+    });
   }
 
   return blocks;
+}
+
+/**
+ * Find the closing fence for a code block, handling nested fences
+ * @param text - The text to search in
+ * @param startIndex - Where to start searching (after opening fence)
+ * @returns The index of the closing fence, or -1 if not found
+ */
+function findClosingFence(text: string, startIndex: number): number {
+  let depth = 1;
+  let index = startIndex;
+
+  while (index < text.length) {
+    // Look for next fence marker (```)
+    const nextFence = text.indexOf("```", index);
+    
+    if (nextFence === -1) {
+      // No more fences found
+      return -1;
+    }
+
+    // Check if this fence is at the start of a line or has newline before it
+    const beforeFence = nextFence > 0 ? text[nextFence - 1] : "\n";
+    const isAtLineStart = beforeFence === "\n" || nextFence === 0;
+
+    if (isAtLineStart) {
+      // Determine if this is an opening or closing fence
+      if (isClosingFence(text, nextFence)) {
+        // Closing fence
+        depth--;
+        if (depth === 0) {
+          return nextFence;
+        }
+      } else {
+        // Opening fence (nested code block)
+        depth++;
+      }
+    }
+
+    index = nextFence + 3;
+  }
+
+  return -1;
+}
+
+/**
+ * Check if a fence marker is a closing fence (vs opening fence)
+ * @param text - The text containing the fence
+ * @param fenceIndex - The index of the ``` marker
+ * @returns True if this is a closing fence, false if opening
+ */
+function isClosingFence(text: string, fenceIndex: number): boolean {
+  // Opening fence has content after it on the same line (language/path)
+  // Closing fence has newline, space, or end of string after it
+  const afterFence = fenceIndex + 3 < text.length ? text[fenceIndex + 3] : "\n";
+  const textAfterFence = fenceIndex + 4 < text.length 
+    ? text.substring(fenceIndex + 3, fenceIndex + 10) 
+    : "";
+  
+  // A closing fence is followed by newline, space, or end of text
+  // An opening fence has text (language hint or path) on the same line
+  const hasTextAfter = afterFence !== "\n" && 
+                       afterFence !== "" && 
+                       afterFence !== " " && 
+                       !textAfterFence.startsWith("\n");
+  
+  return !hasTextAfter;
 }
 
 /**

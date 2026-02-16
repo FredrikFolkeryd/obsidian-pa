@@ -480,20 +480,19 @@ export class SafeVaultAccess {
       await this.ensureFileSaved(path);
     }
 
-    const success = await this.backup.restoreFromBackup(path);
+    const result = await this.backup.restoreFromBackup(path);
     
-    // Provide more detailed error message
-    const error = success 
-      ? undefined 
-      : "Failed to restore from backup. The backup file may not exist or may be corrupted. " +
-        "Check the .pa-backups folder in your vault.";
-    
-    this.logAudit("revert", path, "User requested revert", success, error);
+    if (result.success) {
+      this.logAudit("revert", path, "User requested revert", true, undefined, result.backupPath);
+    } else {
+      this.logAudit("revert", path, "User requested revert", false, result.error);
+    }
 
     return {
-      success,
+      success: result.success,
       path,
-      error,
+      error: result.error,
+      backupPath: result.backupPath,
     };
   }
 

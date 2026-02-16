@@ -77,6 +77,41 @@ export default {};
         expect(result.hasEdits).toBe(true);
         expect(result.blocks[0].path).toBe("config.json");
       });
+
+      it("should handle nested code blocks within file content", () => {
+        const response = `Here's the corrected file:
+
+\`\`\`Weekly/2026-W07.md
+# Weekly Note
+
+## Tasks
+Some content here
+
+- Notes linking to dates:
+\`\`\`dataview 
+LIST 
+FROM ([[2026-02-09]] OR [[2026-02-10]])
+\`\`\`
+
+## Jira Items
+\`\`\`jira-search
+type: LIST
+query: assignee=user
+\`\`\`
+
+More content after nested blocks
+\`\`\``;
+
+        const result = parseEditBlocks(response);
+
+        expect(result.hasEdits).toBe(true);
+        expect(result.blocks).toHaveLength(1);
+        expect(result.blocks[0].path).toBe("Weekly/2026-W07.md");
+        expect(result.blocks[0].content).toContain("Notes linking to dates:");
+        expect(result.blocks[0].content).toContain("```dataview");
+        expect(result.blocks[0].content).toContain("```jira-search");
+        expect(result.blocks[0].content).toContain("More content after nested blocks");
+      });
     });
 
     describe("XML edit blocks", () => {
