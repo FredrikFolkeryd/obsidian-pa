@@ -325,5 +325,31 @@ describe("VaultBackup", () => {
         /^\.pa-backups\/notes\/2024\/daily-\d+\.md$/
       );
     });
+
+    it("should create intermediate directories for deeply nested paths", async () => {
+      const sourceFile = createMockFile("notes/2024/jan/daily.md");
+      mockApp = createMockApp([sourceFile]);
+      backup = new VaultBackup(mockApp as App);
+
+      (mockApp.vault!.read as ReturnType<typeof vi.fn>).mockResolvedValue("content");
+
+      const result = await backup.createBackup(sourceFile, "deeply nested path test");
+
+      expect(result).not.toBeNull();
+      expect(result!.backupPath).toMatch(
+        /^\.pa-backups\/notes\/2024\/jan\/daily-\d+\.md$/
+      );
+
+      // Each path segment should have been checked/created incrementally
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      const createFolderMock = mockApp.vault!.createFolder as ReturnType<typeof vi.fn>;
+      const createdPaths = createFolderMock.mock.calls.map((c: unknown[]) => c[0]);
+
+      // All intermediate segments must have been attempted
+      expect(createdPaths).toContain(".pa-backups");
+      expect(createdPaths).toContain(".pa-backups/notes");
+      expect(createdPaths).toContain(".pa-backups/notes/2024");
+      expect(createdPaths).toContain(".pa-backups/notes/2024/jan");
+    });
   });
 });
