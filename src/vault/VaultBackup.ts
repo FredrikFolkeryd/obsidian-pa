@@ -270,14 +270,20 @@ export class VaultBackup {
   }
 
   /**
-   * Ensure a folder exists, creating it if necessary
+   * Ensure a folder exists, creating it and any missing intermediate
+   * directories if necessary.
    */
   private async ensureFolder(path: string): Promise<void> {
     const normalizedPath = normalizePath(path);
-    const existing = this.app.vault.getAbstractFileByPath(normalizedPath);
+    const segments = normalizedPath.split("/").filter(Boolean);
 
-    if (!existing) {
-      await this.app.vault.createFolder(normalizedPath);
+    let currentPath = "";
+    for (const segment of segments) {
+      currentPath = currentPath ? `${currentPath}/${segment}` : segment;
+      const existing = this.app.vault.getAbstractFileByPath(currentPath);
+      if (!existing) {
+        await this.app.vault.createFolder(currentPath);
+      }
     }
   }
 
