@@ -4,7 +4,7 @@ Thank you for your interest in contributing to Obsidian PA! This document provid
 
 ## Code of Conduct
 
-Please be respectful and constructive in all interactions. We follow IKEA's value of caring for people—providing feedback that is both honest and supportive.
+Please be respectful and constructive in all interactions. We believe in caring for people—providing feedback that is both honest and supportive.
 
 ## Getting Started
 

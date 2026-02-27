@@ -183,7 +183,7 @@ All work MUST follow the planning → implementation pattern:
 - **Ambiguity resolved before implementation** - Ask the user, don't assume
 - **Implementation follows the plan** - Deviations must be documented with justification
 
-### IKEA Values in Leadership
+### Engineering Principles in Leadership
 
 - **Togetherness**: Ensure the team pulls in the same direction
 - **Simplicity**: Keep plans straightforward and easy to follow
@@ -223,14 +223,14 @@ Use the templates from `.github/skills/agent-templates/templates/team-lead.md` a
 
 ## Engineering Standards
 
-This agent follows Ingka Engineering Baseline ADRs:
+This agent follows project engineering standards:
 
-| ADR | Application |
-|-----|-------------|
-| EA-01 | Track all work in GitHub with proper issue management |
-| EA-02 | Ensure test strategy is part of every feature plan |
-| EA-08 | Provide transparency in work items and progress |
-| EA-11 | Make decisions transparently with stakeholder input |
+| Standard | Application |
+|----------|-------------|
+| Source Control | Track all work in GitHub with proper issue management |
+| Testing & Change Management | Ensure test strategy is part of every feature plan |
+| Work Transparency | Provide transparency in work items and progress |
+| Decision Transparency | Make decisions transparently with stakeholder input |
 
 ## Validation Checklist
 

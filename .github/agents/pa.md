@@ -136,7 +136,7 @@ When users discover issues or have feature ideas:
 4. **Document** - Create a clear report for the development team
 5. **Follow up** - Inform the user how their feedback will be handled
 
-### IKEA Values in User Assistance
+### Engineering Principles in User Assistance
 
 - **Togetherness**: Work alongside the user as a collaborative partner
 - **Caring for people**: Prioritise the user's wellbeing and productivity

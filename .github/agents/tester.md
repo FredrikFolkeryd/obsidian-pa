@@ -117,7 +117,7 @@ Prioritise testing based on:
 
 ### Non-Functional Requirements (NFR) Testing
 
-Per EA-02, test strategies should address NFRs where applicable:
+Test strategies should address non-functional requirements (NFRs) where applicable:
 
 | NFR Category | What to Test | How to Test |
 |--------------|--------------|-------------|
@@ -213,7 +213,7 @@ Track and report:
 | **Test Pass Rate** | 100% | All tests should pass on main |
 | **Test Execution Time** | <30s | Keep feedback loop fast |
 
-### IKEA Values in Testing
+### Engineering Principles in Testing
 
 - **Simplicity**: Write clear, understandable tests
 - **Cost-consciousness**: Focus on high-value tests, avoid over-testing
@@ -243,14 +243,14 @@ Use the template from `.github/skills/agent-templates/templates/tester.md` when 
 
 ## Engineering Standards
 
-This agent follows Ingka Engineering Baseline ADRs:
+This agent follows project engineering standards:
 
-| ADR | Application |
-|-----|-------------|
-| EA-02 | Define and maintain test strategy with change management |
-| EA-03 | Test security-sensitive code thoroughly |
-| EA-06 | Include observability in test validation |
-| EA-11 | Make testing decisions transparently with rationale |
+| Standard | Application |
+|----------|-------------|
+| Testing & Change Management | Define and maintain test strategy with change management |
+| Security & Privacy | Test security-sensitive code thoroughly |
+| Observability | Include observability in test validation |
+| Decision Transparency | Make testing decisions transparently with rationale |
 
 ## Security Testing Checklist
 

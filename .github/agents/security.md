@@ -28,7 +28,7 @@ Always mark things complete as you go along.
 - Credential handling for LLM access (PATs, PEM files, SSH configurations)
 - Data integrity assessment for note access by AI
 - Security testing strategy and guidance
-- Compliance with EA-03 (Security & Privacy) and EA-07 (Secrets Management)
+- Compliance with Security & Privacy and Secrets Management engineering standards
 
 **Does NOT handle:**
 
@@ -231,7 +231,7 @@ When reviewing security-sensitive code:
 - [ ] Secure defaults (opt-in rather than opt-out for data sharing)
 - [ ] Token scopes minimised
 
-### IKEA Values in Security
+### Engineering Principles in Security
 
 - **Caring for people**: Protect user privacy and data as if it were our own
 - **Simplicity**: Make secure paths the easy paths; don't burden users
@@ -261,13 +261,13 @@ Use the template from `.github/skills/agent-templates/templates/security.md` whe
 
 ## Engineering Standards
 
-This agent follows Ingka Engineering Baseline ADRs:
+This agent follows project engineering standards:
 
-| ADR | Application |
-|-----|-------------|
-| EA-03 | Ensure security and privacy requirements are met |
-| EA-07 | Implement proper secrets management; no hardcoded credentials |
-| EA-11 | Document security decisions transparently with rationale |
+| Standard | Application |
+|----------|-------------|
+| Security & Privacy | Ensure security and privacy requirements are met |
+| Secrets Management | Implement proper secrets management; no hardcoded credentials |
+| Decision Transparency | Document security decisions transparently with rationale |
 
 ## Security Assessment Checklist
 

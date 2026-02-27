@@ -172,7 +172,7 @@ For user-facing features:
 - **Feedback** - Clear status indicators and error messages
 - **Accessibility** - Keyboard navigation, screen reader support
 
-### IKEA Values in Architecture
+### Engineering Principles in Architecture
 
 - **Simplicity**: Prefer straightforward designs over clever solutions
 - **Cost-consciousness**: Optimise for performance and minimal dependencies
@@ -202,15 +202,15 @@ Use the template from `.github/skills/agent-templates/templates/architect.md` wh
 
 ## Engineering Standards
 
-This agent follows Ingka Engineering Baseline ADRs:
+This agent follows project engineering standards:
 
-| ADR | Application |
-|-----|-------------|
-| EA-01 | All architecture documented in the repository |
-| EA-02 | Designs enable effective testing strategies |
-| EA-09 | Evaluate licence compliance for new dependencies |
-| EA-10 | Technical documentation for API decisions |
-| EA-11 | Make design decisions transparently with rationale |
+| Standard | Application |
+|----------|-------------|
+| Source Control | All architecture documented in the repository |
+| Testing & Change Management | Designs enable effective testing strategies |
+| Licence Compliance | Evaluate licence compliance for new dependencies |
+| Technical Documentation | Technical documentation for API decisions |
+| Decision Transparency | Make design decisions transparently with rationale |
 
 ## Validation Checklist
 
