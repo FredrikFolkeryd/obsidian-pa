@@ -82,11 +82,11 @@ export class ContextPickerModal extends Modal {
 
     // Build UI
     this.renderSearch(contentEl);
+    this.renderButtons(contentEl);
     this.renderSelectedItems(contentEl);
     this.renderSuggestions(contentEl);
     this.renderFileList(contentEl);
     this.renderBudget(contentEl);
-    this.renderButtons(contentEl);
 
     // Focus search input
     setTimeout(() => this.searchEl?.focus(), 50);
@@ -197,13 +197,16 @@ export class ContextPickerModal extends Modal {
     this.listEl.empty();
 
     const query = this.searchEl?.value.toLowerCase() || "";
-    const filteredFiles = query
+    const filteredFiles = (query
       ? this.allFiles.filter(
           (f) =>
             f.basename.toLowerCase().includes(query) ||
             f.path.toLowerCase().includes(query)
         )
-      : this.allFiles.slice(0, 50); // Show first 50 if no search
+      : this.allFiles
+    ).sort((a, b) =>
+      a.path.localeCompare(b.path, undefined, { numeric: true, sensitivity: "base" })
+    );
 
     // Group by folder
     const byFolder = new Map<string, TFile[]>();
@@ -215,14 +218,46 @@ export class ContextPickerModal extends Modal {
       byFolder.get(folder)!.push(file);
     }
 
+    // Sort folders alphabetically
+    const sortedFolders = [...byFolder.entries()].sort(([a], [b]) =>
+      a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" })
+    );
+
     // Render folders and files
-    for (const [folder, files] of byFolder) {
+    for (const [folder, files] of sortedFolders) {
       const folderEl = this.listEl.createDiv({ cls: "pa-context-folder" });
 
-      // Folder header with select-all
+      // Folder header with collapse toggle and select-all checkbox
       const folderHeader = folderEl.createDiv({ cls: "pa-context-folder-header" });
+
+      const hasSomeSelected = files.some((f) => this.selectedItems.has(f.path));
+      let isExpanded = hasSomeSelected;
+
+      const toggleIndicator = folderHeader.createSpan({
+        text: isExpanded ? "▼" : "▶",
+        cls: "pa-context-folder-toggle",
+      });
+
       const folderCheckbox = folderHeader.createEl("input", { type: "checkbox" });
-      folderHeader.createSpan({ text: `📁 ${folder || "Root"}`, cls: "pa-context-folder-name" });
+      folderHeader.createSpan({
+        text: `📁 ${folder === "/" ? "Root" : folder}`,
+        cls: "pa-context-folder-name",
+      });
+
+      const allSelected = files.every((f) => this.selectedItems.has(f.path));
+      folderCheckbox.checked = allSelected && files.length > 0;
+
+      // Files container (collapsed by default unless something is selected)
+      const filesContainer = folderEl.createDiv({ cls: "pa-context-folder-files" });
+      filesContainer.style.display = isExpanded ? "" : "none";
+
+      // Toggle expand/collapse on header click (not on checkbox)
+      folderHeader.addEventListener("click", (e) => {
+        if (e.target === folderCheckbox) return;
+        isExpanded = !isExpanded;
+        filesContainer.style.display = isExpanded ? "" : "none";
+        toggleIndicator.setText(isExpanded ? "▼" : "▶");
+      });
 
       folderCheckbox.addEventListener("change", () => {
         if (folderCheckbox.checked) {
@@ -234,7 +269,7 @@ export class ContextPickerModal extends Modal {
 
       // Files in folder
       for (const file of files) {
-        const fileEl = folderEl.createDiv({ cls: "pa-context-file" });
+        const fileEl = filesContainer.createDiv({ cls: "pa-context-file" });
         const isSelected = this.selectedItems.has(file.path);
 
         const checkbox = fileEl.createEl("input", { type: "checkbox" });
