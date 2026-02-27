@@ -452,6 +452,14 @@
   border-bottom: 1px solid var(--background-modifier-border);
 }
 
+.pa-context-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
 .pa-context-search input {
   flex: 1;
 }
@@ -495,6 +503,13 @@
   font-weight: 500;
   font-size: 0.9em;
   color: var(--text-muted);
+}
+
+.pa-context-folder-toggle {
+  font-size: 0.75em;
+  color: var(--text-muted);
+  margin-right: 4px;
+  flex-shrink: 0;
 }
 
 .pa-context-folder-files {
