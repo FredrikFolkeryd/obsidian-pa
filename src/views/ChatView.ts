@@ -45,6 +45,7 @@ export class ChatView extends ItemView {
   private taskHistoryManager: TaskHistoryManager;
   private contextRefreshTimeout: NodeJS.Timeout | null = null;
   private explicitlyRemovedFiles: Set<string> = new Set();
+  private explicitlyPinnedFiles: Set<string> = new Set();
 
   public constructor(leaf: WorkspaceLeaf, plugin: PAPlugin) {
     super(leaf);
@@ -1186,6 +1187,12 @@ export class ChatView extends ItemView {
           for (const item of result.items) {
             this.explicitlyRemovedFiles.delete(item.path);
           }
+
+          // Track all files the user explicitly chose to keep/pin
+          this.explicitlyPinnedFiles.clear();
+          for (const item of result.items) {
+            this.explicitlyPinnedFiles.add(item.path);
+          }
           
           // Update context manager with new selections asynchronously
           void (async () => {
@@ -1291,7 +1298,8 @@ export class ChatView extends ItemView {
 
   /**
    * Refresh context indicator based on current workspace state
-   * Automatically adds newly opened files to context, even if manual selection exists
+   * Automatically adds newly opened files to context and removes closed files.
+   * Files explicitly pinned via the context picker are preserved even when not visible.
    */
   private async refreshContextIndicator(): Promise<void> {
     if (!this.contextIndicatorEl) return;
@@ -1311,6 +1319,14 @@ export class ChatView extends ItemView {
     // Get currently selected items
     const currentlySelected = this.contextManager.getSelectedItems();
     const currentPaths = new Set(currentlySelected.map(item => item.path));
+
+    // Remove context files that are no longer visible and not explicitly pinned by the user
+    const staleFiles = currentlySelected.filter(item =>
+      !visiblePaths.has(item.path) && !this.explicitlyPinnedFiles.has(item.path)
+    );
+    for (const item of staleFiles) {
+      this.contextManager.removeFile(item.path);
+    }
     
     // Find newly opened files (visible but not in context and not explicitly removed)
     const newFiles = visibleFiles.filter(file => 
@@ -1322,9 +1338,8 @@ export class ChatView extends ItemView {
       await this.contextManager.addFile(file);
     }
     
-    // Update indicator with all files (existing + newly added)
-    if (newFiles.length > 0 || currentlySelected.length === 0) {
-      // Either we added new files OR there's no selection yet - update the indicator
+    // Update indicator whenever context changes or there is no selection yet
+    if (newFiles.length > 0 || staleFiles.length > 0 || currentlySelected.length === 0) {
       const allContextFiles = this.contextManager.getSelectedItems()
         .map(item => this.app.vault.getAbstractFileByPath(item.path))
         .filter((file): file is TFile => file instanceof TFile);
