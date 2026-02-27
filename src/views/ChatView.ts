@@ -107,8 +107,19 @@ export class ChatView extends ItemView {
     // Update model display in header
     this.updateModelDisplay();
     
+    // Preserve existing context selections when settings change (e.g. model update)
+    const previousItems = this.contextManager.getSelectedItems();
+    
     // Update context manager with new settings
     this.contextManager = new ContextManager(this.app, this.plugin.settings);
+    
+    // Restore the previous context selections so they are not lost on settings change
+    if (previousItems.length > 0) {
+      this.contextManager.setSelectedItemsDirect(previousItems);
+    }
+    
+    // Update the context indicator to reflect the restored state
+    this.updateContextIndicatorWithManualSelection();
   }
 
   /**
@@ -1206,20 +1217,15 @@ export class ChatView extends ItemView {
             this.explicitlyPinnedFiles.add(item.path);
           }
           
-          // Update context manager with new selections asynchronously
-          void (async () => {
-            this.contextManager.clearContext();
-            for (const item of result.items) {
-              // Get the file and add it
-              const file = this.app.vault.getAbstractFileByPath(item.path);
-              if (file instanceof TFile) {
-                await this.contextManager.addFile(file);
-              }
-            }
-            // Update the UI after all files are added
-            this.updateContextIndicatorWithManualSelection();
-            this.updateAddContextButton();
-          })();
+          // Update context manager with new selections synchronously using token
+          // data already computed by the picker. This prevents the race condition
+          // where clearContext() + async addFile() would leave context empty while
+          // workspace events trigger refreshContextIndicator().
+          this.contextManager.setSelectedItemsDirect(result.items);
+
+          // Update the UI immediately after the atomic context update
+          this.updateContextIndicatorWithManualSelection();
+          this.updateAddContextButton();
         } else {
           // If no result (cancelled), still update the UI
           this.updateContextIndicatorWithManualSelection();
