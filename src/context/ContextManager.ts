@@ -131,12 +131,26 @@ export class ContextManager {
   }
 
   /**
+   * Set selected items directly from picker result without async file loading.
+   * Uses token estimates already computed by the picker, making the update atomic.
+   * This avoids the race condition where clearContext() + async addFile() leaves
+   * the context empty during the interim period.
+   */
+  public setSelectedItemsDirect(items: ContextItem[]): void {
+    this.selectedItems.clear();
+    this.loadedFiles.clear();
+    for (const item of items) {
+      this.selectedItems.set(item.path, item);
+    }
+  }
+
+  /**
    * Get total token usage
    */
   public getTotalTokens(): number {
     let total = 0;
-    for (const file of this.loadedFiles.values()) {
-      total += file.tokens;
+    for (const item of this.selectedItems.values()) {
+      total += item.tokens;
     }
     return total;
   }

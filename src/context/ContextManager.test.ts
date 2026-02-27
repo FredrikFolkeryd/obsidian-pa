@@ -180,6 +180,57 @@ describe("ContextManager", () => {
     });
   });
 
+  describe("setSelectedItemsDirect", () => {
+    it("should synchronously set selected items", () => {
+      const items = [
+        { type: "file" as const, path: "notes/a.md", name: "a", tokens: 50 },
+        { type: "file" as const, path: "notes/b.md", name: "b", tokens: 75 },
+      ];
+      manager.setSelectedItemsDirect(items);
+      
+      const selected = manager.getSelectedItems();
+      expect(selected).toHaveLength(2);
+      expect(selected.map(i => i.path)).toEqual(["notes/a.md", "notes/b.md"]);
+    });
+
+    it("should replace any existing selections atomically", async () => {
+      const file1 = createMockFile("notes/old.md");
+      await manager.addFile(file1);
+      expect(manager.getSelectedItems()).toHaveLength(1);
+
+      const newItems = [
+        { type: "file" as const, path: "notes/new1.md", name: "new1", tokens: 100 },
+        { type: "file" as const, path: "notes/new2.md", name: "new2", tokens: 200 },
+      ];
+      manager.setSelectedItemsDirect(newItems);
+      
+      const selected = manager.getSelectedItems();
+      expect(selected).toHaveLength(2);
+      expect(selected.find(i => i.path === "notes/old.md")).toBeUndefined();
+    });
+
+    it("should preserve token counts from picker", () => {
+      const items = [
+        { type: "file" as const, path: "notes/a.md", name: "a", tokens: 42 },
+      ];
+      manager.setSelectedItemsDirect(items);
+      
+      expect(manager.getTotalTokens()).toBe(42);
+    });
+
+    it("should work with empty array to clear context", () => {
+      const items = [
+        { type: "file" as const, path: "notes/a.md", name: "a", tokens: 50 },
+      ];
+      manager.setSelectedItemsDirect(items);
+      expect(manager.getSelectedItems()).toHaveLength(1);
+      
+      manager.setSelectedItemsDirect([]);
+      expect(manager.getSelectedItems()).toHaveLength(0);
+      expect(manager.getTotalTokens()).toBe(0);
+    });
+  });
+
   describe("getSuggestions", () => {
     it("should return recent files when no active file", () => {
       const suggestions = manager.getSuggestions(null);
