@@ -808,6 +808,7 @@ export class ChatView extends ItemView {
     // CRITICAL: Set loading state and clear input IMMEDIATELY to prevent double-submit
     // This must happen synchronously before any async operations
     this.isLoading = true;
+    this.intentionalAbort = false;
     this.inputEl.value = "";
     this.updateButtonStates();
 
@@ -1037,16 +1038,14 @@ export class ChatView extends ItemView {
 
       // Check if request was aborted
       if (err instanceof Error && err.name === "AbortError") {
-        const wasIntentional = this.intentionalAbort;
-        this.intentionalAbort = false;
-        if (wasIntentional) {
+        if (this.intentionalAbort) {
           // Don't restore input on intentional cancel
           this.addSystemMessage("Request cancelled.");
         } else {
           // App was backgrounded or OS cancelled the request
           this.restoreInputOnError(content);
           this.addSystemMessage(
-            "⏸️ **Request interrupted** — The AI request was interrupted (possibly due to switching apps). " +
+            "⚠️ **Request interrupted** — The AI request was interrupted (possibly due to switching apps). " +
             "Your message has been restored to the input box. Please try again."
           );
         }
