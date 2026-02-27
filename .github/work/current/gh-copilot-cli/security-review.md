@@ -490,17 +490,17 @@ export class GhCopilotCliProvider extends BaseProvider {
 
 ---
 
-## 10. Ingka Baseline Compliance
+## 10. Engineering Standards Compliance
 
-| ADR | Requirement | Status |
-|-----|-------------|--------|
-| EA-03 | Security requirements addressed | ✅ With required changes |
-| EA-07 | No hardcoded credentials | ✅ Delegates to gh auth |
+| Standard | Requirement | Status |
+|----------|-------------|--------|
+| Security & Privacy | Security requirements addressed | ✅ With required changes |
+| Secrets Management | No hardcoded credentials | ✅ Delegates to gh auth |
 | - | Privacy - user consent | ⚠️ Design should note that prompts are sent to GitHub |
 
-**EA-03 Compliance**: With the required changes (spawn, sanitised errors), this design meets security requirements.
+**Security & Privacy Compliance**: With the required changes (spawn, sanitised errors), this design meets security requirements.
 
-**EA-07 Compliance**: The design correctly avoids storing any credentials. Authentication is fully delegated to the `gh` CLI which uses the system keychain.
+**Secrets Management Compliance**: The design correctly avoids storing any credentials. Authentication is fully delegated to the `gh` CLI which uses the system keychain.
 
 **Privacy Note**: Add to user-facing documentation that:
 > When using the GitHub Copilot CLI provider, your prompts and note content are sent to GitHub's Copilot service. Review GitHub's privacy policy and your organisation's data handling policies before use.
