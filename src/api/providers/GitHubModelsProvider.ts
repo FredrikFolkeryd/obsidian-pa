@@ -239,6 +239,7 @@ export class GitHubModelsProvider extends BaseProvider {
           Authorization: `Bearer ${this.token}`,
         },
         body: JSON.stringify(requestBody),
+        signal: options.signal,
       });
 
       if (!response.ok) {

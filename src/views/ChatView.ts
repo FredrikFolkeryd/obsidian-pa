@@ -36,6 +36,7 @@ export class ChatView extends ItemView {
   private stopButtonEl: HTMLButtonElement | null = null;
   private isLoading = false;
   private abortController: AbortController | null = null;
+  private intentionalAbort = false;
   private lastActiveFile: TFile | null = null;
   private contextIndicatorEl: HTMLElement | null = null;
   private usageStatsEl: HTMLElement | null = null;
@@ -982,7 +983,7 @@ export class ChatView extends ItemView {
           // Use streaming - update message content as chunks arrive
           await provider.chatStream(
             conversationHistory,
-            { model: this.plugin.settings.model, systemPrompt },
+            { model: this.plugin.settings.model, systemPrompt, signal: this.abortController?.signal },
             (chunk) => {
               if (!chunk.done) {
                 assistantMessage.content += chunk.content;
@@ -995,6 +996,7 @@ export class ChatView extends ItemView {
           const response = await provider.chat(conversationHistory, {
             model: this.plugin.settings.model,
             systemPrompt,
+            signal: this.abortController?.signal,
           });
           assistantMessage.content = response.content;
           this.updateStreamingMessage(messageEl, assistantMessage.content);
@@ -1035,8 +1037,19 @@ export class ChatView extends ItemView {
 
       // Check if request was aborted
       if (err instanceof Error && err.name === "AbortError") {
-        // Don't restore input on intentional cancel
-        this.addSystemMessage("Request cancelled.");
+        const wasIntentional = this.intentionalAbort;
+        this.intentionalAbort = false;
+        if (wasIntentional) {
+          // Don't restore input on intentional cancel
+          this.addSystemMessage("Request cancelled.");
+        } else {
+          // App was backgrounded or OS cancelled the request
+          this.restoreInputOnError(content);
+          this.addSystemMessage(
+            "⏸️ **Request interrupted** — The AI request was interrupted (possibly due to switching apps). " +
+            "Your message has been restored to the input box. Please try again."
+          );
+        }
         return;
       }
 
@@ -2067,6 +2080,7 @@ export class ChatView extends ItemView {
    */
   private stopRequest(): void {
     if (this.abortController) {
+      this.intentionalAbort = true;
       this.abortController.abort();
       this.abortController = null;
     }
