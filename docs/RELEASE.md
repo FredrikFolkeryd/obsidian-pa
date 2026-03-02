@@ -26,9 +26,45 @@ Full releases are stable versions intended for general use. They require passing
 - Security audit reviewed
 - Production environment approval (if configured)
 
+## Automated Release Process (Recommended)
+
+This repository uses [release-please](https://github.com/googleapis/release-please) to automate releases:
+
+### How It Works
+
+1. **Make commits** following [Conventional Commits](https://www.conventionalcommits.org/) format:
+   - `feat:` — New feature (minor version bump)
+   - `fix:` — Bug fix (patch version bump)
+   - `feat!:` or `BREAKING CHANGE:` — Breaking change (major version bump)
+   - `docs:`, `chore:`, `refactor:`, etc. — Other changes
+
+2. **Merge to main** — The release-please workflow automatically:
+   - Analyzes commits since last release
+   - Creates/updates a "Release PR" with:
+     - Updated CHANGELOG.md
+     - Version bumps in package.json and manifest.json
+     - Release notes
+
+3. **Review the Release PR** — Check the generated changelog and version
+
+4. **Merge the Release PR** — This automatically:
+   - Creates a git tag
+   - Publishes a GitHub Release
+   - Triggers artifact building (via existing release.yml)
+
+### For Beta/Pre-releases
+
+Release-please is configured with `"prerelease": false`, so the next release will graduate from `1.0.0-beta.1` to `1.0.0` (or higher if breaking changes are detected). To create a new prerelease series in the future, set `"prerelease": true` (and optionally `"prerelease-type": "beta"`) in `release-please-config.json` and open a PR to update that configuration.
+
+### Manual Releases (Legacy)
+
+The manual process via `release.yml` is still available for edge cases such as hotfixes, emergency releases, or when the automated workflow is unavailable. It is otherwise deprecated in favour of release-please.
+
 ## Creating a Release
 
-### Via GitHub Actions (Recommended)
+### Via GitHub Actions (Deprecated)
+
+> **Note:** This process is deprecated in favour of the automated release-please workflow described above.
 
 1. Go to **Actions** → **Create Release**
 2. Click **Run workflow**
