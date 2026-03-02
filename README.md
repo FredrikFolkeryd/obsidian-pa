@@ -11,7 +11,7 @@ An Obsidian plugin that provides an agentic interface to leverage AI agents with
 Obsidian PA enables users to interact with AI capabilities directly in their note-taking workflow, bringing agentic development practices to personal knowledge management.
 
 **Developer**: Fredrik Folkeryd  
-**Organisation Context**: Built using models from Ingka Group Digital as personal upskilling on agentic development.
+**Background**: Personal project built as an exercise in agentic development practices. Not affiliated with any organisation.
 
 ## Features
 
@@ -207,7 +207,7 @@ See [CHANGELOG.md](CHANGELOG.md) for a detailed history of changes.
 
 ## Development Values
 
-This project follows IKEA values in development:
+This project follows these engineering principles:
 
 - **Simplicity**: Write clear, straightforward code; avoid over-engineering
 - **Cost-consciousness**: Optimise for performance and bundle size

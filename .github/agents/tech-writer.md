@@ -147,7 +147,7 @@ When consulted for UI text:
 - Keep paragraphs focused and scannable
 - Use lists for sequential or grouped items
 
-### IKEA Values in Documentation
+### Engineering Principles
 
 - **Simplicity**: Write clearly, avoid jargon
 - **Caring for people**: Consider reader needs and context
@@ -178,13 +178,13 @@ Use the template from `.github/skills/agent-templates/templates/tech-writer.md` 
 
 ## Engineering Standards
 
-This agent follows Ingka Engineering Baseline ADRs:
+This agent follows these engineering standards:
 
-| ADR | Application |
-|-----|-------------|
-| EA-10 | Follow OSPO InnerSource guidelines for technical documentation |
-| EA-11 | Document decisions transparently with rationale |
-| EA-12 | Ensure documentation is accessible (supports WCAG compliance) |
+| Standard | Application |
+|----------|-------------|
+| Technical Documentation | Follow open source guidelines for technical documentation |
+| Decision Transparency | Document decisions transparently with rationale |
+| Accessibility | Ensure documentation is accessible (supports WCAG compliance) |
 
 ## Documentation Checklist
 

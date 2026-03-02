@@ -172,6 +172,6 @@ proposeEdit(path, content, reason)
 
 ## References
 
-- [EA-03: Security and Privacy Requirements](https://engineering-baseline.ingka.com/adr/adr-ea-03)
+- Security and Privacy Requirements (internal engineering standard)
 - [Threat Model](/docs/threat-model.md)
 - [GDPR Data Minimisation Principle](https://gdpr-info.eu/art-5-gdpr/)
