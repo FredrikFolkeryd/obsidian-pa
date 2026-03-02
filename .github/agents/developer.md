@@ -128,7 +128,7 @@ test(processor): add unit tests for note parsing
 refactor(ui): extract modal into separate component
 ```
 
-### IKEA Values in Code
+### Engineering Principles
 
 - **Simplicity**: Write clear, straightforward code; avoid over-engineering
 - **Cost-consciousness**: Optimise for performance and bundle size
@@ -157,14 +157,14 @@ Use the template from `.github/skills/agent-templates/templates/developer.md` wh
 
 ## Engineering Standards
 
-This agent follows Ingka Engineering Baseline ADRs:
+This agent follows these engineering standards:
 
-| ADR | Application |
-|-----|-------------|
-| EA-01 | All code managed in GitHub with proper branching |
-| EA-02 | Tests written for all changes, following test strategy |
-| EA-09 | Verify licence compliance when adding dependencies |
-| EA-10 | Update technical documentation for API changes |
+| Standard | Application |
+|----------|-------------|
+| Source Control | All code managed in GitHub with proper branching |
+| Testing & Change Management | Tests written for all changes, following test strategy |
+| Licence Compliance | Verify licence compliance when adding dependencies |
+| Technical Documentation | Update technical documentation for API changes |
 
 ## Validation Checklist
 

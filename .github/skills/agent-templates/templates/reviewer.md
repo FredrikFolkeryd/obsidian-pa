@@ -65,7 +65,7 @@ Brief summary of what was reviewed and the overall outcome.
 
 ### Values Alignment
 
-- [ ] Reflects IKEA values in approach and outcome
+- [ ] Reflects engineering principles in approach and outcome
 - <findings and observations>
 
 ## Issues Found

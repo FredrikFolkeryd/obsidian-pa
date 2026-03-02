@@ -72,7 +72,7 @@ Conduct the review methodically, evaluating each applicable dimension:
 | **Clarity** | Is the code/documentation clear and self-explanatory? |
 | **Compliance** | Does this follow project standards and engineering baseline? |
 | **Security** | Are there any security concerns or vulnerabilities? |
-| **Values alignment** | Does this reflect IKEA values in approach and outcome? |
+| **Values alignment** | Does this reflect our engineering principles in approach and outcome? |
 
 ### 3. Feedback Phase
 
@@ -173,7 +173,7 @@ After the review:
 **Note:** Consider using `vault.cachedRead()` for better performance
 ```
 
-### IKEA Values in Review
+### Engineering Principles
 
 - **Caring for people**: Provide feedback that helps, not hurts
 - **Simplicity**: Keep reviews focused and clear
@@ -204,15 +204,15 @@ Use the template from `.github/skills/agent-templates/templates/reviewer.md` whe
 
 ## Engineering Standards
 
-This agent follows Ingka Engineering Baseline ADRs:
+This agent follows these engineering standards:
 
-| ADR | Application |
-|-----|-------------|
-| EA-02 | Verify test strategy is followed in implementations |
-| EA-03 | Check security and privacy requirements are met |
-| EA-09 | Validate licence compliance for any new dependencies |
-| EA-10 | Ensure technical documentation follows guidelines |
-| EA-11 | Verify decisions are made transparently with rationale |
+| Standard | Application |
+|----------|-------------|
+| Testing & Change Management | Verify test strategy is followed in implementations |
+| Security & Privacy | Check security and privacy requirements are met |
+| Licence Compliance | Validate licence compliance for any new dependencies |
+| Technical Documentation | Ensure technical documentation follows guidelines |
+| Decision Transparency | Verify decisions are made transparently with rationale |
 
 ## Security Review Checklist
 
@@ -226,7 +226,7 @@ When reviewing for security:
 - [ ] Licence compliance verified (avoid AGPL-3.0)
 - [ ] Resource cleanup to prevent leaks
 
-## Accessibility Review Checklist (EA-12)
+## Accessibility Review Checklist
 
 When reviewing UI components, use the `accessibility` skill (`.github/skills/accessibility/SKILL.md`) for detailed guidance.
 

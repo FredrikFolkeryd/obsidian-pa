@@ -5,7 +5,7 @@
 This is an Obsidian plugin that provides an agentic interface to leverage AI agents within an Obsidian vault. The plugin enables users to interact with AI capabilities directly in their note-taking workflow.
 
 **Developer**: Fredrik Folkeryd  
-**Organisation Context**: Built using models from Ingka Group Digital as personal upskilling on agentic development.
+**Background**: Personal project built as an exercise in agentic development practices. Not affiliated with any organisation.
 
 ### Safety Rules
 
@@ -92,7 +92,7 @@ Agents **must** commit work progressively, not in one large batch:
 - Jest or Vitest for testing
 - esbuild for bundling
 
-### IKEA Values in Development
+### Engineering Principles
 
 - **Simplicity**: Write clear, straightforward code; avoid over-engineering
 - **Cost-consciousness**: Optimise for performance and bundle size
@@ -207,7 +207,7 @@ The team holds retrospectives at regular intervals to continuously improve proce
 
 1. **What went well?** - Celebrate successes and reinforce good practices
 2. **What could improve?** - Identify friction points and gaps
-3. **Engineering Baseline review** - Compare practices against EA standards (EA-02, EA-03, EA-07, EA-10)
+3. **Engineering Standards review** - Compare practices against established standards (Testing & Change Management, Security & Privacy, Secrets Management, Technical Documentation)
 4. **Agent definition review** - Check if agent files need updating based on process changes
 5. **Action items** - Concrete changes to workflows, docs, or tooling
 
@@ -287,18 +287,18 @@ Use GitHub Issues for all work items with labels:
 
 Track progress using GitHub Milestones aligned with semantic versioning.
 
-## Engineering Standards (Ingka Baseline)
+## Engineering Standards
 
-This project follows relevant Ingka Engineering Baseline ADRs:
+This project follows these engineering standards:
 
-| ADR | Requirement |
-|-----|-------------|
-| EA-01 | Source code managed in GitHub |
-| EA-02 | Defined test strategy with change management |
-| EA-03 | Security and privacy requirements addressed |
-| EA-07 | Secrets management; no hardcoded credentials |
-| EA-09 | Open source licence compliance checks |
-| EA-10 | Technical documentation following OSPO guidelines |
+| Standard | Requirement |
+|----------|-------------|
+| Source Control | Source code managed in GitHub |
+| Testing & Change Management | Defined test strategy with change management |
+| Security & Privacy | Security and privacy requirements addressed |
+| Secrets Management | Secrets management; no hardcoded credentials |
+| Licence Compliance | Open source licence compliance checks |
+| Technical Documentation | Technical documentation following open source guidelines |
 
 ### Security & Privacy
 
