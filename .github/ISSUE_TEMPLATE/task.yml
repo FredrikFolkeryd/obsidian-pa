@@ -1,0 +1,39 @@
+name: 🗂️ Task
+description: Capture a task that isn't a bug or feature (maintainers only)
+title: "[Task]: "
+labels: ["task", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        > ⚠️ **This template is for project maintainers and admins only.**
+        > If you are not a maintainer, your issue will be automatically closed.
+
+  - type: textarea
+    id: task-description
+    attributes:
+      label: What needs to be done?
+      description: Describe the task clearly and concisely.
+      placeholder: Describe the task...
+    validations:
+      required: true
+
+  - type: textarea
+    id: task-rationale
+    attributes:
+      label: Why is this needed?
+      description: Explain the motivation or context for this task.
+      placeholder: Explain why this task is necessary...
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance criteria
+      description: How will you know when this task is complete?
+      placeholder: |
+        - [ ] Criterion 1
+        - [ ] Criterion 2
+    validations:
+      required: false
