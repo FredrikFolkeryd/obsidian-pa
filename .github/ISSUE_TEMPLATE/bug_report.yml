@@ -1,7 +1,9 @@
 name: 🐛 Bug Report
 description: Report a bug in the Obsidian PA plugin
 title: "[Bug]: "
-labels: ["bug", "triage"]
+labels:
+  - bug
+  - triage
 body:
   - type: markdown
     attributes:
