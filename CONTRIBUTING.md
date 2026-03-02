@@ -97,20 +97,42 @@ Before submitting, verify:
 
 ## Reporting Issues
 
-When reporting issues, please include:
+### Using Issue Templates
 
-- Clear description of the problem
-- Steps to reproduce
-- Expected vs actual behaviour
-- Obsidian version and OS
-- Any relevant error messages or logs
+This repository **requires** all issues to use a template. Follow these steps:
 
-Use these labels when creating issues:
+1. Go to [New Issue](https://github.com/FredrikFolkeryd/obsidian-pa/issues/new/choose) — this opens the **template chooser**
+2. Select the appropriate template by clicking **Get started**
+3. Fill in the form fields and click **Submit new issue**
 
-- `bug`: Something isn't working
-- `enhancement`: New feature or improvement
-- `documentation`: Documentation updates
-- `question`: Further information needed
+> ⚠️ Do not navigate directly to `/issues/new` — GitHub will block the submission because blank issues are disabled.
+
+### Available Templates
+
+| Template | Use when |
+|----------|----------|
+| 🐛 **Bug Report** | Something is not working as expected |
+| ✨ **Feature Request** | You want to suggest a new feature or improvement |
+| 🗂️ **Task** | Maintainers only — internal project tasks |
+
+The **Task** template is restricted to project maintainers. Non-maintainer submissions using the Task template are automatically closed by a bot.
+
+### What to Include
+
+**Bug reports** should include:
+
+- Clear description of the problem and steps to reproduce
+- What you expected to happen
+- Any screenshots or error logs from the developer console
+
+**Feature requests** should include:
+
+- A description of the feature you'd like
+- Why it would be useful and what problem it solves
+
+### Labels
+
+Labels are applied automatically based on the template selected. You do not need to apply labels manually.
 
 ## Security
 
