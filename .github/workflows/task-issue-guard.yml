@@ -1,0 +1,52 @@
+name: Task Issue Guard
+
+on:
+  issues:
+    types: [opened, reopened]
+
+permissions:
+  issues: write
+
+jobs:
+  guard:
+    name: Restrict task template to maintainers
+    runs-on: ubuntu-latest
+    if: contains(github.event.issue.labels.*.name, 'task')
+
+    steps:
+      - name: Check permission and close if not maintainer
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const { data: permission } = await github.rest.repos.getCollaboratorPermissionLevel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              username: context.payload.issue.user.login
+            });
+
+            const allowed = ['admin', 'maintain', 'write'];
+            if (!allowed.includes(permission.permission)) {
+              const baseUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}`;
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: [
+                  '👋 Thanks for your interest in contributing!',
+                  '',
+                  'The **Task** issue template is reserved for project maintainers and admins.',
+                  'This issue has been closed automatically.',
+                  '',
+                  `If you would like to report a bug, please use the [Bug Report](${baseUrl}/issues/new?template=bug_report.yml) template.`,
+                  `For new features, use the [Feature Request](${baseUrl}/issues/new?template=feature_request.yml) template.`
+                ].join('\n')
+              });
+
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                state: 'closed',
+                state_reason: 'not_planned'
+              });
+            }
