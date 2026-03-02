@@ -1,7 +1,9 @@
 name: 🗂️ Task
 description: Capture a task that isn't a bug or feature (maintainers only)
 title: "[Task]: "
-labels: ["task", "triage"]
+labels:
+  - task
+  - triage
 body:
   - type: markdown
     attributes:
