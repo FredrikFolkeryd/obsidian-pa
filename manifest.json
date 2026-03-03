@@ -1,7 +1,7 @@
 {
   "id": "obsidian-pa",
   "name": "Personal Assistant",
-  "version": "1.0.0-beta.2",
+  "version": "2.0.0-beta.1",
   "minAppVersion": "1.11.4",
   "description": "An agentic AI interface for your Obsidian vault, powered by GitHub Copilot",
   "author": "Fredrik Folkeryd",

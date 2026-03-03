@@ -1,6 +1,6 @@
 {
   "name": "obsidian-pa",
-  "version": "1.0.0-beta.2",
+  "version": "2.0.0-beta.1",
   "description": "An Obsidian plugin that provides an agentic interface to leverage AI agents within your vault",
   "main": "main.js",
   "scripts": {
