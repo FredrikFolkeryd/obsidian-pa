@@ -11,11 +11,59 @@ _Changes that will be in the next release._
 
 ### 🔮 Planned Features (Future Releases)
 
-The following features are planned for future releases:
-
 - **Link suggestions** — AI recommends connections between notes
 - **Orphan detection** — Find unlinked notes in vault
 - **Performance** — Lazy loading, virtual scrolling for long chats
+
+## [1.0.0-beta.2] - 2026-03-03
+
+### ✨ Features
+
+- **Context picker improvements** — Better usability for selecting context files (#43)
+- **Task issue template** — Maintainer-only task template for structured issue creation (#51)
+- **Licence enforcement** — Automated licence compatibility checks for dependencies (#57)
+- **Release automation** — Changelog and releases via release-please (#58)
+
+### 🐛 Bug Fixes
+
+- **Chat**: restore input and show informative message when request interrupted by app switch (#47)
+- **Chat**: model settings take effect immediately in open views (#29)
+- **Chat**: context files count not updating correctly (#3)
+- **Chat**: always add newly opened files to context
+- **Chat**: auto-update context when workspace changes with debounced refresh
+- **Chat**: use ISO 8601 timestamps instead of unreliable `toLocaleString`
+- **Chat**: maintain async `onClose` signature for compatibility
+- **Context**: context files not recognized when added via picker (#48)
+- **Context**: selection updates when assistant panel is re-activated (#41)
+- **UI**: chat icon does not open chat panel (#26)
+- **UI**: add missing CSS classes for context picker selected items (#35)
+- **Edits**: truncated with nested code blocks and unactionable error messages (#30)
+- **Vault**: create intermediate backup directories for nested file paths (#37)
+- Settings auto-open on restart for configured plugins (#27)
+- Ensure open files saved before edit operations to prevent stale content (#22)
+- Correct property name from `contextWindow` to `maxContextTokens` in ChatView
+- Standardise issue template label format (#52)
+
+### ♻️ Code Refactoring
+
+- Deduplicate timestamp formatting and use locale-correct dates
+- Add debouncing to context refresh
+
+### 📚 Documentation
+
+- Add SECURITY.md for responsible vulnerability reporting (#55)
+- Simplify issue templates to reduce friction (#32)
+
+### 🔧 Maintenance
+
+- Prepare for public beta release (#49)
+- Add issue triage workflow and YAML form templates
+- Enable Renovate for dependency updates
+- Update dependency @types/node to v20.19.32–v20.19.35
+- Update typescript-eslint monorepo to v8.55.0–v8.56.1
+- Update esbuild to ^0.27.0
+- Update actions/checkout to v6, actions/setup-node to v6, actions/github-script to v8
+- Update softprops/action-gh-release to v2
 
 ## [1.0.0-beta.1] - 2026-02-05
 
