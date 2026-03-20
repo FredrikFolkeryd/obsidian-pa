@@ -9,6 +9,7 @@
 
 import { exec } from "child_process";
 import { promisify } from "util";
+import { getShellEnv } from "../utils/shellEnv";
 
 const execAsync = promisify(exec);
 
@@ -44,7 +45,7 @@ export async function isOnePasswordCliInstalled(): Promise<boolean> {
 
   for (const opPath of paths) {
     try {
-      await execAsync(`"${opPath}" --version`);
+      await execAsync(`"${opPath}" --version`, { env: getShellEnv() });
       return true;
     } catch {
       // Try next path
@@ -67,7 +68,7 @@ async function getOpPath(): Promise<string | null> {
 
   for (const opPath of paths) {
     try {
-      await execAsync(`"${opPath}" --version`);
+      await execAsync(`"${opPath}" --version`, { env: getShellEnv() });
       return opPath;
     } catch {
       // Try next path
@@ -85,7 +86,7 @@ export async function isOnePasswordSignedIn(): Promise<boolean> {
 
   try {
     // `op account list` returns accounts if signed in
-    const { stdout } = await execAsync(`"${opPath}" account list --format=json`);
+    const { stdout } = await execAsync(`"${opPath}" account list --format=json`, { env: getShellEnv() });
     const accounts = JSON.parse(stdout) as unknown[];
     return accounts.length > 0;
   } catch {
@@ -131,7 +132,7 @@ export async function resolveOnePasswordSecret(
 
   try {
     // Use op read to get the secret
-    const { stdout, stderr } = await execAsync(`"${opPath}" read "${reference}"`);
+    const { stdout, stderr } = await execAsync(`"${opPath}" read "${reference}"`, { env: getShellEnv() });
 
     if (stderr && !stdout.trim()) {
       return {

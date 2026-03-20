@@ -18,6 +18,7 @@ import {
   resolveOnePasswordSecret,
 } from "./auth/OnePasswordResolver";
 import { SafeVaultAccess } from "./vault/SafeVaultAccess";
+import { resolveShellEnv } from "./utils/shellEnv";
 
 export default class PAPlugin extends Plugin {
   public settings!: PASettings;
@@ -35,6 +36,13 @@ export default class PAPlugin extends Plugin {
     console.info("[PA] Loading Personal Assistant plugin");
 
     await this.loadSettings();
+
+    // Resolve the login shell environment early so CLI tools (Copilot CLI,
+    // 1Password CLI) get the correct PATH and credentials when spawned from
+    // the GUI app. Fire-and-forget: don't block plugin load on this.
+    void resolveShellEnv().catch((err: unknown) => {
+      console.warn("[PA] Shell env resolution failed, using process.env fallback:", err);
+    });
 
     // Register the chat view
     this.registerView(VIEW_TYPE_CHAT, (leaf) => new ChatView(leaf, this));

@@ -16,8 +16,6 @@
  */
 
 import { spawn, type ChildProcess, execSync } from "child_process";
-import { promisify } from "util";
-import { exec } from "child_process";
 import { existsSync } from "fs";
 
 import { BaseProvider, PROVIDER_CONFIGS } from "../BaseProvider";
@@ -30,8 +28,7 @@ import type {
   Result,
   StreamCallback,
 } from "../types";
-
-const execAsync = promisify(exec);
+import { getShellEnv } from "../../utils/shellEnv";
 
 /**
  * Common copilot CLI installation paths by platform
@@ -352,23 +349,24 @@ export class GhCopilotCliProvider extends BaseProvider {
     status.cliInstalled = true;
     status.cliPath = cliPath;
 
-    // Check version to verify it works
+    // Check version to verify it works — use spawn (same env as actual calls)
     try {
-      const { stdout } = await execAsync(`"${cliPath}" --version`, {
-        timeout: 5000,
-      });
+      const { stdout } = await this.spawnGetOutput(cliPath, ["--version"], 5000);
       status.version = stdout.trim();
     } catch {
       // CLI found but failed to run
       return status;
     }
 
-    // Check authentication by running a minimal prompt
-    // The CLI will fail with auth error if not logged in
+    // Check authentication by running a minimal prompt.
+    // Uses spawn (shell:false) so the same environment is in play as actual
+    // invocations — avoiding misleading "authenticated = true" results when
+    // execAsync (shell-based) would succeed but spawn would fail.
     try {
-      await execAsync(
-        `"${cliPath}" -p "hi" --model claude-sonnet-4 --no-auto-update`,
-        { timeout: 30000 }
+      await this.spawnGetOutput(
+        cliPath,
+        ["-p", "hi", "--model", "claude-sonnet-4", "--no-auto-update"],
+        30000
       );
       status.authenticated = true;
     } catch (error) {
@@ -387,6 +385,52 @@ export class GhCopilotCliProvider extends BaseProvider {
     }
 
     return status;
+  }
+
+  /**
+   * Run a CLI command via spawn (shell:false) and return stdout/stderr.
+   * Uses the resolved shell environment so the process inherits the correct
+   * PATH and credentials regardless of how Obsidian was launched.
+   */
+  private spawnGetOutput(
+    execPath: string,
+    args: string[],
+    timeoutMs: number
+  ): Promise<{ stdout: string; stderr: string }> {
+    return new Promise((resolve, reject) => {
+      const child = spawn(execPath, args, {
+        shell: false,
+        timeout: timeoutMs,
+        windowsHide: true,
+        env: getShellEnv(),
+      });
+
+      let stdout = "";
+      let stderr = "";
+
+      child.stdout.on("data", (data: Buffer) => {
+        stdout += data.toString();
+      });
+      child.stderr.on("data", (data: Buffer) => {
+        stderr += data.toString();
+      });
+
+      child.on("close", (code) => {
+        if (code === 0) {
+          resolve({ stdout, stderr });
+        } else {
+          const errMsg =
+            code !== null
+              ? stderr || stdout || `exit code ${String(code)}`
+              : "Process terminated by signal";
+          reject(new Error(errMsg));
+        }
+      });
+
+      child.on("error", (err) => {
+        reject(err);
+      });
+    });
   }
 
   /**
@@ -490,11 +534,7 @@ export class GhCopilotCliProvider extends BaseProvider {
         shell: false, // <-- CRITICAL SECURITY SETTING
         timeout: 120000, // 2 minute timeout
         windowsHide: true, // Prevent window popup on Windows
-        env: {
-          ...process.env,
-          // Ensure HOME is set for config lookup
-          HOME: process.env.HOME,
-        },
+        env: getShellEnv(),
       });
 
       this.activeProcess = child;
@@ -570,10 +610,7 @@ export class GhCopilotCliProvider extends BaseProvider {
         shell: false,
         timeout: 120000, // 2 minute timeout
         windowsHide: true,
-        env: {
-          ...process.env,
-          HOME: process.env.HOME,
-        },
+        env: getShellEnv(),
       });
 
       this.activeProcess = child;
@@ -700,7 +737,16 @@ export class GhCopilotCliProvider extends BaseProvider {
       ],
       [/network|connection|ENOTFOUND|ECONNREFUSED/i, "Network error. Check your internet connection."],
       [/ENOENT|not found|command not found/i, "Copilot CLI not found. Reinstall GitHub Copilot CLI."],
-      [/permission denied|EACCES/i, "Permission denied. Check CLI executable permissions."],
+      // macOS GUI environment: EPERM / EACCES when the process can't access
+      // credentials because the GUI app environment is stripped.  On macOS,
+      // suggest launching Obsidian from a terminal as a workaround.
+      [
+        /EPERM|Operation not permitted|permission denied|EACCES/i,
+        process.platform === "darwin"
+          ? "Operation not permitted. The Copilot CLI could not access its credentials. " +
+            "Try launching Obsidian from a terminal: open -a Obsidian"
+          : "Permission denied. Check CLI executable permissions.",
+      ],
       [/spawn|fork|child_process/i, "Failed to start Copilot CLI process."],
       [/signal|SIGTERM|SIGKILL|killed/i, "Request was cancelled or terminated."],
       [/JSON|parse|syntax/i, "Received invalid response from Copilot CLI."],
