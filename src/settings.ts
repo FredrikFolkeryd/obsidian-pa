@@ -831,29 +831,26 @@ export class PASettingTab extends PluginSettingTab {
     const { workspace } = this.plugin.app;
 
     try {
-      let leaf = workspace.getLeavesOfType(VIEW_TYPE_CHAT)[0];
-      const existingLeaf = !!leaf;
+      const existingLeaves = workspace.getLeavesOfType(VIEW_TYPE_CHAT);
+      const hadExistingLeaf = existingLeaves.length > 0;
 
-      if (!leaf) {
-        leaf = workspace.getRightLeaf(false);
-        if (leaf) {
-          await leaf.setViewState({ type: VIEW_TYPE_CHAT, active: true });
-        }
+      // ensureSideLeaf finds an existing chat leaf or creates a new one,
+      // activates it, and reveals it—even when the sidebar is already open
+      // with another view.
+      const leaf = await workspace.ensureSideLeaf(VIEW_TYPE_CHAT, "right", {
+        active: true,
+        reveal: true,
+      });
+
+      // If it was an existing leaf, refresh it to re-check configuration
+      if (hadExistingLeaf) {
+        const view = leaf.view as ChatView;
+        await view.refresh();
       }
 
-      if (leaf) {
-        // If it was an existing leaf, refresh it to re-check configuration
-        if (existingLeaf) {
-          const view = leaf.view as ChatView;
-          await view.refresh();
-        }
-        await Promise.resolve(workspace.revealLeaf(leaf));
-        // Close settings modal if open
-        const setting = (this.plugin.app as unknown as { setting?: { close: () => void } }).setting;
-        setting?.close();
-      } else {
-        this.showCliStatus(statusEl, "error", "Could not open chat panel");
-      }
+      // Close settings modal if open
+      const setting = (this.plugin.app as unknown as { setting?: { close: () => void } }).setting;
+      setting?.close();
     } catch (error) {
       this.showCliStatus(statusEl, "error", error instanceof Error ? error.message : "Failed to open chat");
     }

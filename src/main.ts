@@ -7,7 +7,7 @@
  * @license MIT
  */
 
-import { Notice, Plugin, WorkspaceLeaf } from "obsidian";
+import { Notice, Plugin } from "obsidian";
 import { PASettings, DEFAULT_SETTINGS, PASettingTab } from "./settings";
 import { ChatView, VIEW_TYPE_CHAT } from "./views/ChatView";
 import { TaskHistoryView, VIEW_TYPE_TASK_HISTORY } from "./views/TaskHistoryView";
@@ -347,30 +347,14 @@ export default class PAPlugin extends Plugin {
       setting?.openTabById?.(this.manifest.id);
       return;
     }
-    const { workspace } = this.app;
 
-    let leaf: WorkspaceLeaf | null = null;
-    const leaves = workspace.getLeavesOfType(VIEW_TYPE_CHAT);
-
-    if (leaves.length > 0) {
-      // A leaf with our view already exists, use that
-      leaf = leaves[0];
-      // Set it as active to ensure it opens and gets focus
-      await leaf.setViewState({ type: VIEW_TYPE_CHAT, active: true });
-    } else {
-      // Create a new leaf in the right sidebar
-      leaf = workspace.getRightLeaf(false);
-      if (leaf) {
-        await leaf.setViewState({ type: VIEW_TYPE_CHAT, active: true });
-      }
-    }
-
-    // Reveal the leaf
-    if (leaf) {
-      // revealLeaf returns void in some Obsidian versions
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      Promise.resolve(workspace.revealLeaf(leaf));
-    }
+    // ensureSideLeaf finds an existing chat leaf or creates a new one,
+    // activates it, and reveals it—even when the sidebar is already open
+    // with another view (e.g. calendar).
+    await this.app.workspace.ensureSideLeaf(VIEW_TYPE_CHAT, "right", {
+      active: true,
+      reveal: true,
+    });
   }
 
   /**
@@ -384,26 +368,9 @@ export default class PAPlugin extends Plugin {
    * Internal async implementation of task history view activation
    */
   private async doActivateTaskHistoryView(): Promise<void> {
-    const { workspace } = this.app;
-
-    let leaf: WorkspaceLeaf | null = null;
-    const leaves = workspace.getLeavesOfType(VIEW_TYPE_TASK_HISTORY);
-
-    if (leaves.length > 0) {
-      // A leaf with our view already exists, use that
-      leaf = leaves[0];
-    } else {
-      // Create a new leaf in the right sidebar
-      leaf = workspace.getRightLeaf(false);
-      if (leaf) {
-        await leaf.setViewState({ type: VIEW_TYPE_TASK_HISTORY, active: true });
-      }
-    }
-
-    // Reveal the leaf
-    if (leaf) {
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      Promise.resolve(workspace.revealLeaf(leaf));
-    }
+    await this.app.workspace.ensureSideLeaf(VIEW_TYPE_TASK_HISTORY, "right", {
+      active: true,
+      reveal: true,
+    });
   }
 }

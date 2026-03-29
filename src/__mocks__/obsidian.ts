@@ -39,6 +39,7 @@ export class Workspace {
   public getLeavesOfType = (_viewType: string): WorkspaceLeaf[] => [];
   public getRightLeaf = (_split: boolean): WorkspaceLeaf | null => null;
   public revealLeaf = (_leaf: WorkspaceLeaf): void => undefined;
+  public ensureSideLeaf = async (_type: string, _side: string, _options?: { active?: boolean; split?: boolean; reveal?: boolean; state?: unknown }): Promise<WorkspaceLeaf> => new WorkspaceLeaf();
   public onLayoutReady = (callback: () => void): void => { callback(); };
 }
 
@@ -62,6 +63,12 @@ export class TFile extends TAbstractFile {
 
 export class TFolder extends TAbstractFile {
   public children: TAbstractFile[] = [];
+}
+
+export class Notice {
+  public constructor(_message: string, _duration?: number) {
+    // Mock
+  }
 }
 
 export class Plugin {
