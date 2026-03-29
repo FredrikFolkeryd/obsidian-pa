@@ -342,7 +342,50 @@ When Windows support is implemented:
 
 ---
 
-## 8. References
+## 8. macOS GUI Environment
+
+### The Problem
+
+On macOS, applications launched from the **Dock, Spotlight, or Finder** do not inherit the user's login shell environment. This means Obsidian — as a GUI Electron app — gets a stripped-down `process.env` compared to what a terminal session provides.
+
+CLIs that read config or credentials from paths set via `~/.zshrc` / `~/.bash_profile` (e.g. GitHub Copilot CLI, 1Password CLI) will fail when spawned from Obsidian, even though they work perfectly in a terminal. Common missing variables:
+
+| Variable | Used by |
+|----------|---------|
+| `PATH` additions (Homebrew, `~/.local/bin`) | CLI discovery |
+| `XDG_CONFIG_HOME` | GitHub Copilot CLI credentials |
+| `XDG_DATA_HOME` | GitHub Copilot CLI data |
+| `GITHUB_TOKEN` / `GH_TOKEN` | Token-based auth |
+
+### How the Shell Env Resolver Works
+
+`src/utils/shellEnv.ts` solves this by running a one-time login shell at plugin startup:
+
+```typescript
+// macOS only — called once during Plugin.onload()
+resolveShellEnv()  // runs `/bin/zsh -l -c env`, falling back to bash
+                   // caches result for the plugin lifetime
+```
+
+The captured shell env is merged with `process.env` (shell values win) and enriched with XDG defaults and augmented PATH entries. Every `spawn` / `exec` call in the plugin uses `getShellEnv()` instead of `process.env`.
+
+On non-macOS platforms, `resolveShellEnv()` is a synchronous no-op that returns an enriched `process.env`.
+
+### Workaround: Launch Obsidian from Terminal
+
+If CLI tools still fail (e.g., the user's shell is fish or nushell, which don't support `-l -c env`), they can launch Obsidian from a terminal to inherit the full environment:
+
+```bash
+# Option 1: Using the macOS open command
+open -a Obsidian
+
+# Option 2: Direct binary (inherits current terminal env exactly)
+/Applications/Obsidian.app/Contents/MacOS/Obsidian
+```
+
+---
+
+## 9. References
 
 - [Obsidian normalizePath](https://docs.obsidian.md/Reference/TypeScript+API/normalizePath)
 - [Node.js path module](https://nodejs.org/api/path.html)
