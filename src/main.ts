@@ -88,6 +88,19 @@ export default class PAPlugin extends Plugin {
     this.settingsTab = new PASettingTab(this.app, this);
     this.addSettingTab(this.settingsTab);
 
+    // Defer heavy async work (CLI spawns, token resolution) until after
+    // the workspace layout is ready so that onload() returns promptly and
+    // Obsidian does not warn about the plugin taking too long to load.
+    this.app.workspace.onLayoutReady(() => {
+      void this.deferredInit();
+    });
+  }
+
+  /**
+   * Deferred initialisation that runs after the workspace layout is ready.
+   * Keeps onload() fast by moving CLI / network calls out of the critical path.
+   */
+  private async deferredInit(): Promise<void> {
     // Initialize API client if configured
     await this.initializeApiClient();
 

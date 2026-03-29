@@ -39,6 +39,7 @@ export class Workspace {
   public getLeavesOfType = (_viewType: string): WorkspaceLeaf[] => [];
   public getRightLeaf = (_split: boolean): WorkspaceLeaf | null => null;
   public revealLeaf = (_leaf: WorkspaceLeaf): void => undefined;
+  public onLayoutReady = (callback: () => void): void => { callback(); };
 }
 
 export class WorkspaceLeaf {
