@@ -196,14 +196,16 @@ export class ChatView extends ItemView {
     // Separator
     infoRow.createSpan({ cls: "pa-chat-info-sep", text: "•" });
 
-    // Limitation notice with link
-    const limitNotice = infoRow.createEl("a", {
-      cls: "pa-chat-limit-notice",
-      text: "Read-only mode",
-      href: "https://github.com/FredrikFolkeryd/obsidian-pa#known-limitations",
+    // Settings link
+    const settingsLink = infoRow.createEl("a", {
+      cls: "pa-chat-settings-link",
+      text: "Settings",
     });
-    limitNotice.setAttribute("target", "_blank");
-    limitNotice.setAttribute("title", "AI can read notes but cannot edit them. Click to learn more.");
+    settingsLink.setAttribute("title", "Open plugin settings");
+    settingsLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      this.plugin.openSettings();
+    });
 
     // Context row - contains indicator and add context button
     const contextRow = headerEl.createDiv({ cls: "pa-chat-context-row" });
@@ -731,14 +733,15 @@ export class ChatView extends ItemView {
         opacity: 0.9;
       }
 
-      .pa-chat-limit-notice {
+      .pa-chat-settings-link {
         color: var(--text-muted);
         text-decoration: none;
         opacity: 0.8;
         font-size: 0.9em;
+        cursor: pointer;
       }
 
-      .pa-chat-limit-notice:hover {
+      .pa-chat-settings-link:hover {
         color: var(--text-accent);
         text-decoration: underline;
       }
