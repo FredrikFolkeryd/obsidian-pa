@@ -196,15 +196,22 @@ export class ChatView extends ItemView {
     // Separator
     infoRow.createSpan({ cls: "pa-chat-info-sep", text: "•" });
 
-    // Settings link
-    const settingsLink = infoRow.createEl("a", {
+    // Settings link (span with button role for accessibility)
+    const settingsLink = infoRow.createSpan({
       cls: "pa-chat-settings-link",
       text: "Settings",
     });
     settingsLink.setAttribute("title", "Open plugin settings");
-    settingsLink.addEventListener("click", (e) => {
-      e.preventDefault();
+    settingsLink.setAttribute("role", "button");
+    settingsLink.setAttribute("tabindex", "0");
+    settingsLink.addEventListener("click", () => {
       this.plugin.openSettings();
+    });
+    settingsLink.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        this.plugin.openSettings();
+      }
     });
 
     // Context row - contains indicator and add context button
