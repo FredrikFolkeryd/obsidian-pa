@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1-beta.3](https://github.com/FredrikFolkeryd/obsidian-pa/compare/obsidian-pa-v1.0.0-beta.3...obsidian-pa-v1.0.1-beta.3) (2026-04-10)
+
+
+### 🔧 Maintenance
+
+* **deps:** update dependency esbuild to ^0.28.0 ([#76](https://github.com/FredrikFolkeryd/obsidian-pa/issues/76)) ([0cefc45](https://github.com/FredrikFolkeryd/obsidian-pa/commit/0cefc4592d3bb950e8cbc979b7db014ab6da9afd))
+
 ## [1.0.0-beta.3](https://github.com/FredrikFolkeryd/obsidian-pa/compare/v1.0.0-beta.2...v1.0.0-beta.3) (2026-04-10)
 
 
