@@ -159,10 +159,7 @@ export class ChatView extends ItemView {
     });
     
     openSettingsBtn.addEventListener("click", () => {
-      // Use type assertion for internal Obsidian API
-      const setting = (this.app as unknown as { setting?: { open: () => void; openTabById?: (id: string) => void } }).setting;
-      setting?.open();
-      setting?.openTabById?.(this.plugin.manifest.id);
+      this.plugin.openSettings();
     });
 
     // Add styles for setup state
@@ -196,14 +193,24 @@ export class ChatView extends ItemView {
     // Separator
     infoRow.createSpan({ cls: "pa-chat-info-sep", text: "•" });
 
-    // Limitation notice with link
-    const limitNotice = infoRow.createEl("a", {
-      cls: "pa-chat-limit-notice",
-      text: "Read-only mode",
-      href: "https://github.com/FredrikFolkeryd/obsidian-pa#known-limitations",
+    // Settings link (span with button role for accessibility)
+    const settingsLink = infoRow.createSpan({
+      cls: "pa-chat-settings-link",
+      text: "Settings",
     });
-    limitNotice.setAttribute("target", "_blank");
-    limitNotice.setAttribute("title", "AI can read notes but cannot edit them. Click to learn more.");
+    settingsLink.setAttribute("title", "Open plugin settings");
+    settingsLink.setAttribute("role", "button");
+    settingsLink.setAttribute("tabindex", "0");
+    settingsLink.addEventListener("click", () => {
+      this.plugin.openSettings();
+    });
+    settingsLink.addEventListener("keydown", (e) => {
+      if (e.repeat) return;
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        this.plugin.openSettings();
+      }
+    });
 
     // Context row - contains indicator and add context button
     const contextRow = headerEl.createDiv({ cls: "pa-chat-context-row" });
@@ -731,14 +738,15 @@ export class ChatView extends ItemView {
         opacity: 0.9;
       }
 
-      .pa-chat-limit-notice {
+      .pa-chat-settings-link {
         color: var(--text-muted);
         text-decoration: none;
         opacity: 0.8;
         font-size: 0.9em;
+        cursor: pointer;
       }
 
-      .pa-chat-limit-notice:hover {
+      .pa-chat-settings-link:hover {
         color: var(--text-accent);
         text-decoration: underline;
       }
