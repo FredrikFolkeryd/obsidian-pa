@@ -50,15 +50,17 @@ This repository uses [release-please](https://github.com/googleapis/release-plea
 4. **Merge the Release PR** — This automatically:
    - Creates a git tag
    - Publishes a GitHub Release
-   - Triggers artifact building (via existing release.yml)
+   - Builds the plugin and uploads installable artifacts:
+     - `obsidian-pa-<version>.zip` — complete plugin package with installer
+     - `main.js`, `manifest.json`, `styles.css` — individual files for BRAT compatibility
 
 ### For Beta/Pre-releases
 
-Release-please is configured with `"prerelease": false`, so the next release will graduate from `1.0.0-beta.1` to `1.0.0` (or higher if breaking changes are detected). To create a new prerelease series in the future, set `"prerelease": true` (and optionally `"prerelease-type": "beta"`) in `release-please-config.json` and open a PR to update that configuration.
+Release-please is configured with `"prerelease": true` and `"prerelease-type": "beta"`, so releases are created as `1.0.0-beta.X`. To graduate to a stable release, set `"prerelease": false` in `release-please-config.json` and open a PR to update that configuration.
 
 ### Manual Releases (Legacy)
 
-The manual process via `release.yml` is still available for edge cases such as hotfixes, emergency releases, or when the automated workflow is unavailable. It is otherwise deprecated in favour of release-please.
+The manual process via `release.yml` is still available for edge cases such as hotfixes, emergency releases, or when the automated workflow is unavailable. It triggers on manually pushed tags (with or without `v` prefix) and builds + uploads the same installable artifacts. It is otherwise deprecated in favour of release-please.
 
 ## Creating a Release
 

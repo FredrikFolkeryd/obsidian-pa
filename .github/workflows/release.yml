@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - '[0-9]+.[0-9]+.[0-9]+*'
+      - 'v[0-9]+.[0-9]+.[0-9]+*'
 
 permissions:
   contents: write
@@ -18,7 +19,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
 
       - name: Install dependencies
@@ -35,7 +36,12 @@ jobs:
 
       - name: Get version from tag
         id: version
-        run: echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          # Strip leading 'v' if present
+          VERSION="${TAG#v}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
 
       - name: Extract release notes from CHANGELOG
         id: changelog
@@ -65,20 +71,24 @@ jobs:
           cp main.js dist/obsidian-pa/
           cp manifest.json dist/obsidian-pa/
           cp styles.css dist/obsidian-pa/ 2>/dev/null || echo '/* obsidian-pa styles */' > dist/obsidian-pa/styles.css
+          cp scripts/install.sh dist/obsidian-pa/
+          chmod +x dist/obsidian-pa/install.sh
           
           cd dist
           zip -r "obsidian-pa-${VERSION}.zip" obsidian-pa
+          cp "obsidian-pa-${VERSION}.zip" "obsidian-pa-latest.zip"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.version.outputs.version }}
+          tag_name: ${{ steps.version.outputs.tag }}
           name: "v${{ steps.version.outputs.version }}"
           draft: false
           prerelease: ${{ contains(steps.version.outputs.version, 'alpha') || contains(steps.version.outputs.version, 'beta') }}
           body_path: ${{ steps.changelog.outputs.notes_file }}
           files: |
             dist/obsidian-pa-${{ steps.version.outputs.version }}.zip
+            dist/obsidian-pa-latest.zip
             dist/obsidian-pa/main.js
             dist/obsidian-pa/manifest.json
             dist/obsidian-pa/styles.css

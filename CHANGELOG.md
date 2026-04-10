@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0-beta.3](https://github.com/FredrikFolkeryd/obsidian-pa/compare/v1.0.0-beta.2...v1.0.0-beta.3) (2026-04-10)
+
+
+### 🐛 Bug Fixes
+
+* **env:** resolve macOS GUI shell environment for CLI spawning ([#66](https://github.com/FredrikFolkeryd/obsidian-pa/issues/66)) ([7d4e41a](https://github.com/FredrikFolkeryd/obsidian-pa/commit/7d4e41a004d45ac0682e045d96d1002bf2f25bd9))
+* defer heavy async init to onLayoutReady to prevent slow-load warning ([#71](https://github.com/FredrikFolkeryd/obsidian-pa/issues/71)) ([a777e9b](https://github.com/FredrikFolkeryd/obsidian-pa/commit/a777e9b9d0cfd7a99e940d9f467f12556d7787a2))
+
+
+### 🔧 Maintenance
+
+* **deps:** update dependency @types/node to v20.19.37 ([#61](https://github.com/FredrikFolkeryd/obsidian-pa/issues/61)) ([80725a9](https://github.com/FredrikFolkeryd/obsidian-pa/commit/80725a95a968e45e1f56967315d46404fc01a361))
+* **deps:** update dependency @types/node to v20.19.39 ([#77](https://github.com/FredrikFolkeryd/obsidian-pa/issues/77)) ([c17f487](https://github.com/FredrikFolkeryd/obsidian-pa/commit/c17f487))
+* **deps:** update dependency esbuild to v0.27.4 ([#64](https://github.com/FredrikFolkeryd/obsidian-pa/issues/64)) ([b777ff8](https://github.com/FredrikFolkeryd/obsidian-pa/commit/b777ff843a0636a802ec6aec66f0ebdeec0e27e7))
+* **deps:** update dependency node to v24 ([#18](https://github.com/FredrikFolkeryd/obsidian-pa/issues/18)) ([587d3cb](https://github.com/FredrikFolkeryd/obsidian-pa/commit/587d3cb))
+* **deps:** update typescript-eslint monorepo to v8.57.0 ([#63](https://github.com/FredrikFolkeryd/obsidian-pa/issues/63)) ([5ebea28](https://github.com/FredrikFolkeryd/obsidian-pa/commit/5ebea28adafaf1f8897007852b4cea5b855a9e34))
+* **deps:** update typescript-eslint monorepo to v8.57.1 ([#65](https://github.com/FredrikFolkeryd/obsidian-pa/issues/65)) ([3895d71](https://github.com/FredrikFolkeryd/obsidian-pa/commit/3895d71fa52d4592d42519850ab70a52282822aa))
+* **deps:** update typescript-eslint monorepo to v8.57.2 ([#67](https://github.com/FredrikFolkeryd/obsidian-pa/issues/67)) ([787481e](https://github.com/FredrikFolkeryd/obsidian-pa/commit/787481e7f5b768e9fc7af092bb802693f39735bb))
+* **deps:** update typescript-eslint monorepo to v8.58.0 ([#74](https://github.com/FredrikFolkeryd/obsidian-pa/issues/74)) ([7c0e608](https://github.com/FredrikFolkeryd/obsidian-pa/commit/7c0e608))
+* **deps:** update typescript-eslint monorepo to v8.58.1 ([#78](https://github.com/FredrikFolkeryd/obsidian-pa/issues/78)) ([bc8dd5a](https://github.com/FredrikFolkeryd/obsidian-pa/commit/bc8dd5a))
+
 ## [Unreleased]
 
 _Changes that will be in the next release._
