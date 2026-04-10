@@ -208,6 +208,7 @@ export class ChatView extends ItemView {
       this.plugin.openSettings();
     });
     settingsLink.addEventListener("keydown", (e) => {
+      if (e.repeat) return;
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
         this.plugin.openSettings();
