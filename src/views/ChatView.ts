@@ -159,10 +159,7 @@ export class ChatView extends ItemView {
     });
     
     openSettingsBtn.addEventListener("click", () => {
-      // Use type assertion for internal Obsidian API
-      const setting = (this.app as unknown as { setting?: { open: () => void; openTabById?: (id: string) => void } }).setting;
-      setting?.open();
-      setting?.openTabById?.(this.plugin.manifest.id);
+      this.plugin.openSettings();
     });
 
     // Add styles for setup state
