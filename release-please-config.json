@@ -7,7 +7,8 @@
       "extra-files": [
         "manifest.json"
       ],
-      "prerelease": false
+      "prerelease": true,
+      "prerelease-type": "beta"
     }
   },
   "changelog-sections": [
