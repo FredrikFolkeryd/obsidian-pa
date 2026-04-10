@@ -9,6 +9,8 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import PAPlugin from "./main";
+import { WorkspaceLeaf } from "obsidian";
+import { VIEW_TYPE_CHAT } from "./views/ChatView";
 
 // Stub document for addRibbonIcon (node environment has no DOM)
 vi.stubGlobal("document", {
@@ -62,6 +64,52 @@ describe("PAPlugin", () => {
       await vi.waitFor(() => {
         expect(initSpy).toHaveBeenCalledOnce();
       });
+    });
+  });
+
+  describe("activateChatView", () => {
+    it("should call ensureSideLeaf with correct parameters when configured", async () => {
+      await plugin.onload();
+
+      // Make isConfigured return true
+      vi.spyOn(plugin as unknown as { isConfigured: () => Promise<boolean> }, "isConfigured")
+        .mockResolvedValue(true);
+
+      const ensureSpy = vi.fn().mockResolvedValue(new WorkspaceLeaf());
+      plugin.app.workspace.ensureSideLeaf = ensureSpy;
+
+      plugin.activateChatView();
+
+      // Allow the async call to settle
+      await vi.waitFor(() => {
+        expect(ensureSpy).toHaveBeenCalledOnce();
+      });
+
+      expect(ensureSpy).toHaveBeenCalledWith(VIEW_TYPE_CHAT, "right", {
+        active: true,
+        reveal: true,
+      });
+    });
+
+    it("should not call ensureSideLeaf when not configured", async () => {
+      await plugin.onload();
+
+      // Make isConfigured return false
+      const isConfiguredSpy = vi.spyOn(plugin as unknown as { isConfigured: () => Promise<boolean> }, "isConfigured")
+        .mockResolvedValue(false);
+
+      const ensureSpy = vi.fn().mockResolvedValue(new WorkspaceLeaf());
+      plugin.app.workspace.ensureSideLeaf = ensureSpy;
+
+      plugin.activateChatView();
+
+      // Wait for the async path to complete by checking isConfigured was called
+      await vi.waitFor(() => {
+        expect(isConfiguredSpy).toHaveBeenCalledOnce();
+      });
+
+      // After the not-configured path has run, ensureSideLeaf should not have been called
+      expect(ensureSpy).not.toHaveBeenCalled();
     });
   });
 });
