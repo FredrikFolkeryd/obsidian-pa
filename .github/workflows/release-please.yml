@@ -12,8 +12,67 @@ permissions:
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      version: ${{ steps.release.outputs.version }}
     steps:
       - uses: googleapis/release-please-action@v4
+        id: release
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+  build-release:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Create plugin package
+        run: |
+          VERSION="${{ needs.release-please.outputs.version }}"
+
+          mkdir -p dist/obsidian-pa
+          cp main.js dist/obsidian-pa/
+          cp manifest.json dist/obsidian-pa/
+          cp styles.css dist/obsidian-pa/ 2>/dev/null || echo '/* obsidian-pa styles */' > dist/obsidian-pa/styles.css
+          cp scripts/install.sh dist/obsidian-pa/
+          chmod +x dist/obsidian-pa/install.sh
+
+          cd dist
+          zip -r "obsidian-pa-${VERSION}.zip" obsidian-pa
+          cp "obsidian-pa-${VERSION}.zip" "obsidian-pa-latest.zip"
+
+      - name: Upload release artifacts
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.release-please.outputs.tag_name }}
+          files: |
+            dist/obsidian-pa-${{ needs.release-please.outputs.version }}.zip
+            dist/obsidian-pa-latest.zip
+            dist/obsidian-pa/main.js
+            dist/obsidian-pa/manifest.json
+            dist/obsidian-pa/styles.css
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
