@@ -95,7 +95,7 @@ describe("PAPlugin", () => {
       await plugin.onload();
 
       // Make isConfigured return false
-      vi.spyOn(plugin as unknown as { isConfigured: () => Promise<boolean> }, "isConfigured")
+      const isConfiguredSpy = vi.spyOn(plugin as unknown as { isConfigured: () => Promise<boolean> }, "isConfigured")
         .mockResolvedValue(false);
 
       const ensureSpy = vi.fn().mockResolvedValue(new WorkspaceLeaf());
@@ -103,9 +103,12 @@ describe("PAPlugin", () => {
 
       plugin.activateChatView();
 
-      // Give time for the async call to settle
-      await new Promise((r) => setTimeout(r, 50));
+      // Wait for the async path to complete by checking isConfigured was called
+      await vi.waitFor(() => {
+        expect(isConfiguredSpy).toHaveBeenCalledOnce();
+      });
 
+      // After the not-configured path has run, ensureSideLeaf should not have been called
       expect(ensureSpy).not.toHaveBeenCalled();
     });
   });

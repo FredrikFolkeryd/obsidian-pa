@@ -351,10 +351,15 @@ export default class PAPlugin extends Plugin {
     // ensureSideLeaf finds an existing chat leaf or creates a new one,
     // activates it, and reveals it—even when the sidebar is already open
     // with another view (e.g. calendar).
-    await this.app.workspace.ensureSideLeaf(VIEW_TYPE_CHAT, "right", {
-      active: true,
-      reveal: true,
-    });
+    try {
+      await this.app.workspace.ensureSideLeaf(VIEW_TYPE_CHAT, "right", {
+        active: true,
+        reveal: true,
+      });
+    } catch (error) {
+      console.error("Failed to activate chat view", error);
+      new Notice("Failed to open chat view", 5000);
+    }
   }
 
   /**
@@ -368,9 +373,14 @@ export default class PAPlugin extends Plugin {
    * Internal async implementation of task history view activation
    */
   private async doActivateTaskHistoryView(): Promise<void> {
-    await this.app.workspace.ensureSideLeaf(VIEW_TYPE_TASK_HISTORY, "right", {
-      active: true,
-      reveal: true,
-    });
+    try {
+      await this.app.workspace.ensureSideLeaf(VIEW_TYPE_TASK_HISTORY, "right", {
+        active: true,
+        reveal: true,
+      });
+    } catch (error) {
+      console.error("Failed to activate task history view", error);
+      new Notice("Failed to open task history view", 5000);
+    }
   }
 }
