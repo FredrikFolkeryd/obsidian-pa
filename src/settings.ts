@@ -832,7 +832,6 @@ export class PASettingTab extends PluginSettingTab {
 
     try {
       const existingLeaves = workspace.getLeavesOfType(VIEW_TYPE_CHAT);
-      const hadExistingLeaf = existingLeaves.length > 0;
 
       // ensureSideLeaf finds an existing chat leaf or creates a new one,
       // activates it, and reveals it—even when the sidebar is already open
@@ -842,8 +841,8 @@ export class PASettingTab extends PluginSettingTab {
         reveal: true,
       });
 
-      // If it was an existing leaf, refresh it to re-check configuration
-      if (hadExistingLeaf) {
+      // If the returned leaf was already open, refresh it to re-check configuration
+      if (existingLeaves.includes(leaf)) {
         const view = leaf.view as ChatView;
         await view.refresh();
       }

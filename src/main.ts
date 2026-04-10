@@ -357,7 +357,7 @@ export default class PAPlugin extends Plugin {
         reveal: true,
       });
     } catch (error) {
-      console.error("Failed to activate chat view", error);
+      console.error("[PA] Failed to activate chat view", error);
       new Notice("Failed to open chat view", 5000);
     }
   }
@@ -379,7 +379,7 @@ export default class PAPlugin extends Plugin {
         reveal: true,
       });
     } catch (error) {
-      console.error("Failed to activate task history view", error);
+      console.error("[PA] Failed to activate task history view", error);
       new Notice("Failed to open task history view", 5000);
     }
   }
