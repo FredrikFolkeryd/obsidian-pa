@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Check permission and close if not maintainer
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const { data: permission } = await github.rest.repos.getCollaboratorPermissionLevel({
