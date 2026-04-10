@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2-beta.3](https://github.com/FredrikFolkeryd/obsidian-pa/compare/obsidian-pa-v1.0.1-beta.3...obsidian-pa-v1.0.2-beta.3) (2026-04-10)
+
+
+### 🐛 Bug Fixes
+
+* **chat:** replace outdated "Read-only mode" link with Settings link ([#81](https://github.com/FredrikFolkeryd/obsidian-pa/issues/81))mal! ([81d1a4b](https://github.com/FredrikFolkeryd/obsidian-pa/commit/81d1a4be279a197e81a10584dabeb25673967ff0))
+* **ci:** pin GitHub Actions to commit SHAs to prevent supply-chain attacks ([#86](https://github.com/FredrikFolkeryd/obsidian-pa/issues/86)) ([27f2c3f](https://github.com/FredrikFolkeryd/obsidian-pa/commit/27f2c3f7823ce5b1358851e9b0a205e891c77623))
+* use ensureSideLeaf to reliably activate chat panel when sidebar is open ([#73](https://github.com/FredrikFolkeryd/obsidian-pa/issues/73)) ([1268036](https://github.com/FredrikFolkeryd/obsidian-pa/commit/12680365cd684214ab708701cbaf41eb049d9c6f))
+
+
+### 🔧 Maintenance
+
+* **deps:** update actions/github-script action to v9 ([#79](https://github.com/FredrikFolkeryd/obsidian-pa/issues/79)) ([75fa3e6](https://github.com/FredrikFolkeryd/obsidian-pa/commit/75fa3e6e9eafb82e226632b4bdb4c0e4c2001e10))
+
 ## [1.0.1-beta.3](https://github.com/FredrikFolkeryd/obsidian-pa/compare/obsidian-pa-v1.0.0-beta.3...obsidian-pa-v1.0.1-beta.3) (2026-04-10)
 
 
