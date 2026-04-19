@@ -5,7 +5,11 @@
       "package-name": "obsidian-pa",
       "changelog-path": "CHANGELOG.md",
       "extra-files": [
-        "manifest.json"
+        "manifest.json",
+        {
+          "type": "generic",
+          "path": "README.md"
+        }
       ],
       "prerelease": true,
       "prerelease-type": "beta"
