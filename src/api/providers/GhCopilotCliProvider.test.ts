@@ -27,14 +27,24 @@ import { GhCopilotCliProvider } from "./GhCopilotCliProvider";
 import { execSync } from "child_process";
 import { existsSync } from "fs";
 
+class TestableGhCopilotCliProvider extends GhCopilotCliProvider {
+  public testBuildCliArgs(prompt: string, model: string, streaming: boolean): string[] {
+    return this.buildCliArgs(prompt, model, streaming);
+  }
+
+  public testSanitiseErrorMessage(rawError: string, exitCode: number | null): string {
+    return this.sanitiseErrorMessage(rawError, exitCode);
+  }
+}
+
 describe("GhCopilotCliProvider", () => {
-  let provider: GhCopilotCliProvider;
+  let provider: TestableGhCopilotCliProvider;
   const mockExecSync = execSync as ReturnType<typeof vi.fn>;
   const mockExistsSync = existsSync as ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    provider = new GhCopilotCliProvider();
+    provider = new TestableGhCopilotCliProvider();
   });
 
   afterEach(() => {
@@ -282,13 +292,11 @@ describe("GhCopilotCliProvider", () => {
     it("should include scoped tool permissions when vault path is set", () => {
       provider.setVaultBasePath("/tmp/vault");
 
-      const args = (
-        provider as unknown as {
-          buildCliArgs: (prompt: string, model: string, streaming: boolean) => string[];
-        }
-      ).buildCliArgs("hello", "claude-sonnet-4", false);
+      const args = provider.testBuildCliArgs("hello", "claude-sonnet-4", false);
+      const addDirIndex = args.indexOf("--add-dir");
 
-      expect(args).toContain("--add-dir=/tmp/vault");
+      expect(addDirIndex).toBeGreaterThan(-1);
+      expect(args[addDirIndex + 1]).toBe("/tmp/vault");
       expect(args).toContain("--allow-tool=edit");
       expect(args).toContain("--allow-tool=bash");
       expect(args).toContain("--stream");
@@ -296,13 +304,9 @@ describe("GhCopilotCliProvider", () => {
     });
 
     it("should omit scoped tool permissions when vault path is not set", () => {
-      const args = (
-        provider as unknown as {
-          buildCliArgs: (prompt: string, model: string, streaming: boolean) => string[];
-        }
-      ).buildCliArgs("hello", "claude-sonnet-4", true);
+      const args = provider.testBuildCliArgs("hello", "claude-sonnet-4", true);
 
-      expect(args.some((arg) => arg.startsWith("--add-dir="))).toBe(false);
+      expect(args).not.toContain("--add-dir");
       expect(args).not.toContain("--allow-tool=edit");
       expect(args).not.toContain("--allow-tool=bash");
     });
@@ -310,11 +314,10 @@ describe("GhCopilotCliProvider", () => {
 
   describe("sanitiseErrorMessage", () => {
     it("should return vault write access guidance for permission denied errors", () => {
-      const sanitized = (
-        provider as unknown as {
-          sanitiseErrorMessage: (rawError: string, exitCode: number | null) => string;
-        }
-      ).sanitiseErrorMessage("Permission denied and could not request permission from user", 1);
+      const sanitized = provider.testSanitiseErrorMessage(
+        "Permission denied and could not request permission from user",
+        1
+      );
 
       expect(sanitized).toContain("vault directory");
       expect(sanitized).toContain("allowed");

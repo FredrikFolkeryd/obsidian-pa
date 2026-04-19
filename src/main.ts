@@ -21,6 +21,10 @@ import { SafeVaultAccess } from "./vault/SafeVaultAccess";
 import { resolveShellEnv } from "./utils/shellEnv";
 import { GhCopilotCliProvider } from "./api/providers/GhCopilotCliProvider";
 
+interface VaultAdapterWithBasePath {
+  basePath?: string;
+}
+
 export default class PAPlugin extends Plugin {
   public settings!: PASettings;
   private apiClient: GitHubModelsClient | null = null;
@@ -202,7 +206,7 @@ export default class PAPlugin extends Plugin {
       return;
     }
 
-    const adapter = this.app.vault.adapter as { basePath?: string };
+    const adapter = this.app.vault.adapter as VaultAdapterWithBasePath;
     provider.setVaultBasePath(adapter.basePath ?? null);
   }
 

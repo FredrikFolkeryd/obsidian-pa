@@ -661,7 +661,7 @@ export class GhCopilotCliProvider extends BaseProvider {
   /**
    * Build CLI arguments for non-interactive invocations.
    */
-  private buildCliArgs(prompt: string, model: string, streaming: boolean): string[] {
+  protected buildCliArgs(prompt: string, model: string, streaming: boolean): string[] {
     const args = [
       "-p",
       prompt,
@@ -687,7 +687,8 @@ export class GhCopilotCliProvider extends BaseProvider {
     }
 
     return [
-      `--add-dir=${this.vaultBasePath}`,
+      "--add-dir",
+      this.vaultBasePath,
       "--allow-tool=edit",
       "--allow-tool=bash",
     ];
@@ -739,7 +740,7 @@ export class GhCopilotCliProvider extends BaseProvider {
   /**
    * Sanitise error messages to avoid leaking sensitive info
    */
-  private sanitiseErrorMessage(rawError: string, exitCode: number | null): string {
+  protected sanitiseErrorMessage(rawError: string, exitCode: number | null): string {
     const patterns: Array<[RegExp, string]> = [
       [
         /command not found|not recognized/i,
@@ -750,7 +751,12 @@ export class GhCopilotCliProvider extends BaseProvider {
         "Not authenticated with Copilot. Run: copilot",
       ],
       [
-        /403|forbidden|access denied/i,
+        /permission denied.*could not request permission from user|could not request permission from user/i,
+        "Permission denied. Copilot CLI may not have write access to your vault directory. " +
+          "Ensure the vault path is allowed for Copilot CLI tool use.",
+      ],
+      [
+        /403|forbidden|access denied|permission/i,
         "Access denied. Ensure you have a valid Copilot licence.",
       ],
       [

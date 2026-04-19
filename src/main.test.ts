@@ -13,6 +13,10 @@ import { WorkspaceLeaf } from "obsidian";
 import { VIEW_TYPE_CHAT } from "./views/ChatView";
 import { GhCopilotCliProvider } from "./api/providers/GhCopilotCliProvider";
 
+interface MockVaultAdapterWithBasePath {
+  basePath?: string;
+}
+
 // Stub document for addRibbonIcon (node environment has no DOM)
 vi.stubGlobal("document", {
   createElement: vi.fn().mockReturnValue({}),
@@ -76,9 +80,8 @@ describe("PAPlugin", () => {
         "setVaultBasePath"
       );
 
-      (plugin.app.vault as unknown as { adapter: { basePath?: string } }).adapter = {
-        basePath: "/tmp/vault",
-      };
+      const vault = plugin.app.vault as unknown as { adapter: MockVaultAdapterWithBasePath };
+      vault.adapter = { basePath: "/tmp/vault" };
 
       await plugin.onload();
 
