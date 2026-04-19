@@ -69,21 +69,21 @@ You'll need **one** of the following:
 
 ## Installation
 
-### From Community Plugins (Recommended)
+### From Community Plugins (**Not yet supported**)
 
 > **Note**: This plugin is not yet available in the Obsidian Community Plugins directory. Once submitted and approved, you'll be able to install it directly from Obsidian.
-
+<span style="color:#ccc">
 1. Open Obsidian Settings → Community plugins
 2. Click "Browse" and search for "Personal Assistant"
 3. Click "Install" then "Enable"
-
+</spanZ
 ### Manual Installation
 
-Download the release zip and run the included installer:
+Download the latest release zip and run the included installer:
 
 ```bash
 # Download and extract
-curl -L https://github.com/FredrikFolkeryd/obsidian-pa/releases/latest/download/obsidian-pa-latest.zip -o /tmp/obsidian-pa.zip
+curl -L https://github.com/FredrikFolkeryd/obsidian-pa/releases/download/obsidian-pa-v1.0.2-beta.3/obsidian-pa-latest.zip -o /tmp/obsidian-pa.zip
 unzip -o /tmp/obsidian-pa.zip -d /tmp/
 
 # Run installer (auto-detects your vaults)
@@ -96,7 +96,7 @@ The installer will auto-detect your Obsidian vaults and let you choose where to 
 
 If you prefer to install manually:
 
-1. Download `obsidian-pa-X.X.X.zip` from the [latest release](https://github.com/FredrikFolkeryd/obsidian-pa/releases/latest)
+1. Download `obsidian-pa-X.X.X.zip` from the [latest release](https://github.com/FredrikFolkeryd/obsidian-pa/releases)
 2. Extract the `obsidian-pa/` folder to `<your-vault>/.obsidian/plugins/`
 3. Enable the plugin in Obsidian Settings → Community plugins
 
