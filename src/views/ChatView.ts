@@ -28,6 +28,9 @@ interface DisplayMessage extends ChatMessage {
  * Chat view for AI conversations
  */
 export class ChatView extends ItemView {
+  private static readonly BASE_MESSAGE_CONTENT_CLASS = "pa-chat-message-content";
+  private static readonly ASSISTANT_MESSAGE_CONTENT_CLASS =
+    "pa-chat-message-content markdown-rendered markdown-preview-view";
   private plugin: PAPlugin;
   private messages: DisplayMessage[] = [];
   private inputEl: HTMLTextAreaElement | null = null;
@@ -1403,11 +1406,14 @@ export class ChatView extends ItemView {
       }
     }
 
-    const contentEl = messageEl.createDiv({ cls: "pa-chat-message-content" });
+    const contentEl = messageEl.createDiv({
+      cls: message.role === "assistant"
+        ? ChatView.ASSISTANT_MESSAGE_CONTENT_CLASS
+        : ChatView.BASE_MESSAGE_CONTENT_CLASS,
+    });
 
     // Render markdown for assistant messages
     if (message.role === "assistant") {
-      contentEl.addClass("markdown-rendered", "markdown-preview-view");
       void MarkdownRenderer.render(this.app, message.content, contentEl, "", this.plugin);
     } else {
       contentEl.setText(message.content);
@@ -1445,7 +1451,7 @@ export class ChatView extends ItemView {
     // Store message reference for copy - will be updated when finalized
     copyBtn.dataset.messageId = message.id;
 
-    const contentEl = messageEl.createDiv({ cls: "pa-chat-message-content markdown-rendered markdown-preview-view" });
+    const contentEl = messageEl.createDiv({ cls: ChatView.ASSISTANT_MESSAGE_CONTENT_CLASS });
     contentEl.addClass("pa-chat-streaming");
     
     // Show cursor indicator
