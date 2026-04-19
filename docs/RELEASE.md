@@ -58,6 +58,8 @@ This repository uses [release-please](https://github.com/googleapis/release-plea
 
 Release-please is configured with `"prerelease": true` and `"prerelease-type": "beta"`, so releases are created as `1.0.0-beta.X`. To graduate to a stable release, set `"prerelease": false` in `release-please-config.json` and open a PR to update that configuration.
 
+README manual install instructions are also updated automatically during release preparation. This is driven by `release-please-config.json` (`extra-files` includes `README.md`) and the `# x-release-please-version` marker on the download URL line in `README.md`.
+
 ### Manual Releases (Legacy)
 
 The manual process via `release.yml` is still available for edge cases such as hotfixes, emergency releases, or when the automated workflow is unavailable. It triggers on manually pushed tags (with or without `v` prefix) and builds + uploads the same installable artifacts. It is otherwise deprecated in favour of release-please.
