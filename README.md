@@ -83,7 +83,11 @@ Download the latest release zip and run the included installer:
 
 ```bash
 # Download and extract
-curl -L https://github.com/FredrikFolkeryd/obsidian-pa/releases/download/obsidian-pa-v1.0.2-beta.3/obsidian-pa-latest.zip -o /tmp/obsidian-pa.zip
+# x-release-please-start-version
+curl -L \
+  https://github.com/FredrikFolkeryd/obsidian-pa/releases/download/obsidian-pa-v1.0.2-beta.3/obsidian-pa-latest.zip \
+  -o /tmp/obsidian-pa.zip
+# x-release-please-end
 unzip -o /tmp/obsidian-pa.zip -d /tmp/
 
 # Run installer (auto-detects your vaults)
