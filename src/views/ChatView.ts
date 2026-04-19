@@ -1407,6 +1407,7 @@ export class ChatView extends ItemView {
 
     // Render markdown for assistant messages
     if (message.role === "assistant") {
+      contentEl.addClass("markdown-rendered", "markdown-preview-view");
       void MarkdownRenderer.render(this.app, message.content, contentEl, "", this.plugin);
     } else {
       contentEl.setText(message.content);
@@ -1444,7 +1445,7 @@ export class ChatView extends ItemView {
     // Store message reference for copy - will be updated when finalized
     copyBtn.dataset.messageId = message.id;
 
-    const contentEl = messageEl.createDiv({ cls: "pa-chat-message-content" });
+    const contentEl = messageEl.createDiv({ cls: "pa-chat-message-content markdown-rendered markdown-preview-view" });
     contentEl.addClass("pa-chat-streaming");
     
     // Show cursor indicator
