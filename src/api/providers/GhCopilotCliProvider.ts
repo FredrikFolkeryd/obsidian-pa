@@ -495,7 +495,14 @@ export class GhCopilotCliProvider extends BaseProvider {
     // Add instruction for response
     parts.push("\nPlease respond to the user's latest message.");
     parts.push(
-      "IMPORTANT: Do NOT use built-in edit or bash tools. Instead, when you want to edit a file, output the complete new content in a fenced code block with the file path as the language hint, like: ```path/to/file.md\\ncontent\\n```. The user's application will parse this and show an Apply Edit button."
+      [
+        "IMPORTANT: Do NOT use built-in edit or bash tools.",
+        "Instead, when you want to edit a file, output the complete new content in a fenced code block",
+        "with the file path as the language hint, like: ```path/to/file.md",
+        "content",
+        "```.",
+        "The user's application will parse this and show an Apply Edit button.",
+      ].join("\n")
     );
 
     return parts.join("\n");

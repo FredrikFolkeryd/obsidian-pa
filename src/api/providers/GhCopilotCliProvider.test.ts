@@ -31,6 +31,10 @@ class TestableGhCopilotCliProvider extends GhCopilotCliProvider {
   public testBuildCliArgs(prompt: string, model: string, streaming: boolean): string[] {
     return this.buildCliArgs(prompt, model, streaming);
   }
+
+  public testSanitiseErrorMessage(rawError: string, exitCode: number | null): string {
+    return this.sanitiseErrorMessage(rawError, exitCode);
+  }
 }
 
 describe("GhCopilotCliProvider", () => {
@@ -290,6 +294,33 @@ describe("GhCopilotCliProvider", () => {
 
       expect(args).toContain("--stream");
       expect(args).toContain("off");
+    });
+  });
+
+  describe("prompt formatting", () => {
+    it("should include edit block guidance and avoid built-in tools", () => {
+      const prompt = (
+        provider as unknown as {
+          formatMessagesAsPrompt: (
+            messages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
+            systemPrompt?: string
+          ) => string;
+        }
+      ).formatMessagesAsPrompt([{ role: "user", content: "Hello" }], "System instruction");
+
+      expect(prompt).toContain("Do NOT use built-in edit or bash tools");
+      expect(prompt).toContain("```path/to/file.md");
+    });
+  });
+
+  describe("sanitiseErrorMessage", () => {
+    it("should return executable permission guidance for spawn EACCES errors", () => {
+      const sanitized = provider.testSanitiseErrorMessage(
+        "spawn /usr/local/bin/copilot EACCES",
+        1
+      );
+
+      expect(sanitized).toContain("executable permissions");
     });
   });
 });
