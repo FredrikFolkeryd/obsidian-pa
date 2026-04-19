@@ -773,6 +773,10 @@ export class GhCopilotCliProvider extends BaseProvider {
       ],
       [/network|connection|ENOTFOUND|ECONNREFUSED/i, "Network error. Check your internet connection."],
       [/ENOENT|not found|command not found/i, "Copilot CLI not found. Reinstall GitHub Copilot CLI."],
+      [
+        /spawn.*(?:EACCES|EPERM|permission denied|Operation not permitted)/i,
+        "Permission denied. Check Copilot CLI executable permissions.",
+      ],
       // macOS GUI environment: EPERM / EACCES when the process can't access
       // credentials because the GUI app environment is stripped.  On macOS,
       // suggest launching Obsidian from a terminal as a workaround.

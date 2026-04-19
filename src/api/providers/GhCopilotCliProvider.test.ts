@@ -322,5 +322,15 @@ describe("GhCopilotCliProvider", () => {
       expect(sanitized).toContain("vault directory");
       expect(sanitized).toContain("allowed");
     });
+
+    it("should return Copilot CLI executable permission guidance for spawn EACCES errors", () => {
+      const sanitized = provider.testSanitiseErrorMessage(
+        "spawn /usr/local/bin/copilot EACCES",
+        1
+      );
+
+      expect(sanitized).toContain("executable permissions");
+      expect(sanitized).not.toContain("vault directory");
+    });
   });
 });
