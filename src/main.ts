@@ -19,6 +19,7 @@ import {
 } from "./auth/OnePasswordResolver";
 import { SafeVaultAccess } from "./vault/SafeVaultAccess";
 import { resolveShellEnv } from "./utils/shellEnv";
+import { GhCopilotCliProvider } from "./api/providers/GhCopilotCliProvider";
 
 export default class PAPlugin extends Plugin {
   public settings!: PASettings;
@@ -166,6 +167,7 @@ export default class PAPlugin extends Plugin {
     
     // Sync provider setting to manager
     this.providerManager.setActiveProvider(this.settings.provider);
+    this.configureCopilotCliVaultPath();
     
     // Initialize SafeVaultAccess with current settings
     this.safeVault = new SafeVaultAccess(this.app, this.settings);
@@ -178,6 +180,7 @@ export default class PAPlugin extends Plugin {
     await this.saveData(this.settings);
     // Sync provider setting to manager
     this.providerManager.setActiveProvider(this.settings.provider);
+    this.configureCopilotCliVaultPath();
     // Update SafeVaultAccess with new settings
     this.safeVault = new SafeVaultAccess(this.app, this.settings);
     
@@ -188,6 +191,19 @@ export default class PAPlugin extends Plugin {
         leaf.view.onSettingsChanged();
       }
     }
+  }
+
+  /**
+   * Configure the gh-copilot-cli provider with the active vault base path.
+   */
+  private configureCopilotCliVaultPath(): void {
+    const provider = this.providerManager.getProvider("gh-copilot-cli");
+    if (!(provider instanceof GhCopilotCliProvider)) {
+      return;
+    }
+
+    const adapter = this.app.vault.adapter as { basePath?: string };
+    provider.setVaultBasePath(adapter.basePath ?? null);
   }
 
   /**

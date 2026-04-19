@@ -11,6 +11,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import PAPlugin from "./main";
 import { WorkspaceLeaf } from "obsidian";
 import { VIEW_TYPE_CHAT } from "./views/ChatView";
+import { GhCopilotCliProvider } from "./api/providers/GhCopilotCliProvider";
 
 // Stub document for addRibbonIcon (node environment has no DOM)
 vi.stubGlobal("document", {
@@ -64,6 +65,24 @@ describe("PAPlugin", () => {
       await vi.waitFor(() => {
         expect(initSpy).toHaveBeenCalledOnce();
       });
+    });
+
+    it("should set vault base path on gh-copilot-cli provider", async () => {
+      const provider = plugin.providerManager.getProvider("gh-copilot-cli");
+      expect(provider).toBeInstanceOf(GhCopilotCliProvider);
+
+      const setVaultPathSpy = vi.spyOn(
+        provider as GhCopilotCliProvider,
+        "setVaultBasePath"
+      );
+
+      (plugin.app.vault as unknown as { adapter: { basePath?: string } }).adapter = {
+        basePath: "/tmp/vault",
+      };
+
+      await plugin.onload();
+
+      expect(setVaultPathSpy).toHaveBeenCalledWith("/tmp/vault");
     });
   });
 

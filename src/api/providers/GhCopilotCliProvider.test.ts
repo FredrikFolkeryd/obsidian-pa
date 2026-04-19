@@ -277,4 +277,47 @@ describe("GhCopilotCliProvider", () => {
       expect(result.success).toBe(false);
     });
   });
+
+  describe("non-interactive permission args", () => {
+    it("should include scoped tool permissions when vault path is set", () => {
+      provider.setVaultBasePath("/tmp/vault");
+
+      const args = (
+        provider as unknown as {
+          buildCliArgs: (prompt: string, model: string, streaming: boolean) => string[];
+        }
+      ).buildCliArgs("hello", "claude-sonnet-4", false);
+
+      expect(args).toContain("--add-dir=/tmp/vault");
+      expect(args).toContain("--allow-tool=edit");
+      expect(args).toContain("--allow-tool=bash");
+      expect(args).toContain("--stream");
+      expect(args).toContain("off");
+    });
+
+    it("should omit scoped tool permissions when vault path is not set", () => {
+      const args = (
+        provider as unknown as {
+          buildCliArgs: (prompt: string, model: string, streaming: boolean) => string[];
+        }
+      ).buildCliArgs("hello", "claude-sonnet-4", true);
+
+      expect(args.some((arg) => arg.startsWith("--add-dir="))).toBe(false);
+      expect(args).not.toContain("--allow-tool=edit");
+      expect(args).not.toContain("--allow-tool=bash");
+    });
+  });
+
+  describe("sanitiseErrorMessage", () => {
+    it("should return vault write access guidance for permission denied errors", () => {
+      const sanitized = (
+        provider as unknown as {
+          sanitiseErrorMessage: (rawError: string, exitCode: number | null) => string;
+        }
+      ).sanitiseErrorMessage("Permission denied and could not request permission from user", 1);
+
+      expect(sanitized).toContain("vault directory");
+      expect(sanitized).toContain("allowed");
+    });
+  });
 });
