@@ -161,9 +161,18 @@ export class GhCopilotCliProvider extends BaseProvider {
   private cliStatusCacheTime = 0;
   private readonly CLI_CACHE_TTL = 60000; // 1 minute
   private activeProcess: ChildProcess | null = null;
+  private vaultBasePath: string | null = null;
 
   public constructor() {
     super(PROVIDER_CONFIGS["gh-copilot-cli"]);
+  }
+
+  /**
+   * Set the vault base path used to scope CLI file permissions.
+   */
+  public setVaultBasePath(vaultBasePath: string | null): void {
+    const trimmedPath = vaultBasePath?.trim();
+    this.vaultBasePath = trimmedPath ? trimmedPath : null;
   }
 
   public getCapabilities(): ProviderCapabilities {
@@ -519,15 +528,7 @@ export class GhCopilotCliProvider extends BaseProvider {
 
     return new Promise((resolve, reject) => {
       // Arguments for non-interactive mode
-      const args = [
-        "-p",
-        prompt,
-        "--model",
-        model,
-        "--no-auto-update", // Don't try to update during invocation
-        "--stream",
-        "off", // Disable streaming for simpler output parsing
-      ];
+      const args = this.buildCliArgs(prompt, model, false);
 
       // CRITICAL: shell: false prevents shell interpretation
       const child = spawn(cliPath, args, {
@@ -596,14 +597,8 @@ export class GhCopilotCliProvider extends BaseProvider {
     }
 
     return new Promise((resolve, reject) => {
-      // Arguments for streaming mode - no --stream off flag
-      const args = [
-        "-p",
-        prompt,
-        "--model",
-        model,
-        "--no-auto-update", // Don't try to update during invocation
-      ];
+      // Arguments for streaming mode
+      const args = this.buildCliArgs(prompt, model, true);
 
       // CRITICAL: shell: false prevents shell interpretation
       const child = spawn(cliPath, args, {
@@ -664,6 +659,42 @@ export class GhCopilotCliProvider extends BaseProvider {
   }
 
   /**
+   * Build CLI arguments for non-interactive invocations.
+   */
+  protected buildCliArgs(prompt: string, model: string, streaming: boolean): string[] {
+    const args = [
+      "-p",
+      prompt,
+      "--model",
+      model,
+      "--no-auto-update", // Don't try to update during invocation
+      ...this.buildPermissionArgs(),
+    ];
+
+    if (!streaming) {
+      args.push("--stream", "off"); // Disable streaming for simpler output parsing
+    }
+
+    return args;
+  }
+
+  /**
+   * Build scoped permission args for non-interactive tool use.
+   */
+  private buildPermissionArgs(): string[] {
+    if (!this.vaultBasePath) {
+      return [];
+    }
+
+    return [
+      "--add-dir",
+      this.vaultBasePath,
+      "--allow-tool=edit",
+      "--allow-tool=bash",
+    ];
+  }
+
+  /**
    * Parse CLI output to extract just the response content
    * The CLI adds usage stats at the end which we want to strip
    */
@@ -709,7 +740,7 @@ export class GhCopilotCliProvider extends BaseProvider {
   /**
    * Sanitise error messages to avoid leaking sensitive info
    */
-  private sanitiseErrorMessage(rawError: string, exitCode: number | null): string {
+  protected sanitiseErrorMessage(rawError: string, exitCode: number | null): string {
     const patterns: Array<[RegExp, string]> = [
       [
         /command not found|not recognized/i,
@@ -718,6 +749,11 @@ export class GhCopilotCliProvider extends BaseProvider {
       [
         /401|unauthorized|not logged in|auth.*failed/i,
         "Not authenticated with Copilot. Run: copilot",
+      ],
+      [
+        /permission denied.*could not request permission from user|could not request permission from user/i,
+        "Permission denied. Copilot CLI may not have write access to your vault directory. " +
+          "Ensure the vault path is allowed for Copilot CLI tool use.",
       ],
       [
         /403|forbidden|access denied|permission/i,
@@ -737,6 +773,10 @@ export class GhCopilotCliProvider extends BaseProvider {
       ],
       [/network|connection|ENOTFOUND|ECONNREFUSED/i, "Network error. Check your internet connection."],
       [/ENOENT|not found|command not found/i, "Copilot CLI not found. Reinstall GitHub Copilot CLI."],
+      [
+        /spawn.*(?:EACCES|EPERM|permission denied|Operation not permitted)/i,
+        "Permission denied. Check Copilot CLI executable permissions.",
+      ],
       // macOS GUI environment: EPERM / EACCES when the process can't access
       // credentials because the GUI app environment is stripped.  On macOS,
       // suggest launching Obsidian from a terminal as a workaround.
@@ -745,7 +785,8 @@ export class GhCopilotCliProvider extends BaseProvider {
         process.platform === "darwin"
           ? "Operation not permitted. The Copilot CLI could not access its credentials. " +
             "Try launching Obsidian from a terminal: open -a Obsidian"
-          : "Permission denied. Check CLI executable permissions.",
+          : "Permission denied. Copilot CLI may not have write access to your vault directory. " +
+            "Ensure the vault path is allowed for Copilot CLI tool use.",
       ],
       [/spawn|fork|child_process/i, "Failed to start Copilot CLI process."],
       [/signal|SIGTERM|SIGKILL|killed/i, "Request was cancelled or terminated."],
