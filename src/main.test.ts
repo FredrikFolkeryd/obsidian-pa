@@ -11,11 +11,6 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import PAPlugin from "./main";
 import { WorkspaceLeaf } from "obsidian";
 import { VIEW_TYPE_CHAT } from "./views/ChatView";
-import { GhCopilotCliProvider } from "./api/providers/GhCopilotCliProvider";
-
-interface MockVaultAdapterWithBasePath {
-  basePath?: string;
-}
 
 // Stub document for addRibbonIcon (node environment has no DOM)
 vi.stubGlobal("document", {
@@ -71,22 +66,6 @@ describe("PAPlugin", () => {
       });
     });
 
-    it("should set vault base path on gh-copilot-cli provider", async () => {
-      const provider = plugin.providerManager.getProvider("gh-copilot-cli");
-      expect(provider).toBeInstanceOf(GhCopilotCliProvider);
-
-      const setVaultPathSpy = vi.spyOn(
-        provider as GhCopilotCliProvider,
-        "setVaultBasePath"
-      );
-
-      const vault = plugin.app.vault as unknown as { adapter: MockVaultAdapterWithBasePath };
-      vault.adapter = { basePath: "/tmp/vault" };
-
-      await plugin.onload();
-
-      expect(setVaultPathSpy).toHaveBeenCalledWith("/tmp/vault");
-    });
   });
 
   describe("activateChatView", () => {

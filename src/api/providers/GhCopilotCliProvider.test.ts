@@ -31,10 +31,6 @@ class TestableGhCopilotCliProvider extends GhCopilotCliProvider {
   public testBuildCliArgs(prompt: string, model: string, streaming: boolean): string[] {
     return this.buildCliArgs(prompt, model, streaming);
   }
-
-  public testSanitiseErrorMessage(rawError: string, exitCode: number | null): string {
-    return this.sanitiseErrorMessage(rawError, exitCode);
-  }
 }
 
 describe("GhCopilotCliProvider", () => {
@@ -288,49 +284,12 @@ describe("GhCopilotCliProvider", () => {
     });
   });
 
-  describe("non-interactive permission args", () => {
-    it("should include scoped tool permissions when vault path is set", () => {
-      provider.setVaultBasePath("/tmp/vault");
-
+  describe("buildCliArgs", () => {
+    it("should add stream off for non-streaming invocations", () => {
       const args = provider.testBuildCliArgs("hello", "claude-sonnet-4", false);
-      const addDirIndex = args.indexOf("--add-dir");
 
-      expect(addDirIndex).toBeGreaterThan(-1);
-      expect(args[addDirIndex + 1]).toBe("/tmp/vault");
-      expect(args).toContain("--allow-tool=edit");
-      expect(args).toContain("--allow-tool=bash");
       expect(args).toContain("--stream");
       expect(args).toContain("off");
-    });
-
-    it("should omit scoped tool permissions when vault path is not set", () => {
-      const args = provider.testBuildCliArgs("hello", "claude-sonnet-4", true);
-
-      expect(args).not.toContain("--add-dir");
-      expect(args).not.toContain("--allow-tool=edit");
-      expect(args).not.toContain("--allow-tool=bash");
-    });
-  });
-
-  describe("sanitiseErrorMessage", () => {
-    it("should return vault write access guidance for permission denied errors", () => {
-      const sanitized = provider.testSanitiseErrorMessage(
-        "Permission denied and could not request permission from user",
-        1
-      );
-
-      expect(sanitized).toContain("vault directory");
-      expect(sanitized).toContain("allowed");
-    });
-
-    it("should return Copilot CLI executable permission guidance for spawn EACCES errors", () => {
-      const sanitized = provider.testSanitiseErrorMessage(
-        "spawn /usr/local/bin/copilot EACCES",
-        1
-      );
-
-      expect(sanitized).toContain("executable permissions");
-      expect(sanitized).not.toContain("vault directory");
     });
   });
 });

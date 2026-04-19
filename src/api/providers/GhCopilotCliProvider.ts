@@ -161,18 +161,9 @@ export class GhCopilotCliProvider extends BaseProvider {
   private cliStatusCacheTime = 0;
   private readonly CLI_CACHE_TTL = 60000; // 1 minute
   private activeProcess: ChildProcess | null = null;
-  private vaultBasePath: string | null = null;
 
   public constructor() {
     super(PROVIDER_CONFIGS["gh-copilot-cli"]);
-  }
-
-  /**
-   * Set the vault base path used to scope CLI file permissions.
-   */
-  public setVaultBasePath(vaultBasePath: string | null): void {
-    const trimmedPath = vaultBasePath?.trim();
-    this.vaultBasePath = trimmedPath ? trimmedPath : null;
   }
 
   public getCapabilities(): ProviderCapabilities {
@@ -503,6 +494,9 @@ export class GhCopilotCliProvider extends BaseProvider {
 
     // Add instruction for response
     parts.push("\nPlease respond to the user's latest message.");
+    parts.push(
+      "IMPORTANT: Do NOT use built-in edit or bash tools. Instead, when you want to edit a file, output the complete new content in a fenced code block with the file path as the language hint, like: ```path/to/file.md\\ncontent\\n```. The user's application will parse this and show an Apply Edit button."
+    );
 
     return parts.join("\n");
   }
@@ -668,7 +662,6 @@ export class GhCopilotCliProvider extends BaseProvider {
       "--model",
       model,
       "--no-auto-update", // Don't try to update during invocation
-      ...this.buildPermissionArgs(),
     ];
 
     if (!streaming) {
@@ -676,22 +669,6 @@ export class GhCopilotCliProvider extends BaseProvider {
     }
 
     return args;
-  }
-
-  /**
-   * Build scoped permission args for non-interactive tool use.
-   */
-  private buildPermissionArgs(): string[] {
-    if (!this.vaultBasePath) {
-      return [];
-    }
-
-    return [
-      "--add-dir",
-      this.vaultBasePath,
-      "--allow-tool=edit",
-      "--allow-tool=bash",
-    ];
   }
 
   /**
