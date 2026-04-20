@@ -500,7 +500,7 @@ export class GhCopilotCliProvider extends BaseProvider {
         "Instead, when you want to edit a file, output the complete new content in a fenced code block",
         "with the file path as the language hint, like: ```path/to/file.md",
         "content",
-        "```.",
+        "```",
         "The user's application will parse this and show an Apply Edit button.",
       ].join("\n")
     );
