@@ -736,8 +736,8 @@ export class GhCopilotCliProvider extends BaseProvider {
       ],
       [
         /permission denied.*could not request permission from user|could not request permission from user/i,
-        "Permission denied. Copilot CLI may not have write access to your vault directory. " +
-          "Ensure the vault path is allowed for Copilot CLI tool use.",
+        "Permission denied. This integration does not support Copilot CLI built-in edit/bash tools. " +
+          "Ask for file changes as fenced code blocks with the file path as the language hint, then apply them in the plugin.",
       ],
       [
         /403|forbidden|access denied|permission/i,
@@ -769,8 +769,8 @@ export class GhCopilotCliProvider extends BaseProvider {
         process.platform === "darwin"
           ? "Operation not permitted. The Copilot CLI could not access its credentials. " +
             "Try launching Obsidian from a terminal: open -a Obsidian"
-          : "Permission denied. Copilot CLI may not have write access to your vault directory. " +
-            "Ensure the vault path is allowed for Copilot CLI tool use.",
+          : "Permission denied. Built-in Copilot CLI tools are not supported in this integration. " +
+            "Request fenced code block edits and apply them in the plugin.",
       ],
       [/spawn|fork|child_process/i, "Failed to start Copilot CLI process."],
       [/signal|SIGTERM|SIGKILL|killed/i, "Request was cancelled or terminated."],

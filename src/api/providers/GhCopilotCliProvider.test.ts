@@ -314,6 +314,17 @@ describe("GhCopilotCliProvider", () => {
   });
 
   describe("sanitiseErrorMessage", () => {
+    it("should map permission request failures to fenced-edit guidance", () => {
+      const sanitized = provider.testSanitiseErrorMessage(
+        "could not request permission from user",
+        1
+      );
+
+      expect(sanitized.toLowerCase()).toContain("permission");
+      expect(sanitized).toContain("fenced code blocks");
+      expect(sanitized).not.toContain("could not request permission from user");
+    });
+
     it("should return executable permission guidance for spawn EACCES errors", () => {
       const sanitized = provider.testSanitiseErrorMessage(
         "spawn /usr/local/bin/copilot EACCES",
