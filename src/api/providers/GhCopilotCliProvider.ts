@@ -161,18 +161,9 @@ export class GhCopilotCliProvider extends BaseProvider {
   private cliStatusCacheTime = 0;
   private readonly CLI_CACHE_TTL = 60000; // 1 minute
   private activeProcess: ChildProcess | null = null;
-  private vaultBasePath: string | null = null;
 
   public constructor() {
     super(PROVIDER_CONFIGS["gh-copilot-cli"]);
-  }
-
-  /**
-   * Set the vault base path used to scope CLI file permissions.
-   */
-  public setVaultBasePath(vaultBasePath: string | null): void {
-    const trimmedPath = vaultBasePath?.trim();
-    this.vaultBasePath = trimmedPath ? trimmedPath : null;
   }
 
   public getCapabilities(): ProviderCapabilities {
@@ -503,6 +494,16 @@ export class GhCopilotCliProvider extends BaseProvider {
 
     // Add instruction for response
     parts.push("\nPlease respond to the user's latest message.");
+    parts.push(
+      [
+        "IMPORTANT: Do NOT use built-in edit or bash tools.",
+        "Instead, when you want to edit a file, output the complete new content in a fenced code block",
+        "with the file path as the language hint, like: ```path/to/file.md",
+        "content",
+        "```",
+        "The user's application will parse this and show an Apply Edit button.",
+      ].join("\n")
+    );
 
     return parts.join("\n");
   }
@@ -668,7 +669,6 @@ export class GhCopilotCliProvider extends BaseProvider {
       "--model",
       model,
       "--no-auto-update", // Don't try to update during invocation
-      ...this.buildPermissionArgs(),
     ];
 
     if (!streaming) {
@@ -676,22 +676,6 @@ export class GhCopilotCliProvider extends BaseProvider {
     }
 
     return args;
-  }
-
-  /**
-   * Build scoped permission args for non-interactive tool use.
-   */
-  private buildPermissionArgs(): string[] {
-    if (!this.vaultBasePath) {
-      return [];
-    }
-
-    return [
-      "--add-dir",
-      this.vaultBasePath,
-      "--allow-tool=edit",
-      "--allow-tool=bash",
-    ];
   }
 
   /**
@@ -752,8 +736,8 @@ export class GhCopilotCliProvider extends BaseProvider {
       ],
       [
         /permission denied.*could not request permission from user|could not request permission from user/i,
-        "Permission denied. Copilot CLI may not have write access to your vault directory. " +
-          "Ensure the vault path is allowed for Copilot CLI tool use.",
+        "Permission denied. This integration does not support Copilot CLI built-in edit/bash tools. " +
+          "Ask for file changes as fenced code blocks with the file path as the language hint, then apply them in the plugin.",
       ],
       [
         /403|forbidden|access denied|permission/i,
@@ -785,8 +769,8 @@ export class GhCopilotCliProvider extends BaseProvider {
         process.platform === "darwin"
           ? "Operation not permitted. The Copilot CLI could not access its credentials. " +
             "Try launching Obsidian from a terminal: open -a Obsidian"
-          : "Permission denied. Copilot CLI may not have write access to your vault directory. " +
-            "Ensure the vault path is allowed for Copilot CLI tool use.",
+          : "Permission denied. Built-in Copilot CLI tools are not supported in this integration. " +
+            "Request fenced code block edits and apply them in the plugin.",
       ],
       [/spawn|fork|child_process/i, "Failed to start Copilot CLI process."],
       [/signal|SIGTERM|SIGKILL|killed/i, "Request was cancelled or terminated."],

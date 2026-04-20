@@ -116,7 +116,7 @@ describe("ChatView message content classes", () => {
     const contentCall = messageEl.createDiv.mock.calls.find(
       ([options]: [{ cls?: string }]) => options?.cls?.includes("pa-chat-message-content")
     );
-    expect(contentCall?.[0]?.cls).toBe("pa-chat-message-content markdown-rendered markdown-preview-view");
+    expect(contentCall?.[0]?.cls).toBe("pa-chat-message-content markdown-rendered");
     expect(markdownRenderSpy).toHaveBeenCalledOnce();
   });
 
@@ -161,7 +161,7 @@ describe("ChatView message content classes", () => {
     const contentCall = messageEl.createDiv.mock.calls.find(
       ([options]: [{ cls?: string }]) => options?.cls?.includes("pa-chat-message-content")
     );
-    expect(contentCall?.[0]?.cls).toBe("pa-chat-message-content markdown-rendered markdown-preview-view");
+    expect(contentCall?.[0]?.cls).toBe("pa-chat-message-content markdown-rendered");
     expect(contentEl.addClass).toHaveBeenCalledWith("pa-chat-streaming");
   });
 });

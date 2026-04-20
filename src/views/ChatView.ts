@@ -30,7 +30,7 @@ interface DisplayMessage extends ChatMessage {
 export class ChatView extends ItemView {
   private static readonly BASE_MESSAGE_CONTENT_CLASS = "pa-chat-message-content";
   private static readonly ASSISTANT_MESSAGE_CONTENT_CLASS =
-    "pa-chat-message-content markdown-rendered markdown-preview-view";
+    "pa-chat-message-content markdown-rendered";
   private plugin: PAPlugin;
   private messages: DisplayMessage[] = [];
   private inputEl: HTMLTextAreaElement | null = null;
@@ -619,6 +619,11 @@ export class ChatView extends ItemView {
         user-select: text;
         -webkit-user-select: text;
         cursor: text;
+      }
+
+      .pa-chat-message-content.markdown-rendered {
+        background: transparent;
+        color: inherit;
       }
 
       .pa-chat-message-content p:last-child {

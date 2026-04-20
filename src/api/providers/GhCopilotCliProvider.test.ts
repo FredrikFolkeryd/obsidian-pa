@@ -288,49 +288,50 @@ describe("GhCopilotCliProvider", () => {
     });
   });
 
-  describe("non-interactive permission args", () => {
-    it("should include scoped tool permissions when vault path is set", () => {
-      provider.setVaultBasePath("/tmp/vault");
-
+  describe("buildCliArgs", () => {
+    it("should add stream off for non-streaming invocations", () => {
       const args = provider.testBuildCliArgs("hello", "claude-sonnet-4", false);
-      const addDirIndex = args.indexOf("--add-dir");
 
-      expect(addDirIndex).toBeGreaterThan(-1);
-      expect(args[addDirIndex + 1]).toBe("/tmp/vault");
-      expect(args).toContain("--allow-tool=edit");
-      expect(args).toContain("--allow-tool=bash");
       expect(args).toContain("--stream");
       expect(args).toContain("off");
     });
+  });
 
-    it("should omit scoped tool permissions when vault path is not set", () => {
-      const args = provider.testBuildCliArgs("hello", "claude-sonnet-4", true);
+  describe("prompt formatting", () => {
+    it("should include edit block guidance and avoid built-in tools", () => {
+      const prompt = (
+        provider as unknown as {
+          formatMessagesAsPrompt: (
+            messages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
+            systemPrompt?: string
+          ) => string;
+        }
+      ).formatMessagesAsPrompt([{ role: "user", content: "Hello" }], "System instruction");
 
-      expect(args).not.toContain("--add-dir");
-      expect(args).not.toContain("--allow-tool=edit");
-      expect(args).not.toContain("--allow-tool=bash");
+      expect(prompt).toContain("Do NOT use built-in edit or bash tools");
+      expect(prompt).toContain("```path/to/file.md");
     });
   });
 
   describe("sanitiseErrorMessage", () => {
-    it("should return vault write access guidance for permission denied errors", () => {
+    it("should map permission request failures to fenced-edit guidance", () => {
       const sanitized = provider.testSanitiseErrorMessage(
-        "Permission denied and could not request permission from user",
+        "could not request permission from user",
         1
       );
 
-      expect(sanitized).toContain("vault directory");
-      expect(sanitized).toContain("allowed");
+      expect(sanitized.toLowerCase()).toContain("permission");
+      expect(sanitized).toContain("fenced code blocks");
+      expect(sanitized).not.toContain("could not request permission from user");
     });
 
-    it("should return Copilot CLI executable permission guidance for spawn EACCES errors", () => {
+    it("should return executable permission guidance for spawn EACCES errors", () => {
       const sanitized = provider.testSanitiseErrorMessage(
         "spawn /usr/local/bin/copilot EACCES",
         1
       );
 
       expect(sanitized).toContain("executable permissions");
-      expect(sanitized).not.toContain("vault directory");
     });
   });
 });
