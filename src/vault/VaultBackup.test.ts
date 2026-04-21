@@ -55,7 +55,7 @@ const createMockApp = (files: unknown[] = [], folders: unknown[] = []): Partial<
     return folder ?? null;
   });
 
-  vault.getMarkdownFiles = vi.fn(() => typedFiles) as typeof vault.getMarkdownFiles;
+  vault.getMarkdownFiles = vi.fn(() => typedFiles);
 
   return {
     vault: vault as unknown as Vault,

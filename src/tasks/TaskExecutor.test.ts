@@ -34,7 +34,7 @@ function createTestPlan(overrides?: Partial<TaskPlan>): TaskPlan {
         id: "step-1",
         type: "create-note",
         description: "Create a note",
-        params: { path: "test.md", content: "Hello" } as CreateNoteParams,
+        params: { path: "test.md", content: "Hello" },
         status: "pending",
       },
     ],
@@ -49,7 +49,7 @@ function createTestStep(overrides?: Partial<TaskStep>): TaskStep {
     id: "step-test",
     type: "create-note",
     description: "Test step",
-    params: { path: "test.md" } as CreateNoteParams,
+    params: { path: "test.md" },
     status: "pending",
     ...overrides,
   };

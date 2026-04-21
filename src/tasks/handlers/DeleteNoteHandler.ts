@@ -5,7 +5,7 @@
  */
 
 import type { App, TFile } from "obsidian";
-import type { TaskStep, UndoAction, DeleteNoteParams } from "../types";
+import type { TaskStep, UndoAction } from "../types";
 import { BaseStepHandler, type StepHandlerResult, type UndoResult } from "./BaseStepHandler";
 import type { SafeVaultAccess } from "../../vault/SafeVaultAccess";
 
@@ -23,7 +23,7 @@ export class DeleteNoteHandler extends BaseStepHandler {
   }
 
   public async execute(step: TaskStep): Promise<StepHandlerResult> {
-    const params = step.params as DeleteNoteParams;
+    const params = step.params;
     const { path } = params;
 
     try {

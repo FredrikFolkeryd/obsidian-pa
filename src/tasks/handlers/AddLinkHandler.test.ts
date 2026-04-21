@@ -81,7 +81,7 @@ function createStep(overrides?: Partial<TaskStep>): TaskStep {
     params: {
       path: "notes/source.md",
       target: "notes/target.md",
-    } as AddLinkParams,
+    },
     ...overrides,
   };
 }

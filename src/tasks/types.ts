@@ -314,7 +314,7 @@ export function createTaskPlan(
     steps: steps.map((step) => ({
       ...step,
       id: generateStepId(),
-      status: "pending" as TaskStepStatus,
+      status: "pending",
     })),
     status: "pending",
     createdAt: Date.now(),

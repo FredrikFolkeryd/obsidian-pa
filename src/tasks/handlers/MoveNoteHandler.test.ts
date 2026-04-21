@@ -74,7 +74,7 @@ function createStep(overrides?: Partial<TaskStep>): TaskStep {
       path: "notes/source.md",
       newPath: "archive/source.md",
       updateLinks: true,
-    } as MoveNoteParams,
+    },
     ...overrides,
   };
 }

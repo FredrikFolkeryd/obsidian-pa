@@ -6,7 +6,7 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { AddTagHandler } from "./AddTagHandler";
-import type { TaskStep, AddTagParams } from "../types";
+import type { TaskStep } from "../types";
 import type { App, TFile, TAbstractFile } from "obsidian";
 import type { SafeVaultAccess } from "../../vault/SafeVaultAccess";
 
@@ -81,7 +81,7 @@ function createStep(overrides?: Partial<TaskStep>): TaskStep {
     params: {
       path: "notes/test.md",
       tag: "project",
-    } as AddTagParams,
+    },
     ...overrides,
   };
 }
@@ -205,7 +205,7 @@ describe("AddTagHandler", () => {
     describe("tag normalization", () => {
       it("should strip # prefix from tag", async () => {
         const step = createStep({
-          params: { path: "notes/test.md", tag: "#project" } as AddTagParams,
+          params: { path: "notes/test.md", tag: "#project" },
         });
         await handler.execute(step);
 
@@ -272,7 +272,7 @@ describe("AddTagHandler", () => {
     describe("error handling", () => {
       it("should fail if file does not exist", async () => {
         const step = createStep({
-          params: { path: "notes/missing.md", tag: "project" } as AddTagParams,
+          params: { path: "notes/missing.md", tag: "project" },
         });
         const result = await handler.execute(step);
 

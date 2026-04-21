@@ -17,11 +17,7 @@ import {
   DEFAULT_EXECUTOR_CONFIG,
   generateTaskId,
   generateStepId,
-  CreateNoteParams,
   ModifyNoteParams,
-  DeleteNoteParams,
-  AddLinkParams,
-  AddTagParams,
   MoveNoteParams,
 } from "./types";
 
@@ -158,7 +154,7 @@ function parseStepParams(
       return {
         path: sanitizedPath,
         content: content,
-      } as CreateNoteParams;
+      };
     }
 
     case "modify-note": {
@@ -180,7 +176,7 @@ function parseStepParams(
     }
 
     case "delete-note": {
-      return { path: sanitizedPath } as DeleteNoteParams;
+      return { path: sanitizedPath };
     }
 
     case "add-link": {
@@ -200,7 +196,7 @@ function parseStepParams(
         displayText: getAttribute(stepStr, "displayText") || undefined,
         position: (getAttribute(stepStr, "position") as "append" | "prepend" | "section") || undefined,
         section: getAttribute(stepStr, "section") || undefined,
-      } as AddLinkParams;
+      };
     }
 
     case "add-tag": {
@@ -212,7 +208,7 @@ function parseStepParams(
       return {
         path: sanitizedPath,
         tag: tag.replace(/^#/, ""), // Remove leading # if present
-      } as AddTagParams;
+      };
     }
 
     case "move-note": {
@@ -225,7 +221,7 @@ function parseStepParams(
         path: sanitizedPath,
         newPath: sanitizePath(newPath),
         updateLinks: getAttribute(stepStr, "updateLinks") !== "false",
-      } as MoveNoteParams;
+      };
     }
 
     default:
@@ -336,7 +332,7 @@ export function validateTaskPlan(
 
   // Validate each step
   for (const step of plan.steps) {
-    const path = "path" in step.params ? (step.params as { path: string }).path : undefined;
+    const path = "path" in step.params ? (step.params).path : undefined;
 
     // Check content size
     if ("content" in step.params) {
