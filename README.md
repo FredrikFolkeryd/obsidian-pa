@@ -85,7 +85,7 @@ Download the latest release zip and run the included installer:
 # Download and extract
 # x-release-please-start-version
 curl -L \
-  https://github.com/FredrikFolkeryd/obsidian-pa/releases/download/obsidian-pa-v1.0.2-beta.3/obsidian-pa-latest.zip \
+  https://github.com/FredrikFolkeryd/obsidian-pa/releases/download/obsidian-pa-v1.0.3-beta.3/obsidian-pa-latest.zip \
   -o /tmp/obsidian-pa.zip
 # x-release-please-end
 unzip -o /tmp/obsidian-pa.zip -d /tmp/

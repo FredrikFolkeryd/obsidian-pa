@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.3-beta.3](https://github.com/FredrikFolkeryd/obsidian-pa/compare/obsidian-pa-v1.0.2-beta.3...obsidian-pa-v1.0.3-beta.3) (2026-04-21)
+
+
+### 🐛 Bug Fixes
+
+* **chat,provider:** restore dark-theme assistant rendering and re-enable Apply Edit flow for gh-copilot-cli ([#95](https://github.com/FredrikFolkeryd/obsidian-pa/issues/95)) ([973cc7a](https://github.com/FredrikFolkeryd/obsidian-pa/commit/973cc7a730216da9cfa16c6cd8271889747b26ae))
+* **chat:** apply Obsidian markdown theme classes to assistant message rendering ([#93](https://github.com/FredrikFolkeryd/obsidian-pa/issues/93)) ([1f3a06c](https://github.com/FredrikFolkeryd/obsidian-pa/commit/1f3a06ca824f059508543dce9c9af1f22a348e18))
+* **copilot-cli:** pre-authorize scoped write tools for non-interactive sessions ([#92](https://github.com/FredrikFolkeryd/obsidian-pa/issues/92)) ([a894350](https://github.com/FredrikFolkeryd/obsidian-pa/commit/a894350d297836093e4fb19ade1fed46bddece9a))
+* **release:** automate README prerelease download tag updates ([#94](https://github.com/FredrikFolkeryd/obsidian-pa/issues/94)) ([562d520](https://github.com/FredrikFolkeryd/obsidian-pa/commit/562d52064417efcd4a9805bf7957d81ad502c773))
+
+
+### 🔧 Maintenance
+
+* **deps:** update softprops/action-gh-release action to v3 ([#90](https://github.com/FredrikFolkeryd/obsidian-pa/issues/90)) ([2ccc9a5](https://github.com/FredrikFolkeryd/obsidian-pa/commit/2ccc9a5e5ae92b1c5ca93d4b4ed7362703ce5106))
+* **deps:** update typescript-eslint monorepo to v8.58.2 ([#89](https://github.com/FredrikFolkeryd/obsidian-pa/issues/89)) ([5f87ba4](https://github.com/FredrikFolkeryd/obsidian-pa/commit/5f87ba491614179080be6759228ee01b1d4859cb))
+* revise README for plugin installation details ([23621b7](https://github.com/FredrikFolkeryd/obsidian-pa/commit/23621b7bdd7b99a6a8d07c91322c34e65d1ecc4f))
+
 ## [1.0.2-beta.3](https://github.com/FredrikFolkeryd/obsidian-pa/compare/obsidian-pa-v1.0.1-beta.3...obsidian-pa-v1.0.2-beta.3) (2026-04-10)
 
 
