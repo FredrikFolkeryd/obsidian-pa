@@ -2,6 +2,8 @@ import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   // Global ignores (replaces ignorePatterns)
+  // Config files are excluded: they use CommonJS/top-level-await patterns
+  // that conflict with the TypeScript-checked source rules below
   {
     ignores: ["main.js", "node_modules/", "**/*.config.js", "**/*.config.mjs", "**/*.config.mts"],
   },
