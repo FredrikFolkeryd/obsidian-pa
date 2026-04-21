@@ -5,7 +5,7 @@
  * that are used in our tests.
  */
 
-/* eslint-disable @typescript-eslint/no-unused-vars */
+ 
 /* eslint-disable @typescript-eslint/require-await */
 
 export class App {

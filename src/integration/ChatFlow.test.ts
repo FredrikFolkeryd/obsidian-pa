@@ -71,7 +71,7 @@ describe("Chat Flow E2E", () => {
     mockVault.getAbstractFileByPath = vi.fn().mockImplementation((path: string) =>
       files.find((f) => f.path === path) ?? null
     );
-    mockVault.getMarkdownFiles = vi.fn(() => files) as typeof mockVault.getMarkdownFiles;
+    mockVault.getMarkdownFiles = vi.fn(() => files);
     mockVault.getRoot = vi.fn(() => ({ path: "/" }) as TFolder);
 
     mockApp = {

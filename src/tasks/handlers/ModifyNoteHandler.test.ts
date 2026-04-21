@@ -82,7 +82,7 @@ function createStep(overrides?: Partial<TaskStep>): TaskStep {
     params: {
       path: "notes/test.md",
       content: "# New Content",
-    } as ModifyNoteParams,
+    },
     ...overrides,
   };
 }

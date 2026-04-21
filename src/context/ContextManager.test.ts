@@ -19,7 +19,7 @@ function createMockFile(path: string, content = "test content"): TFile {
     stat: { mtime: Date.now(), ctime: Date.now(), size: content.length },
     vault: {} as never,
     parent: { path: parts.slice(0, -1).join("/") || "/" } as TFolder,
-  } as TFile;
+  };
 }
 
 // Mock App
@@ -246,7 +246,7 @@ describe("ContextManager", () => {
       const caches = new Map<string, CachedMetadata>();
       caches.set("notes/active.md", {
         links: [{ link: "linked", original: "linked", position: { start: { line: 0, col: 0, offset: 0 }, end: { line: 0, col: 6, offset: 6 } } }],
-      } as CachedMetadata);
+      });
       
       const files = [activeFile, linkedFile];
       app = createMockApp(files, caches);

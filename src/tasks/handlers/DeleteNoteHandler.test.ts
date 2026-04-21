@@ -6,7 +6,7 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { DeleteNoteHandler } from "./DeleteNoteHandler";
-import type { TaskStep, DeleteNoteParams } from "../types";
+import type { TaskStep } from "../types";
 import type { App, TFile, TAbstractFile } from "obsidian";
 import type { SafeVaultAccess } from "../../vault/SafeVaultAccess";
 
@@ -74,7 +74,7 @@ function createStep(overrides?: Partial<TaskStep>): TaskStep {
     status: "pending",
     params: {
       path: "notes/to-delete.md",
-    } as DeleteNoteParams,
+    },
     ...overrides,
   };
 }
@@ -124,7 +124,7 @@ describe("DeleteNoteHandler", () => {
 
     it("should fail if file does not exist", async () => {
       const step = createStep({
-        params: { path: "notes/missing.md" } as DeleteNoteParams,
+        params: { path: "notes/missing.md" },
       });
       const result = await handler.execute(step);
 

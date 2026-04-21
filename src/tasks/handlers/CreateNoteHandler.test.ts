@@ -56,7 +56,7 @@ function createStep(overrides?: Partial<TaskStep>): TaskStep {
     params: {
       path: "notes/new-note.md",
       content: "# New Note\n\nContent here.",
-    } as CreateNoteParams,
+    },
     ...overrides,
   };
 }

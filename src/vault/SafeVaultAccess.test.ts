@@ -28,7 +28,7 @@ const createMockApp = (files: MockTFile[] = []): Partial<App> => {
   vault.read = vi.fn().mockResolvedValue("file content");
   vault.getAbstractFileByPath = vi.fn((path: string) =>
     files.find((f) => f.path === path) ?? null
-  ) as typeof vault.getAbstractFileByPath;
+  );
   vault.getMarkdownFiles = vi.fn(() => files as TFile[]);
   vault.getRoot = vi.fn(() => ({ path: "/" }) as TFolder);
 

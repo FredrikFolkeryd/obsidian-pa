@@ -3,8 +3,8 @@
  */
 
 /* eslint-disable @typescript-eslint/require-await */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+ 
+ 
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { GitHubModelsClient } from "./GitHubModelsClient";
